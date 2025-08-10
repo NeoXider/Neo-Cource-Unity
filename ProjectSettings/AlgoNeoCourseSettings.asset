@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &1
+MonoBehaviour:
+  m_ObjectHideFlags: 53
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 80192f0b3b279c540ba67590b3eb6be9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  repositoryBaseUrl: https://raw.githubusercontent.com/NeoXider/AlgoNeoCource/main
+  courseJsonFile: course.json
+  autoLoadOnStart: 1
+  enableDebugLogging: 0
+  testMode: 0
+  okLogColor: {r: 0.2, g: 0.85, b: 0.2, a: 1}
+  failLogColor: {r: 1, g: 0.6, b: 0.2, a: 1}
+  localCourseJsonPath: 
+  downloadFolderRelative: Assets/_AlgoNeoCourse/Downloaded
+  lessonsFolderInRepo: lessons
+  lessonSelections: []
