@@ -24,8 +24,9 @@ namespace NeoCource.Editor.Tasks.Builtin
             var go = GameObject.Find(targetName);
             if (go == null) { message = $"Не найден объект {targetName}"; return false; }
 
-            var type = Type.GetType(componentName) ?? Type.GetType("UnityEngine." + componentName + ", UnityEngine") ??
-                       Type.GetType(componentName + ", Assembly-CSharp");
+            var type = Type.GetType(componentName)
+                       ?? Type.GetType("UnityEngine." + componentName + ", UnityEngine")
+                       ?? Type.GetType(componentName + ", Assembly-CSharp");
             if (type == null) { message = $"Не найден тип компонента {componentName}"; return false; }
 
             var has = go.GetComponent(type) != null;

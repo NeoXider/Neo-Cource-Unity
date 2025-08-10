@@ -12,6 +12,7 @@ using UIMarkdownRenderer;
 using NeoCource.Editor.Settings;
 using NeoCource.Editor.Util;
 using UnityEngine.UIElements.Experimental;
+using UnityEditor.Callbacks;
 
 namespace NeoCource.Editor
 {
@@ -36,6 +37,8 @@ namespace NeoCource.Editor
         private string currentLessonTitle;
         private int currentSlideIndex;
         private List<string> slides = new();
+        private bool autoReloadScheduled = false;
+        private bool autoReloadInProgress = false;
 
         [MenuItem("Tools/AlgoNeoCourse/Open Course Window")]
         public static void Open()
@@ -43,6 +46,21 @@ namespace NeoCource.Editor
             var wnd = GetWindow<CourseWindow>(false, WindowTitle, true);
             wnd.minSize = new Vector2(640, 420);
             wnd.Focus();
+        }
+
+        [DidReloadScripts]
+        private static void OnScriptsReloaded()
+        {
+            // После domain reload восстановим сессию во всех открытых окнах
+            EditorApplication.delayCall += () =>
+            {
+                var windows = Resources.FindObjectsOfTypeAll<CourseWindow>();
+                foreach (var w in windows)
+                {
+                    // Дадим окну завершить CreateGUI/RefreshLessonsList
+                    EditorApplication.delayCall += () => { try { w.RestoreLastSession(); } catch { } };
+                }
+            };
         }
 
         public void CreateGUI()
@@ -59,6 +77,8 @@ namespace NeoCource.Editor
                 {
                     EnsureDocsMenuFromSettings();
                     RefreshLessonsList();
+                    RestoreLastSession();
+                    SaveLastSession();
                 }
                 catch (Exception ex)
                 {
@@ -81,11 +101,20 @@ namespace NeoCource.Editor
                 if (idx >= 0 && idx < availableLessons.Count)
                 {
                     LoadLesson(availableLessons[idx]);
+                    SaveLastSession();
                 }
             });
             toolbar.Add(lessonDropdown);
 
             toolbar.Add(new ToolbarSpacer());
+
+            // Settings button before back
+            var settingsIcon = (Texture2D)(EditorGUIUtility.IconContent("d__Popup@2x").image ?? EditorGUIUtility.IconContent("SettingsIcon").image ?? EditorGUIUtility.IconContent("_Popup").image);
+            var settingsBtn = CreateIconButton(settingsIcon, "Открыть Course Settings", () =>
+            {
+                Selection.activeObject = CourseSettings.instance;
+            });
+            toolbar.Add(settingsBtn);
 
             prevBtn = new ToolbarButton(() => ShowSlide(currentSlideIndex - 1)) { text = "◀" };
             nextBtn = new ToolbarButton(() => ShowSlide(currentSlideIndex + 1)) { text = "▶" };
@@ -107,7 +136,28 @@ namespace NeoCource.Editor
 
             // Кнопка обновления с иконкой редактора (надёжнее, чем эмодзи)
             var refreshTex = (Texture2D)(EditorGUIUtility.IconContent("d_Refresh").image ?? EditorGUIUtility.IconContent("Refresh").image);
-            reloadBtn = CreateIconButton(refreshTex, "Обновить уроки", RefreshLessonsList);
+            reloadBtn = CreateIconButton(refreshTex, "Обновить уроки", () =>
+            {
+                // Полный цикл обновления: перечитать список уроков, перечитать текущий файл и переразметить слайды
+                RefreshLessonsList();
+                if (!string.IsNullOrEmpty(currentLessonFilePath) && File.Exists(currentLessonFilePath))
+                {
+                    try
+                    {
+                        var text = System.IO.File.ReadAllText(currentLessonFilePath);
+                        slides = SplitSlides(text);
+                        // форсируем ререндер текущего слайда
+                        ShowSlide(currentSlideIndex);
+                        SaveLastSession();
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogWarning($"CourseWindow: не удалось перечитать текущий урок — {ex.Message}");
+                    }
+                }
+                // Дополнительно реинициализируем меню Docs в случае изменения флага
+                EnsureDocsMenuFromSettings();
+            });
             reloadBtn.style.color = new StyleColor(new Color(0.2f, 0.8f, 0.8f));
             openInExplorerBtn = new ToolbarButton(() =>
             {
@@ -174,7 +224,7 @@ namespace NeoCource.Editor
             }
         }
 
-        private void LoadDocsExample(string assetPath)
+        private void LoadDocsExample(string assetPath) 
         {
             try
             {
@@ -208,6 +258,60 @@ namespace NeoCource.Editor
             contentRoot.Add(mdRenderer.RootElement);
 
             rootVisualElement.Add(contentRoot);
+        }
+
+        private void EnsureRichTextOnAllLabels()
+        {
+            if (mdRenderer == null || mdRenderer.RootElement == null) return;
+            try
+            {
+                var labels = mdRenderer.RootElement.Query<Label>().ToList();
+                foreach (var l in labels)
+                {
+                    if (l == null) continue;
+                    l.enableRichText = true;
+                }
+            }
+            catch { /* ignore */ }
+        }
+
+        private void FixBrokenMarkdownLinks()
+        {
+            if (mdRenderer == null || mdRenderer.RootElement == null) return;
+            try
+            {
+                var labels = mdRenderer.RootElement.Query<Label>().ToList();
+                foreach (var l in labels)
+                {
+                    if (l == null) continue;
+                    string txt = l.text ?? string.Empty;
+                    int idx = txt.IndexOf("unity://check", StringComparison.OrdinalIgnoreCase);
+                    if (idx < 0) continue;
+
+                    // Try to extract the target from <link=unity://check...>
+                    string link = null;
+                    var m = System.Text.RegularExpressions.Regex.Match(txt, @"<link=(unity://check[^>]+)>");
+                    if (m.Success) link = m.Groups[1].Value;
+                    if (string.IsNullOrEmpty(link))
+                    {
+                        // fallback: raw url in text
+                        int start = txt.IndexOf("unity://check", StringComparison.OrdinalIgnoreCase);
+                        int end = start;
+                        while (end < txt.Length && !char.IsWhiteSpace(txt[end]) && txt[end] != '>' && txt[end] != '"') end++;
+                        link = txt.Substring(start, end - start);
+                    }
+
+                    // Replace visual text to a clean label
+                    l.text = "▶ Проверить";
+                    l.style.color = new StyleColor(new Color(0.30f, 0.49f, 1.0f));
+                    l.AddToClassList("linkHovered");
+                    l.RegisterCallback<ClickEvent>(_ =>
+                    {
+                        try { OnLinkClicked(link, mdRenderer); } catch (Exception ex) { Debug.LogError(ex.Message); }
+                    });
+                }
+            }
+            catch { /* ignore */ }
         }
 
         private static ToolbarButton CreateIconButton(Texture2D icon, string tooltip, Action onClick)
@@ -265,12 +369,38 @@ namespace NeoCource.Editor
                 titles.Add("Нет загруженных уроков — скачайте их в CourseSettings");
             }
 
+            // Попробуем восстановить последний открытый урок/слайд из EditorPrefs
+            string savedPath = EditorPrefs.GetString(LastLessonPathKey, string.Empty);
+            int savedSlide = EditorPrefs.GetInt(LastSlideIndexKey, 0);
+            int selectedIndex = 0;
+            if (!string.IsNullOrEmpty(savedPath))
+            {
+                try
+                {
+                    string fullSaved = Path.GetFullPath(savedPath);
+                    for (int i = 0; i < availableLessons.Count; i++)
+                    {
+                        if (string.Equals(Path.GetFullPath(availableLessons[i].filePath), fullSaved, StringComparison.OrdinalIgnoreCase))
+                        {
+                            selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+                catch { /* ignore */ }
+            }
+
             lessonDropdown.choices = titles;
-            lessonDropdown.index = titles.Count > 0 ? 0 : -1;
+            lessonDropdown.index = titles.Count > 0 ? selectedIndex : -1;
 
             if (availableLessons.Count > 0)
             {
-                LoadLesson(availableLessons[0]);
+                LoadLesson(availableLessons[selectedIndex]);
+                if (!string.IsNullOrEmpty(savedPath))
+                {
+                    // Перейдём на сохранённый слайд
+                    ShowSlide(Mathf.Clamp(savedSlide, 0, Math.Max(0, slides.Count - 1)));
+                }
             }
             else
             {
@@ -332,6 +462,7 @@ namespace NeoCource.Editor
             // Инициализируем контекст без предварительного полного рендера файла, сразу показываем слайд 0
             SeedMarkdownContext(currentLessonFilePath);
             ShowSlide(0);
+            SaveLastSession();
         }
 
         private static List<string> SplitSlides(string md)
@@ -347,6 +478,8 @@ namespace NeoCource.Editor
             {
                 slideIndicator.text = "—/—";
                 mdRenderer.SetMarkdown("# Пусто");
+                EnsureRichTextOnAllLabels();
+                FixBrokenMarkdownLinks();
                 return;
             }
 
@@ -358,6 +491,7 @@ namespace NeoCource.Editor
             var md = slides[currentSlideIndex];
             md = InjectCheckBlocksIfDebug(md);
             md = PreprocessMediaLinks(md);
+            md = ConvertGifLinksToMp4(md);
             // Подстрахуемся: если у рендера не инициализирован FileFolder, инициализируем по текущему файлу
             if (mdRenderer != null && string.IsNullOrEmpty(mdRenderer.FileFolder) && !string.IsNullOrEmpty(currentLessonFilePath))
             {
@@ -369,6 +503,55 @@ namespace NeoCource.Editor
                 }
             }
             mdRenderer.SetMarkdown(md);
+            EnsureRichTextOnAllLabels();
+            FixBrokenMarkdownLinks();
+            SaveLastSession();
+        }
+
+        private const string LastLessonPathKey = "AlgoNeoCourse.LastLessonPath";
+        private const string LastSlideIndexKey = "AlgoNeoCourse.LastSlideIndex";
+
+        private void SaveLastSession()
+        {
+            if (!string.IsNullOrEmpty(currentLessonFilePath))
+                EditorPrefs.SetString(LastLessonPathKey, currentLessonFilePath);
+            EditorPrefs.SetInt(LastSlideIndexKey, currentSlideIndex);
+        }
+
+        private void RestoreLastSession()
+        {
+            if (mdRenderer == null) BuildContent();
+            string lastPath = EditorPrefs.GetString(LastLessonPathKey, string.Empty);
+            int lastSlide = EditorPrefs.GetInt(LastSlideIndexKey, 0);
+            if (string.IsNullOrEmpty(lastPath) || !File.Exists(lastPath)) return;
+
+            if (availableLessons == null || availableLessons.Count == 0)
+            {
+                try { RefreshLessonsList(); } catch { }
+            }
+
+            // Найти урок в доступных и открыть его
+            var found = availableLessons.FirstOrDefault(l => string.Equals(Path.GetFullPath(l.filePath), Path.GetFullPath(lastPath), StringComparison.OrdinalIgnoreCase));
+            if (string.IsNullOrEmpty(found.filePath))
+            {
+                // Если отсутствует в списке — попробуем открыть напрямую
+                try
+                {
+                    currentLessonTitle = Path.GetFileNameWithoutExtension(lastPath);
+                    currentLessonFilePath = lastPath;
+                    var text = File.ReadAllText(lastPath);
+                    slides = SplitSlides(text);
+                    SeedMarkdownContext(lastPath);
+                    ShowSlide(Mathf.Clamp(lastSlide, 0, Math.Max(0, slides.Count - 1)));
+                    return;
+                }
+                catch { /* ignore */ }
+            }
+            else
+            {
+                LoadLesson(found);
+                ShowSlide(Mathf.Clamp(lastSlide, 0, Math.Max(0, slides.Count - 1)));
+            }
         }
 
         private string InjectCheckBlocksIfDebug(string md)
@@ -384,7 +567,7 @@ namespace NeoCource.Editor
             {
                 var raw = m.Groups[1].Value;
                 var enc = Uri.EscapeDataString(raw);
-                var btn = $"[▶ Проверить](unity://check?type=from-block&__raw_block__={enc})";
+                var btn = $"[▶ Проверить](unity://check?type=from-block&dialog=auto&__raw_block__={enc})";
                 return m.Value + "\n" + btn + "\n";
             });
 
@@ -425,6 +608,53 @@ namespace NeoCource.Editor
                 var replaced = match.Value.Replace(target, "search:" + nameOnly);
                 return replaced;
             });
+        }
+
+        // Конвертирует ссылки на .gif в локальные mp4 через ffmpeg (если настроен), чтобы UI Toolkit-видео их воспроизводил
+        private string ConvertGifLinksToMp4(string md)
+        {
+            if (string.IsNullOrEmpty(md)) return md;
+            var settings = CourseSettings.instance;
+            if (!settings.autoConvertGifToMp4 || string.IsNullOrEmpty(settings.ffmpegPath)) return md;
+
+            int replacedCount = 0;
+            var result = Regex.Replace(md, "!\\[[^\\]]*\\]\\(([^)]+)\\)", match =>
+            {
+                var url = match.Groups[1].Value.Trim();
+                // Обрабатываем только внешние/файловые ссылки. Остальные (Assets/, search:, package:) оставляем как есть
+                if (!(url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                      url.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ||
+                      url.StartsWith("file://", StringComparison.OrdinalIgnoreCase)))
+                    return match.Value;
+
+                var mp4AssetsPath = NeoCource.Editor.GifSupport.GifConverter.ConvertGifToMp4IfNeeded(url);
+                if (string.IsNullOrEmpty(mp4AssetsPath)) return match.Value;
+                replacedCount++;
+
+                // Заменим на видео с тем же alt
+                var alt = Regex.Match(match.Value, "!\\[([^\\]]*)\\]").Groups[1].Value;
+                return $"![{alt}]({mp4AssetsPath})";
+            });
+
+            if (settings.enableDebugLogging && replacedCount == 0)
+            {
+                //Debug.Log("[AlgoNeoCourse] Markdown: GIF-ссылок не найдено — конвертация не выполнялась.");
+            }
+            // Если были замены, то через маленькую задержку перезагрузим текущий слайд один раз,
+            // чтобы гарантировать, что импорт mp4 завершён и UI их увидит
+            if (replacedCount > 0 && !autoReloadScheduled)
+            {
+                autoReloadScheduled = true;
+                EditorApplication.delayCall += () =>
+                {
+                    if (this == null) { autoReloadScheduled = false; return; }
+                    autoReloadInProgress = true;
+                    try { ShowSlide(currentSlideIndex); }
+                    finally { autoReloadInProgress = false; autoReloadScheduled = false; }
+                };
+            }
+
+            return result;
         }
 
         private void OnLinkClicked(string link, UIMarkdownRenderer.UIMarkdownRenderer renderer)

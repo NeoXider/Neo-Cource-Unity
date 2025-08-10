@@ -1,25 +1,18 @@
-# Спецификация Markdown для интерактивного курса в Unity Editor
+# Создание уроков: кратко и по шагам
 
-## Общее
-- Каждый урок описывается одним `.md`‑файлом, перечисленным в `course.json`.
-- Разделяйте урок на слайды отдельно стоящей строкой `---`.
-- Рендер выполняется через UI Toolkit (MarkdownRenderer). Поддерживаются заголовки, списки, цитаты, таблицы, код‑блоки, изображения и видео.
-- Для интерактива используйте ссылки со схемой `unity://...`.
+- Один урок = один `.md` файл, перечисленный в `course.json`.
+- Слайды разделяются строкой из трёх дефисов:
+```
+---
+```
+- Интерактив — через ссылки `unity://...` (см. раздел «Проверки и действия»).
 
-## Формат course.json
-- Поля:
-  - `title`: заголовок курса
-  - `description`: описание (необязательно)
-  - `lessons`: массив объектов `{ id, title, file }`
-    - `id`: уникальный идентификатор урока
-    - `title`: отображаемое имя урока
-    - `file`: относительный путь к `.md` от корня репозитория (напр. `lessons/m1y1.md`)
-
-Пример:
+## 1) Описать уроки в `course.json`
+- Поле `lessons`: массив объектов `{ id, title, file }`.
+- Пример минимума:
 ```json
 {
   "title": "Пример",
-  "description": "Тестовый курс",
   "lessons": [
     { "id": "lesson01", "title": "Базовая сцена", "file": "lessons/m1y1.md" },
     { "id": "lesson02", "title": "Скрипты в Unity", "file": "lessons/m1y2.md" }
@@ -27,12 +20,8 @@
 }
 ```
 
-## Структура `.md` урока
-- Слайды разделяются одиночной строкой:
-```
----
-```
-- Пример разбиения и навигации:
+## 2) Создать `.md` файл урока
+Пример структуры:
 ```md
 # Слайд 1 — Введение
 Добро пожаловать!
@@ -45,77 +34,96 @@
 
 Видео:
 ![](https://www.example.com/intro.mp4)
-
-[◀](unity://slide?dir=prev) [▶](unity://slide?dir=next)
 ```
+Навигацию вперёд/назад окно плагина уже предоставляет кнопками, ссылки `[◀]/[▶]` добавлять не обязательно.
 
-## Действия (`unity://`)
-- Навигация по слайдам:
-  - `unity://slide?dir=next` — следующий слайд
-  - `unity://slide?dir=prev` — предыдущий слайд
-- Проверка задания через реестр проверок:
-  - `unity://check?type=component-present&target=<ObjectName>&component=<ComponentType>`
-    - пример: `unity://check?type=component-present&target=Player&component=Rigidbody`
-- Открытие ассета/показ файла в проводнике:
-  - `unity://open?path=Assets/Prefabs/Player.prefab`
-
-## Медиа
+## 3) Медиа (картинки/видео)
 - Изображения: `![](путь-или-url)`
-- Видео: `![](путь-или-url.mp4|.mov|.webm|...)` — определяется по расширению, создаётся видео‑плеер.
+- Видео: `![](путь-или-url.mp4|.mov|.webm|...)` — определяется по расширению.
 
-Разрешение путей к медиа:
-- Абсолютные URL: поддерживаются `http://` и `https://` (например, `![](https://example.com/pic.png)`).
-- Относительные пути: считаются относительно текущего `.md`‑файла урока (например, `![](./images/pic.png)` или `![](images/pic.png)`).
-- Голое имя файла без путей: выполняется поиск ассета по имени в проекте (например, `![](logo.png)` найдёт `Assets/**/logo.png`).
-- Абсолютные проектные пути `Assets/...` и `Packages/...` также поддерживаются.
+Как резолвятся пути:
+- Абсолютные URL: `http://` / `https://`
+- Относительные пути от текущего `.md`: `![](./images/pic.png)` или `![](images/pic.png)`
+- Голое имя: поиск ассета по имени в проекте (`![](logo.png)` → найдёт `Assets/**/logo.png`)
+- Проектные пути: `Assets/...` и `Packages/...`
 
-Видео‑форматы:
-- Определяются по расширению ссылки/пути. Поддерживаются, в частности: `.mp4`, `.mov`, `.webm`, `.avi`, `.wmv`, `.mpeg`, `.mpg`, `.m4v`, `.ogv`, `.asf`, `.dv`, `.vp8`.
+Поддерживаемые видео‑форматы: `.mp4`, `.mov`, `.webm`, `.avi`, `.wmv`, `.mpeg`, `.mpg`, `.m4v`, `.ogv`, `.asf`, `.dv`, `.vp8`.
 
 Примечания:
-- GIF‑файлы загружаются как статические текстуры (анимация GIF в UI Toolkit не воспроизводится из коробки).
-- Внешние ссылки могут быть недоступны (404) — в таком случае отобразится предупреждение в консоли, урок продолжит работу.
+- GIF выводится как статичное изображение. Если включена авто‑конвертация и настроен `ffmpeg`, внешние GIF конвертируются в `.mp4` автоматически; слайд перезагрузится сам.
+- Внешние ссылки могут быть недоступны (404) — в консоли будет предупреждение, урок продолжит работу.
 
-Примеры:
+Мини‑примеры:
 ```md
 # Изображения
-
-Голое имя (поиск по проекту):
-![](sample.jpg)
-
-Относительный путь от файла урока:
-![](images/sample.jpg)
-
-Внешняя ссылка:
-![](https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/June_odd-eyed-cat.jpg/320px-June_odd-eyed-cat.jpg)
+![](sample.jpg)                 # поиск по проекту
+![](images/sample.jpg)          # относительный путь
+![](https://site/pic.jpg)       # внешний URL
 
 # Видео
-
-Внешний mp4:
 ![](https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4)
 ```
 
-## Debug‑блоки проверок (опционально)
-- Включается в Project Settings: `AlgoNeoCourse → Validation → Debug Render Check Blocks`.
-- Формат fenced‑блока:
-```
+## 4) Проверки и действия (`unity://`)
+- Открыть ассет: `unity://open?path=Assets/Prefabs/Player.prefab`
+- Скрытые проверки (через ссылку):
+  - `object-exists`: `unity://check?type=object-exists&target=Player`
+  - `component-present`: `unity://check?type=component-present&target=Player&component=Rigidbody`
+  - Сложная сцена: `unity://check?type=scene-all&target=Player&components=Rigidbody,BoxCollider`
+  - Для отображения команды в тексте, чтобы не превращалась в ссылку, можно писать с пробелом: 
+    ```
+    unity ://check?type=object-exists&target=Player   # уберите пробел в уроке
+    ```
+
+- Открытые проверки (fenced‑блоки). Включите в Project Settings: `AlgoNeoCourse → Validation → Debug Render Check Blocks`.
+  Пример комбинированного блока (сцена + скрипт):
+  ```
+  ```check
+  rules:
+    - object_exists: "Player"
+    - component_exists:
+        object: "Player"
+        type: "Rigidbody"
+    - filename: "PlayerController.cs"
+    - contains: "public class PlayerController"
+    - contains: "Update"
+  ```
+  ```
+
+Результат проверок печатается в консоль; пункты помечаются цветными V/X, есть краткие итоги.
+
+## 5) Полный пример (3 слайда)
+```md
+# Введение
+Перейдите далее.
+
+---
+
+## Теория
+![](images/intro.png)
+![](https://www.example.com/intro.mp4)
+
+---
+
+## Практика и проверка
+Добавьте `Rigidbody` на объект `Player`.
+
+[Проверить](unity://check?type=component-present&target=Player&component=Rigidbody)
+
 ```check
-# Пример YAML‑подобных правил
-type: scene
 rules:
   - object_exists: "Player"
-  - component_exists:
-      object: "Player"
-      type: "Rigidbody"
+  - component_exists: { object: "Player", type: "Rigidbody" }
 ```
 ```
-- Под блоком автоматически появляется кнопка “▶ Проверить” и текстовый результат.
-- Поддерживаемые правила в debug‑режиме:
-  - `object_exists: "<ObjectName>"`
-  - `component_exists: { object: "<ObjectName>", type: "<ComponentType>" }`
+
+## Нельзя / ограничения
+- Таблицы Markdown и встроенный HTML не поддерживаются (используйте списки/подзаголовки).
+- Анимированные GIF как GIF не воспроизводятся — используйте `.mp4` (или авто‑конвертацию).
+- Видео определяется по расширению ссылки.
 
 ## Рекомендации
-- Храните уроки в `lessons/`, медиа — в `lessons/images/`.
+- Держите уроки в `lessons/`, медиа — в `lessons/images/` (для экономии места можно использовать внешние ссылки).
 - Один слайд — одна мысль/шаг.
-- На длинных слайдах добавляйте навигацию `[◀] ... [▶]`.
-- Для стабильных проверок используйте `unity://check?type=...`; fenced‑блоки `check` применяйте как быстрый способ отладки.
+- Для открытых проверок используйте `unity://check?type=...`; fenced‑блоки `check` — для открытой проверки (рекомендуется).
+

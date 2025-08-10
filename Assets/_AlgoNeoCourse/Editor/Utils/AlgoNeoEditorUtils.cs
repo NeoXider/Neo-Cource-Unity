@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
+using NeoCource.Editor.Settings;
 
  namespace NeoCource.Editor.Util
 {
@@ -13,6 +14,16 @@ using UnityEngine;
             return $"<color=#{hex}>{text}</color>";
         }
 
+        public static string OkMarkColored()
+        {
+            return "V".Color(CourseSettings.instance.okLogColor);
+        }
+
+        public static string FailMarkColored()
+        {
+            return "X".Color(CourseSettings.instance.failLogColor);
+        }
+ 
         /// <summary>
         /// Открывает ассет по пути (Assets/..., Packages/... или абсолютный путь внутри проекта).
         /// Если ассет найден — выделяет и пингует в Project. Если нет — открывает системный проводник.

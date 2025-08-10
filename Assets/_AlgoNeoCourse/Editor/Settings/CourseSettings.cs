@@ -49,6 +49,13 @@ public class CourseSettings : ScriptableSingleton<CourseSettings>
     public Color failLogColor = new Color(1.0f, 0.6f, 0.2f);
 
 #if ODIN_INSPECTOR
+    [Title("GIF → MP4 конвертация (для Markdown)")]
+#endif
+    [Tooltip("Автоматически конвертировать .gif в .mp4 для корректного воспроизведения")] public bool autoConvertGifToMp4 = true;
+    [Tooltip("Путь к ffmpeg.exe (если пусто, конвертация отключена)")] public string ffmpegPath = "Assets/_AlgoNeoCourse/Editor/Utils/ffmpeg.exe";
+    [Tooltip("Папка кэша mp4 (в проекте)")] public string gifVideoCacheFolder = "Assets/_AlgoNeoCourse/.VideoCache";
+
+#if ODIN_INSPECTOR
     [Title("Локальные тестовые настройки"), ShowIf("testMode")]
 #endif
     [Tooltip("Путь к локальному course.json (используется только в режиме теста).")]
@@ -398,6 +405,9 @@ public class CourseSettings : ScriptableSingleton<CourseSettings>
         enableDebugLogging = false;
         testMode = false;
         localCourseJsonPath = string.Empty;
+        autoConvertGifToMp4 = true;
+        ffmpegPath = "Assets/_AlgoNeoCourse/Editor/Utils/ffmpeg.exe";
+        gifVideoCacheFolder = "Assets/_AlgoNeoCourse/VideoCache";
         downloadFolderRelative = "Assets/_AlgoNeoCourse/Downloaded";
         lessonsFolderInRepo = "lessons";
         lessonSelections.Clear();

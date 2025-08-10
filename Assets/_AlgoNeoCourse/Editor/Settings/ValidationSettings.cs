@@ -17,16 +17,16 @@ namespace NeoCource.Editor.Settings
         // Он будет создан автоматически Unity при первом доступе к instance и сохранён при изменении.
         public static void EnsureAssetExists() { /* no-op */ }
         [Header("Диалоги и логирование")]
-        public bool EnableDialogs = true;
+        public bool EnableDialogs = false;
         public bool ShowSuccessDialog = true;
         public bool ShowFailureDialog = true;
-        public bool LogVerbose = false;
+        public bool LogVerbose = true;
 
         [Header("Debug отображение check-блоков в Markdown")]
-        public bool DebugRenderCheckBlocks = false;
+        public bool DebugRenderCheckBlocks = true;
 
         [Header("Debug просмотр примеров из Docs/Examples")] 
-        public bool DebugBrowseDocsExamples = false;
+        public bool DebugBrowseDocsExamples = true;
 
         [Header("Отключённые проверки (по ключу)")]
         public List<string> DisabledChecks = new();
@@ -72,12 +72,12 @@ namespace NeoCource.Editor.Settings
 #endif
         public void ResetToDefaults()
         {
-            EnableDialogs = true;
+            EnableDialogs = false;
             ShowSuccessDialog = true;
             ShowFailureDialog = true;
-            LogVerbose = false;
-            DebugRenderCheckBlocks = false;
-            DebugBrowseDocsExamples = false;
+            LogVerbose = true;
+            DebugRenderCheckBlocks = true;
+            DebugBrowseDocsExamples = true;
             DisabledChecks.Clear();
             Save(true);
         }

@@ -15,11 +15,26 @@ MonoBehaviour:
   repositoryBaseUrl: https://raw.githubusercontent.com/NeoXider/AlgoNeoCource/main
   courseJsonFile: course.json
   autoLoadOnStart: 1
-  enableDebugLogging: 0
+  enableDebugLogging: 1
   testMode: 0
   okLogColor: {r: 0.2, g: 0.85, b: 0.2, a: 1}
   failLogColor: {r: 1, g: 0.6, b: 0.2, a: 1}
+  autoConvertGifToMp4: 1
+  ffmpegPath: Assets/_AlgoNeoCourse/Editor/Utils/ffmpeg.exe
+  gifVideoCacheFolder: Assets/_AlgoNeoCourse/VideoCache
   localCourseJsonPath: 
   downloadFolderRelative: Assets/_AlgoNeoCourse/Downloaded
   lessonsFolderInRepo: lessons
-  lessonSelections: []
+  lessonSelections:
+  - selected: 1
+    id: lesson01
+    title: "\u0411\u0430\u0437\u043E\u0432\u0430\u044F \u0441\u0446\u0435\u043D\u0430"
+    file: lessons/m1y1.md
+  - selected: 1
+    id: lesson02
+    title: "\u0421\u043A\u0440\u0438\u043F\u0442\u044B \u0432 Unity"
+    file: lessons/m1y2.md
+  - selected: 1
+    id: lesson03
+    title: "\u041F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u044B\u0435 \u0432 Unity"
+    file: lessons/m1y3.md
