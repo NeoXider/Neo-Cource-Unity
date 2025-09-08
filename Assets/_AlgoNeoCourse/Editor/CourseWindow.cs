@@ -492,6 +492,7 @@ namespace NeoCource.Editor
             md = InjectCheckBlocksIfDebug(md);
             md = PreprocessMediaLinks(md);
             md = ConvertGifLinksToMp4(md);
+           
             // Подстрахуемся: если у рендера не инициализирован FileFolder, инициализируем по текущему файлу
             if (mdRenderer != null && string.IsNullOrEmpty(mdRenderer.FileFolder) && !string.IsNullOrEmpty(currentLessonFilePath))
             {
@@ -506,6 +507,7 @@ namespace NeoCource.Editor
             EnsureRichTextOnAllLabels();
             FixBrokenMarkdownLinks();
             SaveLastSession();
+            Repaint();
         }
 
         private const string LastLessonPathKey = "AlgoNeoCourse.LastLessonPath";

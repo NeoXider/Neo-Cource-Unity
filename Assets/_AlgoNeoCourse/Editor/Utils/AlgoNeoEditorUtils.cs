@@ -85,7 +85,8 @@ using NeoCource.Editor.Settings;
                 return true;
             }
 
-            try { EditorUtility.RevealInFinder(inputPath); } catch { }
+            //try { EditorUtility.RevealInFinder(inputPath); } catch { }
+            Debug.Log("Failed to find asset: " + resolved);
             return false;
         }
     }
