@@ -1,5 +1,12 @@
 {
   "dependencies": {
+    "com.rtl.markdownrenderer": {
+      "version": "https://github.com/UnityGuillaume/MarkdownRenderer.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "1fc0ca72d9bd4f4110bc7ddf338cc75cb453a12a"
+    },
     "com.unity.collab-proxy": {
       "version": "2.8.2",
       "depth": 0,
