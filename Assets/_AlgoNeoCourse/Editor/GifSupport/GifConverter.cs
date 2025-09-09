@@ -82,10 +82,12 @@ namespace NeoCource.Editor.GifSupport
                 }
 
                 // Вызов ffmpeg: ffmpeg -y -i input.gif -movflags faststart -pix_fmt yuv420p output.mp4
+                // Оптимизированные параметры для скорости: -preset veryfast (быстрое кодирование), -crf 28 (ниже качество, быстрее), -vf "fps=15" (меньше кадров)
+                // scale=trunc(iw/2)*2:trunc(ih/2)*2 - для совместимости с yuv420p, который требует четных размеров кадра.
                 var psi = new ProcessStartInfo
                 {
                     FileName = ffmpegExe,
-                    Arguments = $"-y -i \"{tempGif}\" -movflags faststart -pix_fmt yuv420p \"{Path.GetFullPath(outPath)}\"",
+                    Arguments = $"-y -i \"{tempGif}\" -vf \"fps=15,scale=trunc(iw/2)*2:trunc(ih/2)*2\" -preset veryfast -crf 28 -movflags faststart -pix_fmt yuv420p \"{Path.GetFullPath(outPath)}\"",
                     CreateNoWindow = true,
                     UseShellExecute = false,
                     RedirectStandardError = true,
@@ -117,5 +119,3 @@ namespace NeoCource.Editor.GifSupport
         }
     }
 }
-
-

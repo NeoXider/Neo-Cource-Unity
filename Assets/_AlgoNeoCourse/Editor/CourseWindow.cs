@@ -10,7 +10,8 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using UIMarkdownRenderer;
 using NeoCource.Editor.Settings;
-using NeoCource.Editor.Util;
+using NeoCource.Editor.Utils;
+using NeoCource.Editor.UI;
 using UnityEngine.UIElements.Experimental;
 using UnityEditor.Callbacks;
 
@@ -51,13 +52,11 @@ namespace NeoCource.Editor
         [DidReloadScripts]
         private static void OnScriptsReloaded()
         {
-            // После domain reload восстановим сессию во всех открытых окнах
             EditorApplication.delayCall += () =>
             {
                 var windows = Resources.FindObjectsOfTypeAll<CourseWindow>();
                 foreach (var w in windows)
                 {
-                    // Дадим окну завершить CreateGUI/RefreshLessonsList
                     EditorApplication.delayCall += () => { try { w.RestoreLastSession(); } catch { } };
                 }
             };
@@ -70,7 +69,6 @@ namespace NeoCource.Editor
             BuildToolbar();
             BuildContent();
 
-            // Defer accessing ScriptableSingleton instances until after editor load
             EditorApplication.delayCall += () =>
             {
                 try
@@ -108,7 +106,6 @@ namespace NeoCource.Editor
 
             toolbar.Add(new ToolbarSpacer());
 
-            // Settings button before back
             var settingsIcon = (Texture2D)(EditorGUIUtility.IconContent("d__Popup@2x").image ?? EditorGUIUtility.IconContent("SettingsIcon").image ?? EditorGUIUtility.IconContent("_Popup").image);
             var settingsBtn = CreateIconButton(settingsIcon, "Открыть Course Settings", () =>
             {
@@ -124,7 +121,6 @@ namespace NeoCource.Editor
             nextBtn.style.unityFontStyleAndWeight = FontStyle.Bold;
             prevBtn.style.color = new StyleColor(new Color(0.65f, 0.75f, 1f));
             nextBtn.style.color = new StyleColor(new Color(0.6f, 1f, 0.6f));
-            // Сделаем кнопку вперёд визуально крупнее
             nextBtn.style.minWidth = 60;
             slideIndicator = new Label("—/—") { style = { unityTextAlign = TextAnchor.MiddleCenter, minWidth = 60 } };
 
@@ -134,11 +130,9 @@ namespace NeoCource.Editor
 
             toolbar.Add(new ToolbarSpacer());
 
-            // Кнопка обновления с иконкой редактора (надёжнее, чем эмодзи)
             var refreshTex = (Texture2D)(EditorGUIUtility.IconContent("d_Refresh").image ?? EditorGUIUtility.IconContent("Refresh").image);
             reloadBtn = CreateIconButton(refreshTex, "Обновить уроки", () =>
             {
-                // Полный цикл обновления: перечитать список уроков, перечитать текущий файл и переразметить слайды
                 RefreshLessonsList();
                 if (!string.IsNullOrEmpty(currentLessonFilePath) && File.Exists(currentLessonFilePath))
                 {
@@ -146,7 +140,6 @@ namespace NeoCource.Editor
                     {
                         var text = System.IO.File.ReadAllText(currentLessonFilePath);
                         slides = SplitSlides(text);
-                        // форсируем ререндер текущего слайда
                         ShowSlide(currentSlideIndex);
                         SaveLastSession();
                     }
@@ -155,7 +148,6 @@ namespace NeoCource.Editor
                         Debug.LogWarning($"CourseWindow: не удалось перечитать текущий урок — {ex.Message}");
                     }
                 }
-                // Дополнительно реинициализируем меню Docs в случае изменения флага
                 EnsureDocsMenuFromSettings();
             });
             reloadBtn.style.color = new StyleColor(new Color(0.2f, 0.8f, 0.8f));
@@ -165,14 +157,11 @@ namespace NeoCource.Editor
                     EditorUtility.RevealInFinder(currentLessonFilePath);
             });
             var folderTex = (Texture2D)(EditorGUIUtility.IconContent("Folder Icon").image ?? EditorGUIUtility.IconContent("d_Project").image);
-            // Заменим визуал на иконку
             openInExplorerBtn.text = string.Empty;
             var img = new Image { image = folderTex, scaleMode = ScaleMode.ScaleToFit };
             img.style.width = 16; img.style.height = 16; img.style.marginTop = 2; img.style.marginBottom = 2;
             openInExplorerBtn.Add(img);
             openInExplorerBtn.tooltip = "Показать файл";
-
-            // Docs/Examples quick access in debug — added later in deferred init
 
             toolbar.Add(reloadBtn);
             toolbar.Add(openInExplorerBtn);
@@ -182,14 +171,12 @@ namespace NeoCource.Editor
 
         private void EnsureDocsMenuFromSettings()
         {
-            // Remove existing menu if any
             if (docsMenu != null)
             {
                 toolbar.Remove(docsMenu);
                 docsMenu = null;
             }
 
-            // Add docs menu only if enabled in settings
             if (ValidationSettings.Instance.DebugBrowseDocsExamples)
             {
                 docsMenu = new ToolbarMenu { text = "Docs" };
@@ -237,8 +224,6 @@ namespace NeoCource.Editor
                 currentSlideIndex = 0;
                 var text = System.IO.File.ReadAllText(assetPath);
                 slides = SplitSlides(text);
-                // seed renderer with file context so relative media resolve
-                // Инициализируем контекст без предварительного полного рендера файла, сразу показываем слайд 0
                 SeedMarkdownContext(assetPath);
                 ShowSlide(0);
             }
@@ -253,8 +238,7 @@ namespace NeoCource.Editor
             contentRoot = new ScrollView(ScrollViewMode.Vertical);
             contentRoot.style.flexGrow = 1f;
 
-            // Markdown renderer root
-            mdRenderer = new UIMarkdownRenderer.UIMarkdownRenderer(OnLinkClicked, includeScrollview: true);
+            mdRenderer = new UIMarkdownRenderer.UIMarkdownRenderer((link, renderer) => OnLinkClicked(link, renderer, null), includeScrollview: true);
             contentRoot.Add(mdRenderer.RootElement);
 
             rootVisualElement.Add(contentRoot);
@@ -288,26 +272,23 @@ namespace NeoCource.Editor
                     int idx = txt.IndexOf("unity://check", StringComparison.OrdinalIgnoreCase);
                     if (idx < 0) continue;
 
-                    // Try to extract the target from <link=unity://check...>
                     string link = null;
                     var m = System.Text.RegularExpressions.Regex.Match(txt, @"<link=(unity://check[^>]+)>");
                     if (m.Success) link = m.Groups[1].Value;
                     if (string.IsNullOrEmpty(link))
                     {
-                        // fallback: raw url in text
                         int start = txt.IndexOf("unity://check", StringComparison.OrdinalIgnoreCase);
                         int end = start;
                         while (end < txt.Length && !char.IsWhiteSpace(txt[end]) && txt[end] != '>' && txt[end] != '"') end++;
                         link = txt.Substring(start, end - start);
                     }
 
-                    // Replace visual text to a clean label
                     l.text = "▶ Проверить";
                     l.style.color = new StyleColor(new Color(0.30f, 0.49f, 1.0f));
                     l.AddToClassList("linkHovered");
-                    l.RegisterCallback<ClickEvent>(_ =>
+                    l.RegisterCallback<ClickEvent>(evt =>
                     {
-                        try { OnLinkClicked(link, mdRenderer); } catch (Exception ex) { Debug.LogError(ex.Message); }
+                        try { OnLinkClicked(link, mdRenderer, evt.currentTarget as VisualElement); } catch (Exception ex) { Debug.LogError(ex.Message); }
                     });
                 }
             }
@@ -342,7 +323,6 @@ namespace NeoCource.Editor
                 }
             }
 
-            // Дополнительно: подхватить любые .md из папки загрузок, если они ещё не в списке
             try
             {
                 string folder = settings.downloadFolderRelative?.Replace("\\", "/");
@@ -369,7 +349,6 @@ namespace NeoCource.Editor
                 titles.Add("Нет загруженных уроков — скачайте их в CourseSettings");
             }
 
-            // Попробуем восстановить последний открытый урок/слайд из EditorPrefs
             string savedPath = EditorPrefs.GetString(LastLessonPathKey, string.Empty);
             int savedSlide = EditorPrefs.GetInt(LastSlideIndexKey, 0);
             int selectedIndex = 0;
@@ -398,7 +377,6 @@ namespace NeoCource.Editor
                 LoadLesson(availableLessons[selectedIndex]);
                 if (!string.IsNullOrEmpty(savedPath))
                 {
-                    // Перейдём на сохранённый слайд
                     ShowSlide(Mathf.Clamp(savedSlide, 0, Math.Max(0, slides.Count - 1)));
                 }
             }
@@ -420,22 +398,18 @@ namespace NeoCource.Editor
             if (!string.IsNullOrEmpty(remotePath))
             {
                 string fileName = Path.GetFileName(remotePath);
-                // мы сохраняем как <id>-<fileName>
                 string preferred = Path.Combine(folder, $"{id}-{fileName}");
                 if (File.Exists(preferred)) return preferred;
 
-                // поддержка варианта <fileNameWithoutExt>-<id>.ext
                 string nameNoExt = Path.GetFileNameWithoutExtension(fileName);
                 string ext = Path.GetExtension(fileName);
                 string alt = Path.Combine(folder, $"{nameNoExt}-{id}{ext}");
                 if (File.Exists(alt)) return alt;
 
-                // резерв: поиск просто по имени файла
                 var any = Directory.GetFiles(folder, fileName, SearchOption.TopDirectoryOnly).FirstOrDefault();
                 if (!string.IsNullOrEmpty(any)) return any;
             }
 
-            // последний шанс — первый .md файл с id внутри имени
             var candidate = Directory.GetFiles(folder, "*.md", SearchOption.TopDirectoryOnly)
                 .FirstOrDefault(p =>
                 {
@@ -459,7 +433,6 @@ namespace NeoCource.Editor
 
             string text = File.ReadAllText(currentLessonFilePath);
             slides = SplitSlides(text);
-            // Инициализируем контекст без предварительного полного рендера файла, сразу показываем слайд 0
             SeedMarkdownContext(currentLessonFilePath);
             ShowSlide(0);
             SaveLastSession();
@@ -468,7 +441,6 @@ namespace NeoCource.Editor
         private static List<string> SplitSlides(string md)
         {
             var parts = Regex.Split(md.Replace("\r\n", "\n"), @"^\n?\s*---\s*$", RegexOptions.Multiline).ToList();
-            // очистим пустые
             return parts.Select(p => p.Trim()).Where(p => !string.IsNullOrEmpty(p)).ToList();
         }
 
@@ -492,20 +464,20 @@ namespace NeoCource.Editor
             md = InjectCheckBlocksIfDebug(md);
             md = PreprocessMediaLinks(md);
             md = ConvertGifLinksToMp4(md);
-            // Подстрахуемся: если у рендера не инициализирован FileFolder, инициализируем по текущему файлу
             if (mdRenderer != null && string.IsNullOrEmpty(mdRenderer.FileFolder) && !string.IsNullOrEmpty(currentLessonFilePath))
             {
                 SeedMarkdownContext(currentLessonFilePath);
                 if (string.IsNullOrEmpty(mdRenderer.FileFolder) && File.Exists(currentLessonFilePath))
                 {
                     try { mdRenderer.OpenFile(currentLessonFilePath); }
-                    catch (Exception) { /* ignore — цель лишь инициализировать контекст */ }
+                    catch (Exception) { }
                 }
             }
             mdRenderer.SetMarkdown(md);
             EnsureRichTextOnAllLabels();
             FixBrokenMarkdownLinks();
             SaveLastSession();
+            Repaint();
         }
 
         private const string LastLessonPathKey = "AlgoNeoCourse.LastLessonPath";
@@ -530,11 +502,9 @@ namespace NeoCource.Editor
                 try { RefreshLessonsList(); } catch { }
             }
 
-            // Найти урок в доступных и открыть его
             var found = availableLessons.FirstOrDefault(l => string.Equals(Path.GetFullPath(l.filePath), Path.GetFullPath(lastPath), StringComparison.OrdinalIgnoreCase));
             if (string.IsNullOrEmpty(found.filePath))
             {
-                // Если отсутствует в списке — попробуем открыть напрямую
                 try
                 {
                     currentLessonTitle = Path.GetFileNameWithoutExtension(lastPath);
@@ -545,7 +515,7 @@ namespace NeoCource.Editor
                     ShowSlide(Mathf.Clamp(lastSlide, 0, Math.Max(0, slides.Count - 1)));
                     return;
                 }
-                catch { /* ignore */ }
+                catch { }
             }
             else
             {
@@ -558,8 +528,6 @@ namespace NeoCource.Editor
         {
             if (!ValidationSettings.Instance.DebugRenderCheckBlocks) return md;
 
-            // Оставляем исходный fenced-блок ```check ... ``` и добавляем только кнопку "Проверить".
-            // Результаты проверки пишутся в консоль.
             var pattern = @"```check\n([\s\S]*?)\n```";
             var rx = new Regex(pattern, RegexOptions.Multiline);
 
@@ -574,12 +542,9 @@ namespace NeoCource.Editor
             return result;
         }
 
-        // Converts bare filenames (e.g., sample.jpg) into search:sample.jpg so the renderer can find assets by name in the project.
-        // Leaves URLs, absolute project paths, and relative paths untouched (they resolve via FileFolder seeded by OpenFile).
         private static string PreprocessMediaLinks(string md)
         {
             if (string.IsNullOrEmpty(md)) return md;
-            // Гарантируем ненулевой alt-текст для изображений, чтобы рендерер не падал на FirstChild.ToString()
             md = Regex.Replace(md, @"!\[\s*\]\(", "![img](");
 
             return Regex.Replace(md, "!\\[[^\\]]*\\]\\(([^)]+)\\)", match =>
@@ -587,7 +552,6 @@ namespace NeoCource.Editor
                 var target = match.Groups[1].Value.Trim();
                 if (string.IsNullOrEmpty(target)) return match.Value;
 
-                // Already a URL or special scheme
                 if (target.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
                     target.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ||
                     target.StartsWith("file://", StringComparison.OrdinalIgnoreCase) ||
@@ -597,20 +561,17 @@ namespace NeoCource.Editor
                     return match.Value;
                 }
 
-                // Absolute project paths or relative paths with folders are fine
                 if (target.StartsWith("Assets/") || target.StartsWith("Packages/") || target.Contains("/"))
                 {
                     return match.Value;
                 }
 
-                // Bare filename -> use search:<nameWithoutExt> for robust project-wide lookup
                 var nameOnly = Path.GetFileNameWithoutExtension(target);
                 var replaced = match.Value.Replace(target, "search:" + nameOnly);
                 return replaced;
             });
         }
 
-        // Конвертирует ссылки на .gif в локальные mp4 через ffmpeg (если настроен), чтобы UI Toolkit-видео их воспроизводил
         private string ConvertGifLinksToMp4(string md)
         {
             if (string.IsNullOrEmpty(md)) return md;
@@ -621,7 +582,6 @@ namespace NeoCource.Editor
             var result = Regex.Replace(md, "!\\[[^\\]]*\\]\\(([^)]+)\\)", match =>
             {
                 var url = match.Groups[1].Value.Trim();
-                // Обрабатываем только внешние/файловые ссылки. Остальные (Assets/, search:, package:) оставляем как есть
                 if (!(url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
                       url.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ||
                       url.StartsWith("file://", StringComparison.OrdinalIgnoreCase)))
@@ -631,17 +591,13 @@ namespace NeoCource.Editor
                 if (string.IsNullOrEmpty(mp4AssetsPath)) return match.Value;
                 replacedCount++;
 
-                // Заменим на видео с тем же alt
                 var alt = Regex.Match(match.Value, "!\\[([^\\]]*)\\]").Groups[1].Value;
                 return $"![{alt}]({mp4AssetsPath})";
             });
 
             if (settings.enableDebugLogging && replacedCount == 0)
             {
-                //Debug.Log("[AlgoNeoCourse] Markdown: GIF-ссылок не найдено — конвертация не выполнялась.");
             }
-            // Если были замены, то через маленькую задержку перезагрузим текущий слайд один раз,
-            // чтобы гарантировать, что импорт mp4 завершён и UI их увидит
             if (replacedCount > 0 && !autoReloadScheduled)
             {
                 autoReloadScheduled = true;
@@ -657,9 +613,8 @@ namespace NeoCource.Editor
             return result;
         }
 
-        private void OnLinkClicked(string link, UIMarkdownRenderer.UIMarkdownRenderer renderer)
+        private void OnLinkClicked(string link, UIMarkdownRenderer.UIMarkdownRenderer renderer, VisualElement clickedElement = null)
         {
-            // Спец-схема unity://action?key=value
             if (link.StartsWith("unity://", StringComparison.OrdinalIgnoreCase))
             {
                 try
@@ -673,7 +628,11 @@ namespace NeoCource.Editor
                     }
                     if (string.Equals(action, "check", StringComparison.OrdinalIgnoreCase))
                     {
-                        AlgoNeoTaskChecker.Execute(args);
+                        string resultMessage = AlgoNeoTaskChecker.Execute(args);
+                        if (clickedElement != null)
+                        {
+                            CheckResultPresenter.Show(clickedElement, resultMessage);
+                        }
                         return;
                     }
                     if (string.Equals(action, "open", StringComparison.OrdinalIgnoreCase))
@@ -692,13 +651,11 @@ namespace NeoCource.Editor
                 return;
             }
 
-            // обычные ссылки
             Application.OpenURL(link);
         }
 
         private static (string action, Dictionary<string, string> args) ParseUnityLink(string link)
         {
-            // unity://action?key=value&key2=value2
             string withoutScheme = link.Substring("unity://".Length);
             string action;
             string query = string.Empty;
@@ -746,5 +703,3 @@ namespace NeoCource.Editor
         }
     }
 }
-
-
