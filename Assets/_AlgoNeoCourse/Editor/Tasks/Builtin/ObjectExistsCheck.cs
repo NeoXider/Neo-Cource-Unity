@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using NeoCource.Editor.Utils;
 
 namespace NeoCource.Editor.Tasks.Builtin
 {
@@ -19,10 +20,13 @@ namespace NeoCource.Editor.Tasks.Builtin
 
             var go = GameObject.Find(target);
             bool ok = go != null;
-            message = ok ? $"Объект найден: {target}" : $"Не найден объект {target}";
+
+            var lines = new List<string>();
+            lines.Add((ok ? AlgoNeoEditorUtils.OkMarkColored() : AlgoNeoEditorUtils.FailMarkColored()) + $" object_exists: {target}");
+            lines.Add($"Итого (объекты): {(ok ? 1 : 0)}/1");
+
+            message = string.Join("\n", lines);
             return ok;
         }
     }
 }
-
-

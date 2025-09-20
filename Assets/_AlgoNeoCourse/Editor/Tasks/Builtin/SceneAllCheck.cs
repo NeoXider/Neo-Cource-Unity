@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using NeoCource.Editor.Utils;
 
 namespace NeoCource.Editor.Tasks.Builtin
 {
@@ -34,7 +35,14 @@ namespace NeoCource.Editor.Tasks.Builtin
             var lines = new List<string>();
             var go = GameObject.Find(targetName);
             bool overall = go != null;
-            lines.Add((go != null ? ">" : "X") + $" object-exists: {targetName}");
+            int objectsTotal = 1;
+            int objectsOk = go != null ? 1 : 0;
+
+            lines.Add((go != null ? AlgoNeoEditorUtils.OkMarkColored() : AlgoNeoEditorUtils.FailMarkColored()) + $" object_exists: {targetName}");
+            lines.Add($"Итого (объекты): {objectsOk}/{objectsTotal}");
+
+            int componentsTotal = 0;
+            int componentsOk = 0;
 
             if (!string.IsNullOrWhiteSpace(componentsCsv))
             {
@@ -43,27 +51,47 @@ namespace NeoCource.Editor.Tasks.Builtin
                                          .Where(s => !string.IsNullOrEmpty(s))
                                          .Distinct(StringComparer.OrdinalIgnoreCase)
                                          .ToList();
+                componentsTotal = parts.Count;
 
                 foreach (var compName in parts)
                 {
                     bool ok = false;
+                    string error = "";
                     if (go != null)
                     {
-                        var t = Type.GetType(compName) 
+                        var t = Type.GetType(compName)
                                 ?? Type.GetType("UnityEngine." + compName + ", UnityEngine")
                                 ?? Type.GetType(compName + ", Assembly-CSharp");
-                        ok = (t != null) && (go.GetComponent(t) != null);
+                        if (t == null)
+                        {
+                            error = $" (ОШИБКА: не найден тип компонента '{compName}')";
+                        }
+                        else
+                        {
+                            ok = go.GetComponent(t) != null;
+                            if (!ok)
+                            {
+                                error = $" (ОШИБКА: компонент '{compName}' не найден на объекте)";
+                            }
+                        }
                     }
+                    else
+                    {
+                        error = " (ОШИБКА: игровой объект с именем '" + targetName + "' не найден на сцене)";
+                    }
+
+                    if (ok) componentsOk++;
                     overall &= ok;
-                    lines.Add((ok ? ">" : "X") + $" component-present: {targetName}.{compName}");
+                    lines.Add((ok ? AlgoNeoEditorUtils.OkMarkColored() : AlgoNeoEditorUtils.FailMarkColored()) + $" component_exists: {targetName}.{compName}" + error);
+                }
+                if (componentsTotal > 0)
+                {
+                    lines.Add($"Итого (компоненты): {componentsOk}/{componentsTotal}");
                 }
             }
-
-            lines.Add("Итого: " + (overall ? "OK" : "FAIL"));
+            
             message = string.Join("\n", lines);
             return overall;
         }
     }
 }
-
-

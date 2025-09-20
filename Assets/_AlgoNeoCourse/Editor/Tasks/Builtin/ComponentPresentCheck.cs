@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using NeoCource.Editor.Utils;
 
 namespace NeoCource.Editor.Tasks.Builtin
 {
@@ -21,19 +22,39 @@ namespace NeoCource.Editor.Tasks.Builtin
                 message = "Нужно указать target и component"; return false;
             }
 
+            var lines = new List<string>();
             var go = GameObject.Find(targetName);
-            if (go == null) { message = $"Не найден объект {targetName}"; return false; }
+            bool ok = false;
+            string error = "";
 
-            var type = Type.GetType(componentName)
-                       ?? Type.GetType("UnityEngine." + componentName + ", UnityEngine")
-                       ?? Type.GetType(componentName + ", Assembly-CSharp");
-            if (type == null) { message = $"Не найден тип компонента {componentName}"; return false; }
+            if (go == null)
+            {
+                error = $" (ОШИБКА: игровой объект с именем '{targetName}' не найден на сцене)";
+            }
+            else
+            {
+                var t = Type.GetType(componentName)
+                        ?? Type.GetType("UnityEngine." + componentName + ", UnityEngine")
+                        ?? Type.GetType(componentName + ", Assembly-CSharp");
+                if (t == null)
+                {
+                    error = $" (ОШИБКА: не найден тип компонента '{componentName}')";
+                }
+                else
+                {
+                    ok = go.GetComponent(t) != null;
+                    if (!ok)
+                    {
+                        error = $" (ОШИБКА: компонент '{componentName}' не найден на объекте)";
+                    }
+                }
+            }
 
-            var has = go.GetComponent(type) != null;
-            message = has ? "Компонент найден" : $"Нет компонента {componentName} на {targetName}";
-            return has;
+            lines.Add((ok ? AlgoNeoEditorUtils.OkMarkColored() : AlgoNeoEditorUtils.FailMarkColored()) + $" component_exists: {targetName}.{componentName}" + error);
+            lines.Add($"Итого (компоненты): {(ok ? 1 : 0)}/1");
+
+            message = string.Join("\n", lines);
+            return ok;
         }
     }
 }
-
-

@@ -9,7 +9,6 @@ namespace NeoCource.Editor.UI
 
         public static void Show(VisualElement anchor, string message)
         {
-            // Удаляем предыдущий результат, если он был
             if (_currentResultElement != null && _currentResultElement.parent != null)
             {
                 _currentResultElement.RemoveFromHierarchy();
@@ -17,20 +16,29 @@ namespace NeoCource.Editor.UI
 
             if (anchor == null || anchor.parent == null)
             {
-                return; // Некуда добавлять результат
+                return;
             }
 
-            // Создаем новый элемент для текста результата
             var resultLabel = new Label(message)
             {
-                enableRichText = true // Включаем поддержку <color> тегов
+                enableRichText = true
             };
-            resultLabel.name = "check-result-label"; // Для возможной стилизации через USS
+            resultLabel.name = "check-result-label";
             resultLabel.AddToClassList("check-result-label");
-            // Вставляем результат сразу после кнопки
-            var parent = anchor.parent;
-            int anchorIndex = parent.IndexOf(anchor);
-            parent.Insert(anchorIndex + 1, resultLabel);
+
+            var line = anchor.parent;
+            var container = line?.parent;
+
+            if (container != null)
+            {
+                int lineIndex = container.IndexOf(line);
+                container.Insert(lineIndex + 1, resultLabel);
+            }
+            else
+            {
+                var parent = anchor.parent;
+                parent.Insert(parent.IndexOf(anchor) + 1, resultLabel);
+            }
 
             _currentResultElement = resultLabel;
         }
