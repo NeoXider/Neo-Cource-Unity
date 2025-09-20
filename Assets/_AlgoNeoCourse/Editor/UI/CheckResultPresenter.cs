@@ -25,15 +25,8 @@ namespace NeoCource.Editor.UI
             {
                 enableRichText = true // Включаем поддержку <color> тегов
             };
-            resultLabel.style.marginTop = 5;
-            resultLabel.style.paddingLeft = 10;
-            resultLabel.style.paddingRight = 10;
-            resultLabel.style.paddingTop = 5;
-            resultLabel.style.paddingBottom = 5;
-            resultLabel.style.borderLeftWidth = 2;
-            resultLabel.style.borderLeftColor = new StyleColor(new UnityEngine.Color(0.5f, 0.5f, 0.5f));
             resultLabel.name = "check-result-label"; // Для возможной стилизации через USS
-
+            resultLabel.AddToClassList("check-result-label");
             // Вставляем результат сразу после кнопки
             var parent = anchor.parent;
             int anchorIndex = parent.IndexOf(anchor);

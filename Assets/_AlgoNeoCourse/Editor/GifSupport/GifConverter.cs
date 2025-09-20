@@ -75,8 +75,8 @@ namespace NeoCource.Editor.GifSupport
                 catch { }
                 if (!isGif)
                 {
-                    if (settings.enableDebugLogging)
-                        UnityEngine.Debug.Log("[AlgoNeoCourse] Downloaded image is not GIF — skipping conversion.");
+                    // if (settings.enableDebugLogging)
+                    //     UnityEngine.Debug.Log("[AlgoNeoCourse] Downloaded image is not GIF — skipping conversion.");
                     try { File.Delete(tempGif); } catch { }
                     return null;
                 }
