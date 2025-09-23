@@ -14,6 +14,10 @@
 - Попытки и перемешивание — настраиваются в `Tools → AlgoNeoCourse → Settings → Open Quiz Settings`.
 - После каждого вопроса размещайте поясняющий слайд. [▶](unity://slide?dir=next)
 
+### Стили
+- Мини‑примеры fenced‑блоков с языком `truefalse` подсвечиваются стилем `.codeblock.language-truefalse`.
+- В UI заголовки вопросов переносятся по словам; правильные ответы выделяются зелёным, неверно выбранные — красным.
+
 ```quiz
 id: mc-unity-components
 kind: multiple

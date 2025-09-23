@@ -12,12 +12,4 @@ rules:
       type: "Rigidbody"
 ```
 
-Альтернатива через стабильные ссылки:
-
-```
-unity://check?type=object-exists&target=Player
-```
-
-```
-unity://check?type=component-present&target=Player&component=Rigidbody
-```
+Результат проверок печатается в консоль; пункты помечаются цветными V/X, есть краткие итоги.
