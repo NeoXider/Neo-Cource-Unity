@@ -39,6 +39,27 @@ public class CourseSettings : ScriptableSingleton<CourseSettings>
 
     [Tooltip("Режим теста — использовать локальные файлы вместо загрузки с GitHub.")]
     public bool testMode = false;
+#if ODIN_INSPECTOR
+    [Title("UI")]
+#endif
+    [Tooltip("Максимальная длина заголовка урока в дропдауне окна курса.")]
+    public int maxLessonTitleLength = 20;
+
+    private static readonly System.Net.Http.HttpClient s_HttpClient = CreateHttpClient();
+    private static System.Net.Http.HttpClient CreateHttpClient()
+    {
+        var client = new System.Net.Http.HttpClient();
+        try
+        {
+            client.Timeout = TimeSpan.FromSeconds(20);
+            client.DefaultRequestHeaders.UserAgent.TryParseAdd("AlgoNeoCourseEditor/1.0");
+        }
+        catch { }
+        return client;
+    }
+
+    private System.Threading.CancellationTokenSource currentDownloadCts;
+
 
 #if ODIN_INSPECTOR
     [Title("Оформление логов проверок")]
@@ -95,8 +116,10 @@ public class CourseSettings : ScriptableSingleton<CourseSettings>
     }
     
 #if ODIN_INSPECTOR
-    [GUIColor(0.3f, 0.6f, 1f)]
-    [Button("🔗 Проверить ссылку", ButtonSizes.Medium)]
+    [PropertySpace]
+    [PropertyOrder(10)]
+    [HorizontalGroup("top"), GUIColor(0.6f, 0.75f, 0.95f)]
+    [Button("Проверить ссылку", ButtonSizes.Small)]
 #endif
     public void CheckCourseLink()
     {
@@ -105,12 +128,13 @@ public class CourseSettings : ScriptableSingleton<CourseSettings>
     }
 
 #if ODIN_INSPECTOR
-    [TableList]
+    [PropertyOrder(30)]
+    [TableList, Title("Lessons selections")]
 #endif
     public List<LessonSelection> lessonSelections = new List<LessonSelection>();
 
 #if ODIN_INSPECTOR
-    [HorizontalGroup("sel"), GUIColor(0.3f, 0.8f, 0.4f)]
+    [HorizontalGroup("select"), GUIColor(0.4f, 0.85f, 0.55f)]
     [Button("✅ Выбрать все", ButtonSizes.Medium)]
 #endif
     public void SelectAllLessons()
@@ -121,7 +145,7 @@ public class CourseSettings : ScriptableSingleton<CourseSettings>
     }
 
 #if ODIN_INSPECTOR
-    [HorizontalGroup("sel"), GUIColor(0.6f, 0.6f, 0.6f)]
+    [HorizontalGroup("select"), GUIColor(0.8f, 0.8f, 0.8f)]
     [Button("❎ Снять выбор", ButtonSizes.Medium)]
 #endif
     public void DeselectAllLessons()
@@ -166,19 +190,21 @@ public class CourseSettings : ScriptableSingleton<CourseSettings>
     }
 
 #if ODIN_INSPECTOR
-    [PropertySpace]
-    [GUIColor(0.2f, 0.8f, 0.8f)]
+    [PropertyOrder(20)]
+    [HorizontalGroup("actions"), GUIColor(0.45f, 0.8f, 0.95f)]
     [Button("📥 Загрузить список уроков", ButtonSizes.Large)]
 #endif
     public void LoadLessonsList()
     {
         _ = LoadLessonsListAsync();
+        // Разворачиваем список уроков в Odin: заголовок уже установлен, Odin покажет таблицу открытой
     }
 
     private async Task LoadLessonsListAsync()
     {
         try
         {
+            EditorUtility.DisplayProgressBar("AlgoNeoCourse", "Загрузка списка уроков...", 0.1f);
             string jsonText = await LoadCourseJsonAsync();
             if (string.IsNullOrWhiteSpace(jsonText))
             {
@@ -226,6 +252,10 @@ public class CourseSettings : ScriptableSingleton<CourseSettings>
         {
             Debug.LogError("CourseSettings: LoadLessonsListAsync error — " + ex.Message);
         }
+        finally
+        {
+            EditorUtility.ClearProgressBar();
+        }
     }
 
     private async Task<string> LoadCourseJsonAsync()
@@ -236,37 +266,48 @@ public class CourseSettings : ScriptableSingleton<CourseSettings>
         }
 
         string url = repositoryBaseUrl.TrimEnd('/') + "/" + courseJsonFile.TrimStart('/');
-        using var client = new HttpClient();
-        try
+        const int maxAttempts = 3;
+        int attempt = 0;
+        while (true)
         {
-            client.DefaultRequestHeaders.UserAgent.TryParseAdd("AlgoNeoCourseEditor/1.0");
-            var response = await client.GetAsync(url);
-            if (!response.IsSuccessStatusCode)
+            attempt++;
+            try
             {
-                Debug.LogError($"CourseSettings: не удалось загрузить course.json — {response.StatusCode} {url}");
-                return null;
+                var response = await s_HttpClient.GetAsync(url);
+                if (!response.IsSuccessStatusCode)
+                {
+                    Debug.LogError($"CourseSettings: не удалось загрузить course.json — {response.StatusCode} {url}");
+                    return null;
+                }
+                return await response.Content.ReadAsStringAsync();
             }
-            return await response.Content.ReadAsStringAsync();
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError("CourseSettings: ошибка загрузки course.json — " + ex.Message);
-            return null;
+            catch (Exception ex)
+            {
+                if (attempt >= maxAttempts)
+                {
+                    Debug.LogError("CourseSettings: ошибка загрузки course.json — " + ex.Message);
+                    return null;
+                }
+                await Task.Delay(TimeSpan.FromMilliseconds(300 * Math.Pow(2, attempt - 1)));
+            }
         }
     }
 
 #if ODIN_INSPECTOR
     [PropertySpace]
-    [HorizontalGroup("dl")]
-    [GUIColor(0.2f, 0.7f, 0.3f)]
-    [Button("⬇️ Скачать выбранные", ButtonSizes.Large)]
+    [PropertyOrder(20)]
+    [HorizontalGroup("actions")]
+    [GUIColor(0.25f, 0.85f, 0.35f)]
+    [Button("Скачать выбранные", ButtonSizes.Large)]
 #endif
     public void DownloadSelectedLessons()
     {
-        _ = DownloadSelectedLessonsAsync();
+        CancelDownloads();
+        currentDownloadCts = new System.Threading.CancellationTokenSource();
+        _ = DownloadSelectedLessonsAsync(currentDownloadCts.Token);
     }
 
-    private async Task DownloadSelectedLessonsAsync()
+    private async Task DownloadSelectedLessonsAsync(System.Threading.CancellationToken ct)
     {
         if (lessonSelections == null || lessonSelections.Count == 0)
         {
@@ -277,8 +318,7 @@ public class CourseSettings : ScriptableSingleton<CourseSettings>
         string targetFolder = downloadFolderRelative.Replace("\\", "/");
         if (!Directory.Exists(targetFolder)) Directory.CreateDirectory(targetFolder);
 
-        using var client = new HttpClient();
-        client.DefaultRequestHeaders.UserAgent.TryParseAdd("AlgoNeoCourseEditor/1.0");
+        var client = s_HttpClient;
 
         try
         {
@@ -286,6 +326,7 @@ public class CourseSettings : ScriptableSingleton<CourseSettings>
             int done = 0;
             foreach (var ls in lessonSelections.Where(s => s.selected))
             {
+                if (ct.IsCancellationRequested) break;
                 string remoteRel = ls.file?.TrimStart('/');
                 if (string.IsNullOrEmpty(remoteRel))
                 {
@@ -298,16 +339,40 @@ public class CourseSettings : ScriptableSingleton<CourseSettings>
 
                 EditorUtility.DisplayProgressBar("Загрузка уроков", $"{ls.title}", done / (float)Math.Max(total,1));
 
-                var response = await client.GetAsync(url);
-                if (!response.IsSuccessStatusCode)
+                const int maxAttempts = 3;
+                int attempt = 0;
+                while (true)
                 {
-                    Debug.LogError($"CourseSettings: не удалось загрузить {ls.title} — {response.StatusCode} {url}");
-                }
-                else
-                {
-                    string md = await response.Content.ReadAsStringAsync();
-                    File.WriteAllText(localPath, md);
-                    Debug.Log($"Сохранено: {localPath}");
+                    if (ct.IsCancellationRequested) break;
+                    attempt++;
+                    try
+                    {
+                        var response = await client.GetAsync(url, ct);
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            Debug.LogError($"CourseSettings: не удалось загрузить {ls.title} — {response.StatusCode} {url}");
+                        }
+                        else
+                        {
+                            string md = await response.Content.ReadAsStringAsync();
+                            File.WriteAllText(localPath, md);
+                            Debug.Log($"Сохранено: {localPath}");
+                        }
+                        break;
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        if (attempt >= maxAttempts)
+                        {
+                            Debug.LogError("CourseSettings: ошибка загрузки урока — " + ex.Message);
+                            break;
+                        }
+                        await Task.Delay(TimeSpan.FromMilliseconds(300 * Math.Pow(2, attempt - 1)), ct);
+                    }
                 }
 
                 done++;
@@ -321,7 +386,26 @@ public class CourseSettings : ScriptableSingleton<CourseSettings>
         {
             EditorUtility.ClearProgressBar();
             AssetDatabase.Refresh();
+            CancelDownloads();
         }
+    }
+
+    public void CancelDownloads()
+    {
+        try { currentDownloadCts?.Cancel(); }
+        catch { }
+        finally { currentDownloadCts = null; }
+    }
+
+#if ODIN_INSPECTOR
+    [PropertyOrder(20)]
+    [HorizontalGroup("actions")]
+    [GUIColor(0.98f, 0.75f, 0.25f)]
+    [Button("Отменить", ButtonSizes.Medium)]
+#endif
+    public void CancelDownloadsButton()
+    {
+        CancelDownloads();
     }
 
     private static string SanitizeFileName(string fileName)
@@ -345,9 +429,10 @@ public class CourseSettings : ScriptableSingleton<CourseSettings>
     }
 
 #if ODIN_INSPECTOR
-    [HorizontalGroup("dl")]
-    [GUIColor(0.9f, 0.35f, 0.35f)]
-    [Button("🗑️ Очистить загрузки", ButtonSizes.Medium)]
+    [PropertyOrder(20)]
+    [HorizontalGroup("actions")]
+    [GUIColor(1.0f, 0.35f, 0.35f)]
+    [Button("Очистить загрузки", ButtonSizes.Medium)]
 #endif
     public void DeleteDownloadedFiles()
     {
@@ -394,8 +479,8 @@ public class CourseSettings : ScriptableSingleton<CourseSettings>
     }
 
 #if ODIN_INSPECTOR
-    [Sirenix.OdinInspector.Button("♻ Сбросить настройки", Sirenix.OdinInspector.ButtonSizes.Medium)]
-    [Sirenix.OdinInspector.GUIColor(0.95f, 0.5f, 0.2f)]
+    [Sirenix.OdinInspector.Button("♻ Сбросить настройки", Sirenix.OdinInspector.ButtonSizes.Small)]
+    [Sirenix.OdinInspector.GUIColor(0.98f, 0.7f, 0.45f)]
 #endif
     public void ResetToDefaults()
     {
@@ -420,7 +505,19 @@ public static class CourseSettingsMenu
     [UnityEditor.MenuItem("Tools/AlgoNeoCourse/Settings/Open Course Settings")]
     public static void Open()
     {
-        UnityEditor.Selection.activeObject = CourseSettings.instance;
+        var inst = CourseSettings.instance;
+        UnityEditor.Selection.activeObject = inst;
+        try
+        {
+            if (inst != null && inst.autoLoadOnStart && (inst.lessonSelections == null || inst.lessonSelections.Count == 0))
+            {
+                inst.LoadLessonsList();
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"CourseSettings: авто-загрузка при открытии не удалась — {ex.Message}");
+        }
     }
 
     [UnityEditor.MenuItem("Tools/AlgoNeoCourse/Settings/Reset Course Settings")] 
@@ -435,7 +532,25 @@ public static class CourseSettingsMenu
 [InitializeOnLoad]
 public static class CourseSettingsBootstrap
 {
-    static CourseSettingsBootstrap() { }
+    static CourseSettingsBootstrap()
+    {
+        // Автозагрузка при старте редактора, если включено и список пуст
+        EditorApplication.delayCall += () =>
+        {
+            try
+            {
+                var inst = CourseSettings.instance;
+                if (inst != null && inst.autoLoadOnStart && (inst.lessonSelections == null || inst.lessonSelections.Count == 0))
+                {
+                    inst.LoadLessonsList();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("CourseSettings: авто-загрузка при старте не удалась — " + ex.Message);
+            }
+        };
+    }
 }
 
 }

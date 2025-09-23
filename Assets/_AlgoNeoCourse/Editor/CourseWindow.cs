@@ -23,12 +23,15 @@ namespace NeoCource.Editor
 
         private Toolbar toolbar;
         private PopupField<string> lessonDropdown;
+        private TextField lessonSearchField;
         private ToolbarMenu docsMenu;
         private Label slideIndicator;
         private ToolbarButton prevBtn;
         private ToolbarButton nextBtn;
         private ToolbarButton reloadBtn;
         private ToolbarButton openInExplorerBtn;
+
+        private int LessonDropdownMaxLength => Math.Max(5, ScriptableSingleton<CourseSettings>.instance?.maxLessonTitleLength ?? 20);
 
         private ScrollView contentRoot;
         private UIMarkdownRenderer.UIMarkdownRenderer mdRenderer;
@@ -68,6 +71,7 @@ namespace NeoCource.Editor
 
             BuildToolbar();
             BuildContent();
+            EnsureHotkeysHook();
 
             EditorApplication.delayCall += () =>
             {
@@ -93,6 +97,18 @@ namespace NeoCource.Editor
             {
                 tooltip = "Выберите урок"
             };
+            lessonDropdown.formatSelectedValueCallback = (string value) =>
+            {
+                if (string.IsNullOrEmpty(value)) return value;
+                bool needTruncate = value.Length > LessonDropdownMaxLength;
+                lessonDropdown.tooltip = needTruncate ? value : "Выберите урок";
+                return needTruncate ? (value.Substring(0, LessonDropdownMaxLength - 3) + "...") : value;
+            };
+            lessonDropdown.formatListItemCallback = (string value) =>
+            {
+                if (string.IsNullOrEmpty(value)) return value;
+                return value.Length > LessonDropdownMaxLength ? (value.Substring(0, LessonDropdownMaxLength - 3) + "...") : value;
+            };
             lessonDropdown.RegisterValueChangedCallback(evt =>
             {
                 int idx = lessonDropdown.index;
@@ -102,6 +118,10 @@ namespace NeoCource.Editor
                     SaveLastSession();
                 }
             });
+            lessonSearchField = new TextField { tooltip = "Фильтр уроков", value = string.Empty };
+            lessonSearchField.style.maxWidth = 200;
+            lessonSearchField.RegisterValueChangedCallback(_ => RefreshLessonsList());
+            toolbar.Add(lessonSearchField);
             toolbar.Add(lessonDropdown);
 
             toolbar.Add(new ToolbarSpacer());
@@ -131,25 +151,7 @@ namespace NeoCource.Editor
             toolbar.Add(new ToolbarSpacer());
 
             var refreshTex = (Texture2D)(EditorGUIUtility.IconContent("d_Refresh").image ?? EditorGUIUtility.IconContent("Refresh").image);
-            reloadBtn = CreateIconButton(refreshTex, "Обновить уроки", () =>
-            {
-                RefreshLessonsList();
-                if (!string.IsNullOrEmpty(currentLessonFilePath) && File.Exists(currentLessonFilePath))
-                {
-                    try
-                    {
-                        var text = System.IO.File.ReadAllText(currentLessonFilePath);
-                        slides = SplitSlides(text);
-                        ShowSlide(currentSlideIndex);
-                        SaveLastSession();
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.LogWarning($"CourseWindow: не удалось перечитать текущий урок — {ex.Message}");
-                    }
-                }
-                EnsureDocsMenuFromSettings();
-            });
+            reloadBtn = CreateIconButton(refreshTex, "Обновить уроки", () => { DoRefreshLessonsAndCurrent(); });
             reloadBtn.style.color = new StyleColor(new Color(0.2f, 0.8f, 0.8f));
             openInExplorerBtn = new ToolbarButton(() =>
             {
@@ -167,6 +169,89 @@ namespace NeoCource.Editor
             toolbar.Add(openInExplorerBtn);
 
             rootVisualElement.Add(toolbar);
+
+            // Горячие клавиши
+            rootVisualElement.RegisterCallback<KeyDownEvent>(evt =>
+            {
+                try
+                {
+                    if (evt.keyCode == KeyCode.LeftArrow)
+                    {
+                        ShowSlide(currentSlideIndex - 1);
+                        evt.StopPropagation();
+                    }
+                    else if (evt.keyCode == KeyCode.RightArrow)
+                    {
+                        ShowSlide(currentSlideIndex + 1);
+                        evt.StopPropagation();
+                    }
+                    else if (evt.keyCode == KeyCode.R)
+                    {
+                        DoRefreshLessonsAndCurrent();
+                        evt.StopPropagation();
+                    }
+                    else if (evt.keyCode == KeyCode.O)
+                    {
+                        if (!string.IsNullOrEmpty(currentLessonFilePath) && File.Exists(currentLessonFilePath))
+                            EditorUtility.RevealInFinder(currentLessonFilePath);
+                        evt.StopPropagation();
+                    }
+                }
+                catch { }
+            }, TrickleDown.TrickleDown);
+        }
+
+        private void EnsureHotkeysHook()
+        {
+            try
+            {
+                // Делает корень фокусируемым, чтобы он мог получать KeyDown
+                rootVisualElement.focusable = true;
+                rootVisualElement.pickingMode = PickingMode.Position;
+                rootVisualElement.tabIndex = 0;
+                // Попробуем передать фокус окну после постройки UI
+                EditorApplication.delayCall += () =>
+                {
+                    if (this != null)
+                    {
+                        TryFocusWindowForHotkeys();
+                    }
+                };
+            }
+            catch { }
+        }
+
+        private void TryFocusWindowForHotkeys()
+        {
+            try
+            {
+                if (rootVisualElement != null)
+                {
+                    rootVisualElement.Focus();
+                }
+                Focus();
+            }
+            catch { }
+        }
+
+        private void DoRefreshLessonsAndCurrent()
+        {
+            RefreshLessonsList();
+            if (!string.IsNullOrEmpty(currentLessonFilePath) && File.Exists(currentLessonFilePath))
+            {
+                try
+                {
+                    var text = System.IO.File.ReadAllText(currentLessonFilePath);
+                    slides = SplitSlides(text);
+                    ShowSlide(currentSlideIndex);
+                    SaveLastSession();
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning($"CourseWindow: не удалось перечитать текущий урок — {ex.Message}");
+                }
+            }
+            EnsureDocsMenuFromSettings();
         }
 
         private void EnsureDocsMenuFromSettings()
@@ -343,7 +428,35 @@ namespace NeoCource.Editor
                 Debug.LogWarning($"CourseWindow: сканирование папки загрузок завершилось с ошибкой — {ex.Message}");
             }
 
-            var titles = availableLessons.Select(l => l.title).ToList();
+            // Сортировка: по числовому id, затем по title
+            availableLessons.Sort((a, b) =>
+            {
+                bool aNum = int.TryParse(a.id, out int ai);
+                bool bNum = int.TryParse(b.id, out int bi);
+                if (aNum && bNum)
+                {
+                    int c = ai.CompareTo(bi);
+                    if (c != 0) return c;
+                }
+                else if (aNum != bNum)
+                {
+                    return aNum ? -1 : 1;
+                }
+                return string.Compare(a.title, b.title, StringComparison.CurrentCultureIgnoreCase);
+            });
+
+            // Фильтр по поиску
+            string filter = (lessonSearchField?.value ?? string.Empty).Trim();
+            IEnumerable<(string title, string filePath, string id)> filtered = availableLessons;
+            if (!string.IsNullOrEmpty(filter))
+            {
+                filtered = availableLessons.Where(l =>
+                    (!string.IsNullOrEmpty(l.title) && l.title.IndexOf(filter, StringComparison.CurrentCultureIgnoreCase) >= 0) ||
+                    (!string.IsNullOrEmpty(l.id) && l.id.IndexOf(filter, StringComparison.CurrentCultureIgnoreCase) >= 0));
+            }
+
+            var filteredList = filtered.ToList();
+            var titles = filteredList.Select(l => l.title).ToList();
             if (titles.Count == 0)
             {
                 titles.Add("Нет загруженных уроков — скачайте их в CourseSettings");
@@ -357,9 +470,9 @@ namespace NeoCource.Editor
                 try
                 {
                     string fullSaved = Path.GetFullPath(savedPath);
-                    for (int i = 0; i < availableLessons.Count; i++)
+                    for (int i = 0; i < filteredList.Count; i++)
                     {
-                        if (string.Equals(Path.GetFullPath(availableLessons[i].filePath), fullSaved, StringComparison.OrdinalIgnoreCase))
+                        if (string.Equals(Path.GetFullPath(filteredList[i].filePath), fullSaved, StringComparison.OrdinalIgnoreCase))
                         {
                             selectedIndex = i;
                             break;
@@ -372,9 +485,9 @@ namespace NeoCource.Editor
             lessonDropdown.choices = titles;
             lessonDropdown.index = titles.Count > 0 ? selectedIndex : -1;
 
-            if (availableLessons.Count > 0)
+            if (filteredList.Count > 0)
             {
-                LoadLesson(availableLessons[selectedIndex]);
+                LoadLesson(filteredList[selectedIndex]);
                 if (!string.IsNullOrEmpty(savedPath))
                 {
                     ShowSlide(Mathf.Clamp(savedSlide, 0, Math.Max(0, slides.Count - 1)));
@@ -542,7 +655,23 @@ namespace NeoCource.Editor
             return result;
         }
 
-        private static string PreprocessMediaLinks(string md)
+        private static string ToProjectRelativePath(string fullPath)
+        {
+            try
+            {
+                string projectPath = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+                string full = Path.GetFullPath(fullPath);
+                if (full.StartsWith(projectPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    string rel = full.Substring(projectPath.Length + 1).Replace('\\', '/');
+                    return rel;
+                }
+            }
+            catch { }
+            return null;
+        }
+
+        private string PreprocessMediaLinks(string md)
         {
             if (string.IsNullOrEmpty(md)) return md;
             md = Regex.Replace(md, @"!\[\s*\]\(", "![img](");
@@ -561,9 +690,23 @@ namespace NeoCource.Editor
                     return match.Value;
                 }
 
-                if (target.StartsWith("Assets/") || target.StartsWith("Packages/") || target.Contains("/"))
+                // Относительный путь относительно текущего md-файла
+                if (!string.IsNullOrEmpty(currentLessonFilePath))
                 {
-                    return match.Value;
+                    try
+                    {
+                        string baseDir = Path.GetDirectoryName(currentLessonFilePath);
+                        string combined = Path.GetFullPath(Path.Combine(baseDir ?? ".", target));
+                        if (File.Exists(combined))
+                        {
+                            string projRel = ToProjectRelativePath(combined);
+                            if (!string.IsNullOrEmpty(projRel))
+                            {
+                                return match.Value.Replace(target, projRel);
+                            }
+                        }
+                    }
+                    catch { }
                 }
 
                 var nameOnly = Path.GetFileNameWithoutExtension(target);
