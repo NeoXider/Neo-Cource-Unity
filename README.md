@@ -3,6 +3,9 @@
 Версия курса: V 1.3
 
 <img width="813" height="693" alt="image" src="https://github.com/user-attachments/assets/d54299b1-1739-4d7b-a2ef-6a9565eb723b" />
+<img width="420" height="250" alt="image" src="https://github.com/user-attachments/assets/2f195a94-42c2-43b1-bb11-3b2c0d116c7d" />
+<img width="418" height="193" alt="image" src="https://github.com/user-attachments/assets/ff83b6c4-32a4-4b9b-933d-fb8c43f1e81e" />
+<img width="424" height="251" alt="image" src="https://github.com/user-attachments/assets/db08e0b5-61d0-4c3a-9e60-cc2ec7f19939" />
 
 ### О проекте
 Neo‑Cource‑Unity — это плагин/шаблон для создания интерактивных обучающих курсов прямо в Unity с разметкой Markdown, поддержкой слайдов, встроенными проверками прогресса и мини‑викторинами.
