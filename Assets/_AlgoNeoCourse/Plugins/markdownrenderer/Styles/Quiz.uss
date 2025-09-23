@@ -1,0 +1,138 @@
+.quiz-block {
+    margin-top: 10px;
+    margin-bottom: 12px;
+    padding: 14px 16px;
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: rgba(72, 160, 255, 0.6);
+    border-style: solid;
+    background-color: rgba(36, 52, 72, 0.7);
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+.quiz-title {
+    -unity-font-style: bold;
+    margin-bottom: 6px;
+    font-size: 15px;                 
+    color: rgb(180, 235, 255);      
+    white-space: normal;
+    overflow: visible;
+    min-width: 0;
+    flex-grow: 1;
+    align-self: stretch;
+}
+
+.quiz-answers {
+    margin-top: 4px;
+    margin-bottom: 4px;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.quiz-answer {
+    -unity-font-style: normal;
+    background-color: rgba(52, 74, 102, 0.95);
+    color: rgb(230, 245, 255);
+    padding-top: 8px;
+    padding-bottom: 8px;
+    padding-left: 12px;
+    padding-right: 12px;
+    border-radius: 6px;
+    justify-content: flex-start;
+    align-items: center;
+    min-height: 28px;
+    border-width: 1px;
+    border-style: solid;
+    border-color: rgba(72, 160, 255, 0.35);
+}
+
+.quiz-answer--selected {
+    background-color: rgba(80, 190, 255, 0.35);
+    border-color: rgba(80, 190, 255, 1.0);
+    border-width: 2px;
+    color: rgb(245, 255, 255);
+}
+
+.quiz-answer--correct {
+    background-color: rgba(0, 255, 160, 0.45);
+    border-color: rgba(0, 255, 160, 1.0);
+    border-width: 3px;
+    color: rgb(255, 255, 255);
+    box-shadow: 0 0 0 2px rgba(0, 255, 160, 0.25);
+}
+
+.quiz-answer--wrong {
+    background-color: rgba(255, 90, 90, 0.35);
+    border-color: rgba(255, 110, 110, 1.0);
+    border-width: 2px;
+    color: rgb(255, 240, 240);
+}
+
+.quiz-answer:disabled {
+    opacity: 0.7;
+}
+
+.quiz-answer--correct:disabled,
+.quiz-answer--wrong:disabled {
+    opacity: 1.0;
+}
+
+.quiz-result {
+    margin-top: 4px;
+    align-self: flex-start;
+    color: rgb(200, 215, 230);
+}
+
+/* Hover/active (Editor only) */
+.quiz-answer:hover {
+    background-color: rgba(90, 190, 255, 0.42);
+}
+
+.quiz-result {
+    -unity-font-style: bold;
+}
+
+.quiz-result--success {
+    color: rgb(90, 240, 170);
+}
+
+.quiz-result--fail {
+    color: rgb(255, 120, 120);
+}
+
+/* Кнопка "Проверить" для check/quiz и ссылок unity://check */
+.check-button {
+    background-color: rgba(255, 170, 60, 0.95);
+    color: rgb(40, 25, 0);
+    padding-top: 6px;
+    padding-bottom: 6px;
+    padding-left: 12px;
+    padding-right: 12px;
+    border-radius: 6px;
+    border-width: 1px;
+    border-style: solid;
+    border-color: rgba(255, 210, 120, 1.0);
+    min-height: 26px;
+    -unity-font-style: bold;
+}
+.check-button:hover {
+    background-color: rgba(255, 190, 90, 1.0);
+}
+
+/* Результат проверки блока check */
+.check-result-label {
+    margin-top: 6px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    background-color: rgba(36, 52, 72, 0.7);
+    color: rgb(220, 235, 250);
+    border-width: 1px;
+    border-style: solid;
+    border-color: rgba(72, 160, 255, 0.5);
+}
+
+

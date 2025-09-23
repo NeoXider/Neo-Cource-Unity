@@ -30,6 +30,29 @@ VisualElement {
     padding: 5px;
 }
 
+/* Подсветка fenced-блоков с языком "quiz" (пример/документация) */
+.codeblock.quiz,
+.codeblock.language-quiz,
+.codeblock.fence-quiz,
+.codeblock.lang-quiz {
+    border-color: #00E5FF; /* Cyan bright */
+    background-color: rgba(0, 229, 255, 0.12);
+}
+.codeblock.quiz Label,
+.codeblock.language-quiz Label,
+.codeblock.fence-quiz Label,
+.codeblock.lang-quiz Label {
+    color: #E0FBFF;
+}
+
+.codeblock.language-truefalse {
+    border-color: #4DA3FF; /* Blue accent */
+    background-color: rgba(77, 163, 255, 0.12);
+}
+.codeblock.language-truefalse Label {
+    color: #E6F2FF;
+}
+
 .quote {
     margin-left: 4px;
     padding-left: 4px;
@@ -60,17 +83,29 @@ VisualElement {
     font-size: 200%;
     -unity-font-style: bold;
     color: #ADFF2F; /* Green Yellow */
+    white-space: normal;
+    overflow: visible;
+    min-width: 0;
+    flex-grow: 1;
 }
 
 .h2 {
     font-size: 150%;
     -unity-font-style: bold;
     color: #FFD700; /* Gold */
+    white-space: normal;
+    overflow: visible;
+    min-width: 0;
+    flex-grow: 1;
 }
 
 .h3 {
     font-size: 120%;
     color: #00FFFF; /* Cyan */
+    white-space: normal;
+    overflow: visible;
+    min-width: 0;
+    flex-grow: 1;
 }
 
 .paragraph {

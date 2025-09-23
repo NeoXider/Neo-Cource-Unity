@@ -92,6 +92,54 @@
 
 Результат проверок печатается в консоль; пункты помечаются цветными V/X, есть краткие итоги.
 
+## 5) Квизы (```quiz) — beta
+Блоки викторин позволяют встраивать вопросы прямо в Markdown. Поддерживаются типы: single-choice, multiple-choice, true/false.
+
+Пример single-choice:
+
+```quiz
+id: sc-hello
+kind: single
+text: Какой модификатор доступа делает поле приватным в C#?
+answers:
+  - text: private
+    correct: true
+  - text: public
+  - text: protected
+  - text: internal
+```
+
+Пример multiple-choice и true/false:
+
+```quiz
+id: mc-unity-components
+kind: multiple
+text: Какие из перечисленных являются компонентами Unity?
+answers:
+  - text: Transform
+    correct: true
+  - text: Rigidbody
+    correct: true
+  - text: AnimatorController
+  - text: SceneManager
+```
+
+```quiz
+id: tf-update
+kind: truefalse
+text: Метод Update вызывается один раз за кадр.
+answers:
+  - text: True
+    correct: true
+  - text: False
+```
+
+Заметки:
+- Ответы перемешиваются один раз при открытии курса (настраивается в `Tools/AlgoNeoCourse/Settings/Open Quiz Settings`).
+- Количество попыток на вопрос задаётся в Quiz Settings.
+- Объяснения к ответам сейчас не отображаются (рекомендуется выносить на следующий слайд).
+- Переход к следующему слайду может блокироваться при незавершённых вопросах.
+
 ## 5) Полный пример (3 слайда)
 ```md
 # Введение

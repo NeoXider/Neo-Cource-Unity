@@ -12,6 +12,7 @@ using UIMarkdownRenderer;
 using NeoCource.Editor.Settings;
 using NeoCource.Editor.Utils;
 using NeoCource.Editor.UI;
+using NeoCource.Editor.Quizzes;
 using UnityEngine.UIElements.Experimental;
 using UnityEditor.Callbacks;
 
@@ -43,6 +44,10 @@ namespace NeoCource.Editor
         private List<string> slides = new();
         private bool autoReloadScheduled = false;
         private bool autoReloadInProgress = false;
+
+        // Quiz state for current slide
+        private List<QuizQuestion> currentSlideQuestions = new();
+        private bool canGoNextNow = true;
 
         [MenuItem("Tools/AlgoNeoCourse/Open Course Window")]
         public static void Open()
@@ -182,7 +187,16 @@ namespace NeoCource.Editor
                     }
                     else if (evt.keyCode == KeyCode.RightArrow)
                     {
-                        ShowSlide(currentSlideIndex + 1);
+                        if (CanGoNextSlide())
+                        {
+                            ShowSlide(currentSlideIndex + 1);
+                        }
+                        else
+                        {
+                            // опционально мигнём индикатором/лог
+                            if (NeoCource.Editor.Settings.QuizSettings.instance.enableDebugLogging)
+                                Debug.Log("[Quiz] Навигация вперёд заблокирована: есть незавершённые вопросы");
+                        }
                         evt.StopPropagation();
                     }
                     else if (evt.keyCode == KeyCode.R)
@@ -324,6 +338,17 @@ namespace NeoCource.Editor
             contentRoot.style.flexGrow = 1f;
 
             mdRenderer = new UIMarkdownRenderer.UIMarkdownRenderer((link, renderer) => OnLinkClicked(link, renderer, null), includeScrollview: true);
+            try
+            {
+                // Подключим стили квизов, если файл есть
+                var stylePath = "Assets/_AlgoNeoCourse/Plugins/markdownrenderer/Styles/Quiz.uss";
+                var styleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>(stylePath);
+                if (styleSheet != null)
+                {
+                    mdRenderer.RootElement.styleSheets.Add(styleSheet);
+                }
+            }
+            catch { }
             contentRoot.Add(mdRenderer.RootElement);
 
             rootVisualElement.Add(contentRoot);
@@ -368,13 +393,21 @@ namespace NeoCource.Editor
                         link = txt.Substring(start, end - start);
                     }
 
-                    l.text = "▶ Проверить";
-                    l.style.color = new StyleColor(new Color(0.30f, 0.49f, 1.0f));
-                    l.AddToClassList("linkHovered");
-                    l.RegisterCallback<ClickEvent>(evt =>
+                    // Заменим Label на настоящую кнопку с классом оформления
+                    if (l.parent != null)
                     {
-                        try { OnLinkClicked(link, mdRenderer, evt.currentTarget as VisualElement); } catch (Exception ex) { Debug.LogError(ex.Message); }
-                    });
+                        var parent = l.parent;
+                        int at = parent.IndexOf(l);
+                        var btn = new ToolbarButton();
+                        btn.text = "Проверить";
+                        btn.clicked += () =>
+                        {
+                            try { OnLinkClicked(link, mdRenderer, btn); } catch (Exception ex) { Debug.LogError(ex.Message); }
+                        };
+                        btn.AddToClassList("check-button");
+                        parent.Insert(at, btn);
+                        parent.Remove(l);
+                    }
                 }
             }
             catch { /* ignore */ }
@@ -428,20 +461,15 @@ namespace NeoCource.Editor
                 Debug.LogWarning($"CourseWindow: сканирование папки загрузок завершилось с ошибкой — {ex.Message}");
             }
 
-            // Сортировка: по числовому id, затем по title
+            // Сортировка: по модулю и номеру урока из id/имени файла (m{X} y{Y}), затем по title
             availableLessons.Sort((a, b) =>
             {
-                bool aNum = int.TryParse(a.id, out int ai);
-                bool bNum = int.TryParse(b.id, out int bi);
-                if (aNum && bNum)
-                {
-                    int c = ai.CompareTo(bi);
-                    if (c != 0) return c;
-                }
-                else if (aNum != bNum)
-                {
-                    return aNum ? -1 : 1;
-                }
+                var ka = ExtractModuleLessonKey(a.id, a.filePath, a.title);
+                var kb = ExtractModuleLessonKey(b.id, b.filePath, b.title);
+                int c = ka.module.CompareTo(kb.module);
+                if (c != 0) return c;
+                c = ka.lesson.CompareTo(kb.lesson);
+                if (c != 0) return c;
                 return string.Compare(a.title, b.title, StringComparison.CurrentCultureIgnoreCase);
             });
 
@@ -540,6 +568,19 @@ namespace NeoCource.Editor
             {
                 BuildContent();
             }
+            // Перед сменой урока сохраним квиз-состояние и сбросим in-memory (если не нужна персистенция)
+            try
+            {
+                if (!string.IsNullOrEmpty(currentLessonFilePath))
+                {
+                    QuizStateStore.SaveLessonState(currentLessonFilePath);
+                }
+                if (!NeoCource.Editor.Settings.QuizSettings.instance.persistState)
+                {
+                    QuizStateStore.ResetInMemory();
+                }
+            }
+            catch { }
             currentLessonTitle = lesson.title;
             currentLessonFilePath = lesson.filePath;
             currentSlideIndex = 0;
@@ -559,6 +600,8 @@ namespace NeoCource.Editor
 
         private void ShowSlide(int index)
         {
+            // Сохраняем состояние квизов перед сменой слайда
+            try { if (!string.IsNullOrEmpty(currentLessonFilePath)) QuizStateStore.SaveLessonState(currentLessonFilePath); } catch { }
             if (slides == null || slides.Count == 0)
             {
                 slideIndicator.text = "—/—";
@@ -577,6 +620,10 @@ namespace NeoCource.Editor
             md = InjectCheckBlocksIfDebug(md);
             md = PreprocessMediaLinks(md);
             md = ConvertGifLinksToMp4(md);
+            // Replace quiz blocks with markers for in-place rendering
+            List<QuizQuestion> parsedForMarkers;
+            try { md = QuizParser.ReplaceQuizBlocksWithMarkers(md, out parsedForMarkers); }
+            catch { parsedForMarkers = new List<QuizQuestion>(); }
             if (mdRenderer != null && string.IsNullOrEmpty(mdRenderer.FileFolder) && !string.IsNullOrEmpty(currentLessonFilePath))
             {
                 SeedMarkdownContext(currentLessonFilePath);
@@ -587,10 +634,138 @@ namespace NeoCource.Editor
                 }
             }
             mdRenderer.SetMarkdown(md);
+            // Parse quiz blocks on this slide
+            try
+            {
+                // prefer parsedForMarkers if any; otherwise fallback to parsing after SetMarkdown
+                currentSlideQuestions = parsedForMarkers != null && parsedForMarkers.Count > 0 ? parsedForMarkers : QuizParser.ParseQuestions(md);
+            }
+            catch { currentSlideQuestions = new List<QuizQuestion>(); }
+            // Render quiz UI on top of markdown element if questions exist
+            try
+            {
+                if (currentSlideQuestions != null && currentSlideQuestions.Count > 0 && mdRenderer?.RootElement != null)
+                {
+                    // Ищем маркеры [[QUIZ:<id>]] и заменяем их на визуальные блоки
+                    var allLabels = mdRenderer.RootElement.Query<Label>().ToList();
+                    foreach (var q in currentSlideQuestions)
+                    {
+                        string marker = "[[QUIZ:" + q.id + "]]";
+                        // 1) точное совпадение
+                        var host = allLabels.FirstOrDefault(l => string.Equals(l.text, marker, StringComparison.Ordinal));
+                        if (host != null && host.parent != null)
+                        {
+                            ReplaceLabelWithQuiz(host, q);
+                            continue;
+                        }
+                        // 2) маркер внутри текста
+                        var hostWithText = allLabels.FirstOrDefault(l => !string.IsNullOrEmpty(l.text) && l.text.Contains(marker));
+                        if (hostWithText != null && hostWithText.parent != null)
+                        {
+                            var parent = hostWithText.parent;
+                            int idx = parent.IndexOf(hostWithText);
+                            string text = hostWithText.text;
+                            var parts = text.Split(new[] { marker }, StringSplitOptions.None);
+                            parent.Remove(hostWithText);
+                            // before
+                            if (!string.IsNullOrEmpty(parts[0]))
+                            {
+                                var before = new Label(parts[0]);
+                                parent.Insert(idx++, before);
+                            }
+                            // quiz container
+                            var container = new VisualElement();
+                            parent.Insert(idx++, container);
+                            QuizRenderer.RenderQuizzes(container, currentLessonFilePath, new List<QuizQuestion> { q }, OnQuizStateChanged);
+                            // after
+                            if (parts.Length > 1 && !string.IsNullOrEmpty(parts[1]))
+                            {
+                                var after = new Label(parts[1]);
+                                parent.Insert(idx, after);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("CourseWindow: quiz render failed — " + ex.Message);
+            }
             EnsureRichTextOnAllLabels();
             FixBrokenMarkdownLinks();
+            // Guard next on initial render as well
+            try
+            {
+                if (NeoCource.Editor.Settings.QuizSettings.instance.guardSlideNavigation)
+                {
+                    bool canGoNext = !HasUnfinishedQuestions(currentSlideQuestions, currentLessonFilePath);
+                    canGoNextNow = canGoNext;
+                    nextBtn.SetEnabled(canGoNextNow);
+                    if (NeoCource.Editor.Settings.QuizSettings.instance.enableDebugLogging)
+                    {
+                        Debug.Log($"[Quiz] guard initial: canNext={canGoNext}, slide={currentSlideIndex+1}");
+                    }
+                }
+            }
+            catch { }
             SaveLastSession();
             Repaint();
+        }
+
+        private void ReplaceLabelWithQuiz(Label host, QuizQuestion q)
+        {
+            var parent = host.parent;
+            if (parent == null) return;
+            int idx = parent.IndexOf(host);
+            parent.Remove(host);
+            var container = new VisualElement();
+            parent.Insert(idx, container);
+            QuizRenderer.RenderQuizzes(container, currentLessonFilePath, new List<QuizQuestion> { q }, OnQuizStateChanged);
+        }
+
+        private void OnQuizStateChanged()
+        {
+            try
+            {
+                if (NeoCource.Editor.Settings.QuizSettings.instance.guardSlideNavigation)
+                {
+                    bool canGoNext = !HasUnfinishedQuestions(currentSlideQuestions, currentLessonFilePath);
+                    canGoNextNow = canGoNext;
+                    nextBtn.SetEnabled(canGoNextNow);
+                    if (NeoCource.Editor.Settings.QuizSettings.instance.enableDebugLogging)
+                    {
+                        Debug.Log($"[Quiz] guard update: canNext={canGoNext}, slide={currentSlideIndex+1}");
+                    }
+                }
+            }
+            catch { }
+        }
+
+        private bool HasUnfinishedQuestions(List<QuizQuestion> questions, string lessonPath)
+        {
+            try
+            {
+                if (questions == null || questions.Count == 0) return false;
+                var state = QuizStateStore.GetLessonState(lessonPath, false);
+                if (state == null) return questions.Count == 0;
+                foreach (var q in questions)
+                {
+                    if (!state.questionIdToState.TryGetValue(q.id, out var s) || !s.isCompleted)
+                        return true;
+                }
+                return false;
+            }
+            catch { return false; }
+        }
+
+        private bool CanGoNextSlide()
+        {
+            try
+            {
+                if (!NeoCource.Editor.Settings.QuizSettings.instance.guardSlideNavigation) return true;
+                return canGoNextNow;
+            }
+            catch { return true; }
         }
 
         private const string LastLessonPathKey = "AlgoNeoCourse.LastLessonPath";
@@ -843,6 +1018,35 @@ namespace NeoCource.Editor
             {
                 Debug.LogWarning($"CourseWindow: не удалось проинициализировать контекст MarkdownRenderer — {ex.Message}");
             }
+        }
+
+        private static (int module, int lesson) ExtractModuleLessonKey(string id, string path, string title)
+        {
+            string src = id ?? string.Empty;
+            if (string.IsNullOrEmpty(src)) src = System.IO.Path.GetFileNameWithoutExtension(path ?? string.Empty) ?? string.Empty;
+            if (string.IsNullOrEmpty(src)) src = title ?? string.Empty;
+            // Ищем шаблон m{num}...y{num}
+            var m = System.Text.RegularExpressions.Regex.Match(src, @"m(\d+)[^\d]*y(\d+)", RegexOptions.IgnoreCase);
+            if (m.Success)
+            {
+                int.TryParse(m.Groups[1].Value, out int mod);
+                int.TryParse(m.Groups[2].Value, out int les);
+                return (mod, les);
+            }
+            // fallback: первые два числа в строке
+            var nums = System.Text.RegularExpressions.Regex.Matches(src, @"\d+");
+            if (nums.Count >= 2)
+            {
+                int.TryParse(nums[0].Value, out int mod);
+                int.TryParse(nums[1].Value, out int les);
+                return (mod, les);
+            }
+            if (nums.Count == 1)
+            {
+                int.TryParse(nums[0].Value, out int only);
+                return (only, 0);
+            }
+            return (int.MaxValue, int.MaxValue);
         }
     }
 }
