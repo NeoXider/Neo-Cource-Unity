@@ -141,7 +141,7 @@ rules:
 
 — «GIF не анимируется» → Используйте `.mp4` или настройте авто‑конвертацию через FFmpeg.
 
+```
 
 ## Авторские материалы
-
 — Курс и материалы: [AlgoNeoCource — релизы](https://github.com/NeoXider/AlgoNeoCource/releases)
