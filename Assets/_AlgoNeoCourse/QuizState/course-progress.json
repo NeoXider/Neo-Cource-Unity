@@ -1,6 +1,6 @@
 {
   "lastLessonPath": "Assets/_AlgoNeoCourse/Downloaded\\l2m2y2-y2.md",
-  "lastSlideIndex": 8,
+  "lastSlideIndex": 12,
   "lessonStates": {
     "D:/GIT/Neo-Cource-Unity/Assets/_AlgoNeoCourse/Downloaded/l2m2y2-y2.md": {
       "lessonPath": "Assets/_AlgoNeoCourse/Downloaded\\l2m2y2-y2.md",
@@ -33,6 +33,18 @@
           "selectedAnswerIds": [
             "a2"
           ]
+        },
+        "l2m2y2-q-int-or-float": {
+          "questionId": "l2m2y2-q-int-or-float",
+          "attemptsUsed": 0,
+          "isCompleted": false,
+          "isCorrect": false,
+          "shuffledOrder": [
+            1,
+            0,
+            2
+          ],
+          "selectedAnswerIds": []
         }
       }
     }

@@ -82,6 +82,11 @@ namespace NeoCource.Editor.Settings
             Save(true);
         }
 
+        public void Persist()
+        {
+            Save(true);
+        }
+
         [MenuItem("Tools/AlgoNeoCourse/Settings/Reset Validation Settings")] 
         private static void ResetViaMenu()
         {

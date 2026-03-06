@@ -520,6 +520,11 @@ public class CourseSettings : ScriptableSingleton<CourseSettings>
         }
     }
 
+    public void Persist()
+    {
+        SaveIfPossible();
+    }
+
 #if ODIN_INSPECTOR
     [Sirenix.OdinInspector.Button("♻ Сбросить настройки", Sirenix.OdinInspector.ButtonSizes.Small)]
     [Sirenix.OdinInspector.GUIColor(0.98f, 0.7f, 0.45f)]

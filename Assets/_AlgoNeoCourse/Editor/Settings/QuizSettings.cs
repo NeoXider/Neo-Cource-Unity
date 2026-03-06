@@ -50,6 +50,18 @@ namespace NeoCource.Editor.Settings
             return GetProgressFolderAssetPath().TrimEnd('/') + "/course-progress.json";
         }
 
+        public void Persist()
+        {
+            try
+            {
+                Save(true);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("QuizSettings: сохранение настроек пропущено — " + ex.Message);
+            }
+        }
+
 #if ODIN_INSPECTOR
         [PropertySpace]
         [HorizontalGroup("actions")]

@@ -1,0 +1,91 @@
+.algo-course-window {
+    background-color: rgb(18, 22, 30);
+}
+
+.algo-course-toolbar {
+    min-height: 38px;
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(94, 133, 194, 0.28);
+    background-color: rgba(24, 29, 39, 0.98);
+}
+
+.algo-course-dropdown {
+    min-width: 280px;
+    min-height: 28px;
+    margin-right: 6px;
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: rgba(96, 127, 176, 0.4);
+    background-color: rgba(34, 42, 56, 1);
+    color: rgb(231, 238, 247);
+}
+
+.algo-course-icon-button,
+.algo-course-nav-button,
+.algo-course-docs-menu {
+    min-height: 28px;
+    min-width: 28px;
+    border-radius: 7px;
+    border-width: 1px;
+    border-color: rgba(100, 127, 171, 0.25);
+    background-color: rgba(35, 42, 56, 0.96);
+    color: rgb(223, 232, 245);
+}
+
+.algo-course-icon-button:hover,
+.algo-course-nav-button:hover,
+.algo-course-docs-menu:hover {
+    background-color: rgba(49, 60, 80, 1);
+}
+
+.algo-course-nav-button {
+    min-width: 34px;
+    -unity-font-style: bold;
+    font-size: 13px;
+}
+
+.algo-course-nav-button.prev {
+    color: rgb(145, 187, 255);
+}
+
+.algo-course-nav-button.next {
+    color: rgb(124, 232, 183);
+}
+
+.algo-course-icon-button.reload {
+    border-color: rgba(67, 198, 214, 0.45);
+}
+
+.algo-course-icon-button.reset {
+    border-color: rgba(226, 109, 109, 0.45);
+}
+
+.algo-course-icon-button.settings {
+    border-color: rgba(152, 122, 223, 0.42);
+}
+
+.algo-course-slide-indicator {
+    min-width: 62px;
+    margin-left: 4px;
+    margin-right: 4px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    border-radius: 7px;
+    background-color: rgba(14, 18, 25, 0.95);
+    color: rgb(207, 220, 235);
+    -unity-text-align: middle-center;
+    -unity-font-style: bold;
+}
+
+.algo-course-content {
+    margin: 10px;
+    padding: 8px;
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: rgba(74, 100, 141, 0.24);
+    background-color: rgba(20, 24, 33, 0.86);
+}

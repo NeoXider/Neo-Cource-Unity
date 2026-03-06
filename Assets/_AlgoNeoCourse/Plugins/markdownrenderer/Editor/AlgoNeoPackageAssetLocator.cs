@@ -19,6 +19,7 @@ namespace NeoCource.Editor.Infrastructure
         public static string PackageRootAssetPath => FindExistingRoot() ?? LegacyAssetsRoot;
 
         public static string DocsExamplesFolderAssetPath => CombineFromPackageRoot("Docs/Examples");
+        public static string CourseWindowStylesheetAssetPath => CombineFromPackageRoot("Editor/Styles/AlgoNeoCourseWindow.uss");
         public static string MarkdownRendererRootAssetPath => CombineFromPackageRoot("Plugins/markdownrenderer");
         public static string MarkdownStylesheetAssetPath => CombineFromPackageRoot("Plugins/markdownrenderer/Styles/MarkdownRenderer.uss");
         public static string QuizStylesheetAssetPath => CombineFromPackageRoot("Plugins/markdownrenderer/Styles/Quiz.uss");

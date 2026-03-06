@@ -76,6 +76,8 @@ namespace NeoCource.Editor
         public void CreateGUI()
         {
             rootVisualElement.style.flexDirection = FlexDirection.Column;
+            rootVisualElement.AddToClassList("algo-course-window");
+            LoadWindowStyles();
 
             BuildToolbar();
             BuildContent();
@@ -100,11 +102,13 @@ namespace NeoCource.Editor
         private void BuildToolbar()
         {
             toolbar = new Toolbar();
+            toolbar.AddToClassList("algo-course-toolbar");
 
             lessonDropdown = new PopupField<string>(new List<string>(), 0)
             {
                 tooltip = "Выберите урок"
             };
+            lessonDropdown.AddToClassList("algo-course-dropdown");
             lessonDropdown.formatSelectedValueCallback = (string value) =>
             {
                 if (string.IsNullOrEmpty(value)) return value;
@@ -135,10 +139,15 @@ namespace NeoCource.Editor
             {
                 Selection.activeObject = CourseSettings.instance;
             });
+            settingsBtn.AddToClassList("settings");
             toolbar.Add(settingsBtn);
 
             prevBtn = new ToolbarButton(() => ShowSlide(currentSlideIndex - 1)) { text = "◀" };
             nextBtn = new ToolbarButton(() => ShowSlide(currentSlideIndex + 1)) { text = "▶" };
+            prevBtn.AddToClassList("algo-course-nav-button");
+            prevBtn.AddToClassList("prev");
+            nextBtn.AddToClassList("algo-course-nav-button");
+            nextBtn.AddToClassList("next");
             prevBtn.tooltip = "Предыдущий";
             nextBtn.tooltip = "Следующий";
             prevBtn.style.unityFontStyleAndWeight = FontStyle.Bold;
@@ -147,6 +156,7 @@ namespace NeoCource.Editor
             nextBtn.style.color = new StyleColor(new Color(0.6f, 1f, 0.6f));
             nextBtn.style.minWidth = 60;
             slideIndicator = new Label("—/—") { style = { unityTextAlign = TextAnchor.MiddleCenter, minWidth = 60 } };
+            slideIndicator.AddToClassList("algo-course-slide-indicator");
 
             toolbar.Add(prevBtn);
             toolbar.Add(slideIndicator);
@@ -156,9 +166,11 @@ namespace NeoCource.Editor
 
             var refreshTex = (Texture2D)(EditorGUIUtility.IconContent("d_Refresh").image ?? EditorGUIUtility.IconContent("Refresh").image);
             reloadBtn = CreateIconButton(refreshTex, "Обновить уроки", () => { DoRefreshLessonsAndCurrent(); });
+            reloadBtn.AddToClassList("reload");
             reloadBtn.style.color = new StyleColor(new Color(0.2f, 0.8f, 0.8f));
             var resetTex = (Texture2D)(EditorGUIUtility.IconContent("d_TreeEditor.Trash").image ?? EditorGUIUtility.IconContent("TreeEditor.Trash").image);
             resetProgressBtn = CreateIconButton(resetTex, "Сбросить локальный прогресс", ResetProgressAndReload);
+            resetProgressBtn.AddToClassList("reset");
             openInExplorerBtn = new ToolbarButton(() =>
             {
                 if (!string.IsNullOrEmpty(currentLessonFilePath) && File.Exists(currentLessonFilePath))
@@ -166,6 +178,7 @@ namespace NeoCource.Editor
             });
             var folderTex = (Texture2D)(EditorGUIUtility.IconContent("Folder Icon").image ?? EditorGUIUtility.IconContent("d_Project").image);
             openInExplorerBtn.text = string.Empty;
+            openInExplorerBtn.AddToClassList("algo-course-icon-button");
             var img = new Image { image = folderTex, scaleMode = ScaleMode.ScaleToFit };
             img.style.width = 16; img.style.height = 16; img.style.marginTop = 2; img.style.marginBottom = 2;
             openInExplorerBtn.Add(img);
@@ -281,6 +294,7 @@ namespace NeoCource.Editor
             if (ValidationSettings.Instance.DebugBrowseDocsExamples)
             {
                 docsMenu = new ToolbarMenu { text = "Docs" };
+                docsMenu.AddToClassList("algo-course-docs-menu");
                 docsMenu.tooltip = "Примеры из Docs/Examples";
                 PopulateDocsMenu();
                 toolbar.Add(docsMenu);
@@ -338,6 +352,7 @@ namespace NeoCource.Editor
         {
             contentRoot = new ScrollView(ScrollViewMode.Vertical);
             contentRoot.style.flexGrow = 1f;
+            contentRoot.AddToClassList("algo-course-content");
 
             mdRenderer = new UIMarkdownRenderer.UIMarkdownRenderer((link, renderer) => OnLinkClicked(link, renderer, null), includeScrollview: true);
             try
@@ -419,10 +434,27 @@ namespace NeoCource.Editor
         {
             var btn = new ToolbarButton(onClick) { tooltip = tooltip };
             btn.text = string.Empty;
+            btn.AddToClassList("algo-course-icon-button");
             var img = new Image { image = icon, scaleMode = ScaleMode.ScaleToFit };
             img.style.width = 16; img.style.height = 16; img.style.marginTop = 2; img.style.marginBottom = 2;
             btn.Add(img);
             return btn;
+        }
+
+        private void LoadWindowStyles()
+        {
+            try
+            {
+                var styleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>(AlgoNeoPackageAssetLocator.CourseWindowStylesheetAssetPath);
+                if (styleSheet != null && !rootVisualElement.styleSheets.Contains(styleSheet))
+                {
+                    rootVisualElement.styleSheets.Add(styleSheet);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"CourseWindow: не удалось загрузить стиль окна — {ex.Message}");
+            }
         }
 
         private void RefreshLessonsList()
