@@ -2,7 +2,7 @@
 %TAG !u! tag:unity3d.com,2011:
 --- !u!114 &1
 MonoBehaviour:
-  m_ObjectHideFlags: 53
+  m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   repositoryBaseUrl: https://raw.githubusercontent.com/NeoXider/AlgoNeoCource/main
+  courseJsonPreset: 1
   courseJsonFile: course2.json
   autoLoadOnStart: 1
   enableDebugLogging: 0
@@ -23,6 +24,8 @@ MonoBehaviour:
   autoConvertGifToMp4: 1
   ffmpegPath: Assets/_AlgoNeoCourse/Editor/Utils/ffmpeg.exe
   gifVideoCacheFolder: Assets/_AlgoNeoCourse/VideoCache
+  gifConversionFps: 12
+  gifConversionMaxWidth: 960
   localCourseJsonPath: 
   downloadFolderRelative: Assets/_AlgoNeoCourse/Downloaded
   lessonsFolderInRepo: lessons

@@ -119,7 +119,7 @@ namespace NeoCource.Editor.Settings
                         s_Instance.SaveAsset();
                     }
 
-                    s_Instance.hideFlags = HideFlags.HideAndDontSave;
+                    s_Instance.hideFlags = HideFlags.None;
                     s_Instance.EnsureRuntimeState();
                     s_Instance.ApplyDefaultValuesIfNeeded();
                     return s_Instance;
