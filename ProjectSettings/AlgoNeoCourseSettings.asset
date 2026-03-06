@@ -18,7 +18,7 @@ MonoBehaviour:
   autoLoadOnStart: 1
   enableDebugLogging: 0
   testMode: 0
-  maxLessonTitleLength: 20
+  maxLessonTitleLength: 25
   okLogColor: {r: 0.19999999, g: 0.8509804, b: 0.7763691, a: 1}
   failLogColor: {r: 1, g: 0.37606442, b: 0.19999999, a: 1}
   autoConvertGifToMp4: 1

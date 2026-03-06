@@ -46,7 +46,7 @@ namespace NeoCource.Editor.Settings
         public bool testMode;
 
         [Tooltip("Максимальная длина заголовка урока в дропдауне окна курса.")]
-        public int maxLessonTitleLength = 20;
+        public int maxLessonTitleLength = 25;
 
         [Tooltip("Цвет для сообщений OK (консоль)")]
         public Color okLogColor = new(0.2f, 0.85f, 0.2f);
@@ -155,7 +155,7 @@ namespace NeoCource.Editor.Settings
 
             if (maxLessonTitleLength <= 0)
             {
-                maxLessonTitleLength = 20;
+                maxLessonTitleLength = 25;
             }
 
             if (string.IsNullOrWhiteSpace(ffmpegPath))
@@ -208,7 +208,7 @@ namespace NeoCource.Editor.Settings
             enableDebugLogging = false;
             testMode = false;
             localCourseJsonPath = string.Empty;
-            maxLessonTitleLength = 20;
+            maxLessonTitleLength = 25;
             okLogColor = new Color(0.2f, 0.85f, 0.2f);
             failLogColor = new Color(1.0f, 0.6f, 0.2f);
             autoConvertGifToMp4 = true;
