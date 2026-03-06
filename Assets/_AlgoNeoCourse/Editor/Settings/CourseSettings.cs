@@ -7,6 +7,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using NeoCource.Editor.Infrastructure;
 #if ODIN_INSPECTOR
 using Sirenix.OdinInspector;
 #endif
@@ -60,6 +61,47 @@ public class CourseSettings : ScriptableSingleton<CourseSettings>
 
     private System.Threading.CancellationTokenSource currentDownloadCts;
 
+    public string GetDownloadFolderPath()
+    {
+        return AlgoNeoPackageAssetLocator.NormalizeWritableAssetPath(
+            downloadFolderRelative,
+            AlgoNeoPackageAssetLocator.DefaultDownloadFolderAssetPath);
+    }
+
+    public string GetGifVideoCacheFolderPath()
+    {
+        return AlgoNeoPackageAssetLocator.NormalizeWritableAssetPath(
+            gifVideoCacheFolder,
+            AlgoNeoPackageAssetLocator.DefaultVideoCacheFolderAssetPath);
+    }
+
+    public string GetFfmpegAssetPath()
+    {
+        string normalized = (ffmpegPath ?? string.Empty).Replace('\\', '/');
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return AlgoNeoPackageAssetLocator.EmbeddedFfmpegAssetPath;
+        }
+
+        if (normalized.StartsWith("Assets/", StringComparison.OrdinalIgnoreCase) ||
+            normalized.StartsWith("Packages/", StringComparison.OrdinalIgnoreCase))
+        {
+            if (AlgoNeoPackageAssetLocator.AssetExists(normalized))
+            {
+                return normalized;
+            }
+
+            return AlgoNeoPackageAssetLocator.EmbeddedFfmpegAssetPath;
+        }
+
+        if (File.Exists(normalized))
+        {
+            return normalized;
+        }
+
+        return AlgoNeoPackageAssetLocator.EmbeddedFfmpegAssetPath;
+    }
+
 
 #if ODIN_INSPECTOR
     [Title("Оформление логов проверок")]
@@ -74,7 +116,7 @@ public class CourseSettings : ScriptableSingleton<CourseSettings>
 #endif
     [Tooltip("Автоматически конвертировать .gif в .mp4 для корректного воспроизведения")] public bool autoConvertGifToMp4 = true;
     [Tooltip("Путь к ffmpeg.exe (если пусто, конвертация отключена)")] public string ffmpegPath = "Assets/_AlgoNeoCourse/Editor/Utils/ffmpeg.exe";
-    [Tooltip("Папка кэша mp4 (в проекте)")] public string gifVideoCacheFolder = "Assets/_AlgoNeoCourse/.VideoCache";
+    [Tooltip("Папка кэша mp4 (в проекте)")] public string gifVideoCacheFolder = "Assets/_AlgoNeoCourse/VideoCache";
 
 #if ODIN_INSPECTOR
     [Title("Локальные тестовые настройки"), ShowIf("testMode")]
@@ -86,7 +128,7 @@ public class CourseSettings : ScriptableSingleton<CourseSettings>
     [Title("Загрузка и выбор уроков")]
 #endif
     [Tooltip("Папка, куда сохраняются загруженные уроки (относительно корня проекта).")]
-    public string downloadFolderRelative = "Assets/_AlgoNeoCourse/Downloaded";
+    public string downloadFolderRelative = AlgoNeoPackageAssetLocator.DefaultDownloadFolderAssetPath;
     [Tooltip("Папка в репозитории, где лежат .md уроки (используется как запасной вариант, если в course.json не задан путь).")]
     public string lessonsFolderInRepo = "lessons";
 
@@ -315,7 +357,7 @@ public class CourseSettings : ScriptableSingleton<CourseSettings>
             return;
         }
 
-        string targetFolder = downloadFolderRelative.Replace("\\", "/");
+        string targetFolder = GetDownloadFolderPath();
         if (!Directory.Exists(targetFolder)) Directory.CreateDirectory(targetFolder);
 
         var client = s_HttpClient;
@@ -436,7 +478,7 @@ public class CourseSettings : ScriptableSingleton<CourseSettings>
 #endif
     public void DeleteDownloadedFiles()
     {
-        string targetFolder = downloadFolderRelative.Replace("\\", "/");
+        string targetFolder = GetDownloadFolderPath();
         if (Directory.Exists(targetFolder))
         {
             try
@@ -492,8 +534,8 @@ public class CourseSettings : ScriptableSingleton<CourseSettings>
         localCourseJsonPath = string.Empty;
         autoConvertGifToMp4 = true;
         ffmpegPath = "Assets/_AlgoNeoCourse/Editor/Utils/ffmpeg.exe";
-        gifVideoCacheFolder = "Assets/_AlgoNeoCourse/VideoCache";
-        downloadFolderRelative = "Assets/_AlgoNeoCourse/Downloaded";
+        gifVideoCacheFolder = AlgoNeoPackageAssetLocator.DefaultVideoCacheFolderAssetPath;
+        downloadFolderRelative = AlgoNeoPackageAssetLocator.DefaultDownloadFolderAssetPath;
         lessonsFolderInRepo = "lessons";
         lessonSelections.Clear();
         Save(true);

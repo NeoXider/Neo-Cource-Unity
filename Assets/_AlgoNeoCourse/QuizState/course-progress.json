@@ -1,0 +1,40 @@
+{
+  "lastLessonPath": "Assets/_AlgoNeoCourse/Downloaded\\l2m2y2-y2.md",
+  "lastSlideIndex": 8,
+  "lessonStates": {
+    "D:/GIT/Neo-Cource-Unity/Assets/_AlgoNeoCourse/Downloaded/l2m2y2-y2.md": {
+      "lessonPath": "Assets/_AlgoNeoCourse/Downloaded\\l2m2y2-y2.md",
+      "questionIdToState": {
+        "invalid-var-name": {
+          "questionId": "invalid-var-name",
+          "attemptsUsed": 1,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            2,
+            3,
+            0,
+            1
+          ],
+          "selectedAnswerIds": [
+            "a2"
+          ]
+        },
+        "declare-vs-assign": {
+          "questionId": "declare-vs-assign",
+          "attemptsUsed": 2,
+          "isCompleted": true,
+          "isCorrect": false,
+          "shuffledOrder": [
+            0,
+            2,
+            1
+          ],
+          "selectedAnswerIds": [
+            "a2"
+          ]
+        }
+      }
+    }
+  }
+}

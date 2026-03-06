@@ -1,0 +1,19 @@
+{
+  "name": "AlgoNeoCourse.Editor",
+  "rootNamespace": "NeoCource.Editor",
+  "references": [
+    "Rtl.MarkdownRenderer.Editor",
+    "Markdig"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

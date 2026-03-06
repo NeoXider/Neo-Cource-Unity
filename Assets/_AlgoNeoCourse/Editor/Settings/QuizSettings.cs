@@ -1,6 +1,9 @@
 using UnityEngine;
 using UnityEditor;
 using System;
+using System.IO;
+using NeoCource.Editor.Infrastructure;
+using NeoCource.Editor.Progress;
 #if ODIN_INSPECTOR
 using Sirenix.OdinInspector;
 #endif
@@ -31,9 +34,21 @@ namespace NeoCource.Editor.Settings
 #if ODIN_INSPECTOR
         [Title("Сохранение состояния")] 
 #endif
-        [Tooltip("Сохранять состояние попыток между сессиями")] public bool persistState = false;
-        [Tooltip("Сохранять состояние в JSON (Newtonsoft.Json)")] public bool saveStateAsJson = true;
-        [Tooltip("Папка для JSON сохранений (относительно корня проекта)")] public string stateJsonFolder = "Assets/_AlgoNeoCourse/QuizState";
+        [Tooltip("Сохранение прогресса квизов всегда включено")] public bool persistState = true;
+        [Tooltip("Прогресс хранится в локальном JSON-файле")] public bool saveStateAsJson = true;
+        [Tooltip("Папка для локального JSON прогресса (только в Assets, не в Packages)")] public string stateJsonFolder = AlgoNeoPackageAssetLocator.DefaultProgressFolderAssetPath;
+
+        public string GetProgressFolderAssetPath()
+        {
+            return AlgoNeoPackageAssetLocator.NormalizeWritableAssetPath(
+                stateJsonFolder,
+                AlgoNeoPackageAssetLocator.DefaultProgressFolderAssetPath);
+        }
+
+        public string GetProgressFileAssetPath()
+        {
+            return GetProgressFolderAssetPath().TrimEnd('/') + "/course-progress.json";
+        }
 
 #if ODIN_INSPECTOR
         [PropertySpace]
@@ -45,9 +60,8 @@ namespace NeoCource.Editor.Settings
         {
             try
             {
-                string projectRoot = System.IO.Path.GetFullPath(System.IO.Path.Combine(Application.dataPath, ".."));
-                string full = System.IO.Path.GetFullPath(System.IO.Path.Combine(projectRoot, stateJsonFolder.Replace('\\','/')));
-                if (!System.IO.Directory.Exists(full)) System.IO.Directory.CreateDirectory(full);
+                string full = AlgoNeoPackageAssetLocator.ToAbsolutePath(GetProgressFolderAssetPath());
+                if (!Directory.Exists(full)) Directory.CreateDirectory(full);
                 EditorUtility.RevealInFinder(full);
             }
             catch (Exception ex)
@@ -65,13 +79,9 @@ namespace NeoCource.Editor.Settings
         {
             try
             {
-                string projectRoot = System.IO.Path.GetFullPath(System.IO.Path.Combine(Application.dataPath, ".."));
-                string full = System.IO.Path.GetFullPath(System.IO.Path.Combine(projectRoot, stateJsonFolder.Replace('\\','/')));
-                if (System.IO.Directory.Exists(full))
+                CourseProgressStore.Clear();
+                if (Directory.Exists(AlgoNeoPackageAssetLocator.ToAbsolutePath(GetProgressFolderAssetPath())))
                 {
-                    FileUtil.DeleteFileOrDirectory(full);
-                    FileUtil.DeleteFileOrDirectory(full + ".meta");
-                    AssetDatabase.Refresh();
                     Debug.Log("QuizSettings: сохранения очищены");
                 }
             }
@@ -88,6 +98,17 @@ namespace NeoCource.Editor.Settings
         public static void Open()
         {
             Selection.activeObject = QuizSettings.instance;
+        }
+
+        [MenuItem("Tools/AlgoNeoCourse/Settings/Reset Course Progress")]
+        public static void ResetProgress()
+        {
+            if (!EditorUtility.DisplayDialog("AlgoNeoCourse", "Сбросить локальный прогресс курса и все сохранения квизов?", "Сбросить", "Отмена"))
+            {
+                return;
+            }
+
+            QuizSettings.instance.ClearState();
         }
     }
 }

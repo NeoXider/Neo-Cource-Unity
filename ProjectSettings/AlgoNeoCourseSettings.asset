@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   repositoryBaseUrl: https://raw.githubusercontent.com/NeoXider/AlgoNeoCource/main
-  courseJsonFile: course.json
+  courseJsonFile: course2.json
   autoLoadOnStart: 1
-  enableDebugLogging: 1
+  enableDebugLogging: 0
   testMode: 0
   maxLessonTitleLength: 20
   okLogColor: {r: 0.2, g: 0.85, b: 0.2, a: 1}
@@ -28,21 +28,45 @@ MonoBehaviour:
   lessonsFolderInRepo: lessons
   lessonSelections:
   - selected: 1
-    id: m2y1
+    id: l2m2y1
     title: "\u041E\u0441\u043D\u043E\u0432\u044B \u0441\u0438\u043D\u0442\u0430\u043A\u0441\u0438\u0441\u0430
       C#"
-    file: lessons/m2/y1.md
+    file: lessons2/m2/y1.md
   - selected: 1
-    id: m2y2
+    id: l2m2y2
     title: "\u041F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u044B\u0435 \u0438 \u0442\u0438\u043F\u044B
       \u0434\u0430\u043D\u043D\u044B\u0445"
-    file: lessons/m2/y2.md
+    file: lessons2/m2/y2.md
   - selected: 1
-    id: m2y3
+    id: l2m2y3
     title: "\u0410\u0440\u0438\u0444\u043C\u0435\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0435
       \u043E\u043F\u0435\u0440\u0430\u0446\u0438\u0438"
-    file: lessons/m2/y3.md
+    file: lessons2/m2/y3.md
   - selected: 1
-    id: m2y4
+    id: l2m2y4
     title: "\u041C\u0435\u0442\u043E\u0434\u044B \u0438 \u0421\u043E\u0431\u044B\u0442\u0438\u044F"
-    file: lessons/m2/y4.md
+    file: lessons2/m2/y4.md
+  - selected: 1
+    id: l2m2y5
+    title: "\u0416\u0438\u0437\u043D\u0435\u043D\u043D\u044B\u0439 \u0446\u0438\u043A\u043B
+      Unity + \u044D\u0444\u0444\u0435\u043A\u0442\u044B \u0438 \u0437\u0432\u0443\u043A"
+    file: lessons2/m2/y5.md
+  - selected: 1
+    id: l2m3y1
+    title: "\u0423\u0441\u043B\u043E\u0432\u043D\u044B\u0435 \u043E\u043F\u0435\u0440\u0430\u0442\u043E\u0440\u044B
+      \u0438 \u043B\u043E\u0433\u0438\u0447\u0435\u0441\u043A\u0438\u0435 \u0432\u044B\u0440\u0430\u0436\u0435\u043D\u0438\u044F"
+    file: lessons2/m3/y1.md
+  - selected: 1
+    id: l2m3y2
+    title: "\u0423\u0441\u043B\u043E\u0432\u0438\u044F else if + \u0441\u043E\u0441\u0442\u0430\u0432\u043D\u044B\u0435
+      \u0443\u0441\u043B\u043E\u0432\u0438\u044F (Dino 3D)"
+    file: lessons2/m3/y2.md
+  - selected: 1
+    id: l2m3y3
+    title: "\u0426\u0438\u043A\u043B\u044B for/while (Dino 3D)"
+    file: lessons2/m3/y3.md
+  - selected: 1
+    id: l2m3y4
+    title: "\u0414\u043E\u0440\u0430\u0431\u043E\u0442\u043A\u0430 Dino 3D: Game
+      Over, Restart, UI"
+    file: lessons2/m3/y4.md

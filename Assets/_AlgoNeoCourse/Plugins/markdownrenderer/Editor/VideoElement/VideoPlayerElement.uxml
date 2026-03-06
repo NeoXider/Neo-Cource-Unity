@@ -1,5 +1,4 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
-    <Style src="project://database/Assets/_AlgoNeoCourse/Plugins/markdownrenderer/Styles/MarkdownRenderer.uss?fileID=7433441132597879392&amp;guid=e3f70ab3c1ae6244790fb7a25ac09d3f&amp;type=3#MarkdownRenderer" />
     <VideoPlayerElement>
         <ui:VisualElement name="videoPlayer" class="video-content">
             <ui:VisualElement name="PlayBar" class="video-control-bar" style="scale: 1 1;">

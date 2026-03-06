@@ -74,6 +74,7 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 Assets/_AlgoNeoCourse/Editor/Utils/ffmpeg.exe
+Assets/_AlgoNeoCourse/Downloaded/
 
 # IDE folders
 .idea/

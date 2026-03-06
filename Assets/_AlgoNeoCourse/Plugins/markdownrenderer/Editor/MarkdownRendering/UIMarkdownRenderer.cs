@@ -9,6 +9,7 @@ using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
 using UIMarkdownRenderer.ObjectRenderers;
 using UIMarkdownRenderer;
+using NeoCource.Editor.Infrastructure;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -190,7 +191,9 @@ namespace UIMarkdownRenderer
         {
             if (s_DefaultStylesheet == null)
             {
-                s_DefaultStylesheet =  AssetDatabase.LoadAssetAtPath("Assets/_AlgoNeoCourse/Plugins/markdownrenderer/Styles/MarkdownRenderer.uss", typeof(StyleSheet)) as StyleSheet;
+                s_DefaultStylesheet = AssetDatabase.LoadAssetAtPath(
+                    AlgoNeoPackageAssetLocator.MarkdownStylesheetAssetPath,
+                    typeof(StyleSheet)) as StyleSheet;
                 if(s_DefaultStylesheet == null)
                     Debug.LogError("Couldn't load the MarkdownRenderer.uss stylesheet");
             }
@@ -199,12 +202,12 @@ namespace UIMarkdownRenderer
             {
                 s_VideoPlayerElementPrefab =
                     AssetDatabase.LoadAssetAtPath(
-                        "Assets/_AlgoNeoCourse/Plugins/markdownrenderer/Editor/VideoElement/VideoPlayerElement.uxml",
+                        AlgoNeoPackageAssetLocator.VideoPlayerUxmlAssetPath,
                         typeof(VisualTreeAsset)) as VisualTreeAsset;
                 
                 s_VideoPlayerStyleSheet =
                     AssetDatabase.LoadAssetAtPath(
-                        "Assets/_AlgoNeoCourse/Plugins/markdownrenderer/Editor/VideoElement/VideoPlayerElement.uss",
+                        AlgoNeoPackageAssetLocator.VideoPlayerStylesheetAssetPath,
                         typeof(StyleSheet)) as StyleSheet;
             }
 

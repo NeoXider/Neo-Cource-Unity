@@ -10,6 +10,8 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using UIMarkdownRenderer;
 using NeoCource.Editor.Settings;
+using NeoCource.Editor.Infrastructure;
+using NeoCource.Editor.Progress;
 using NeoCource.Editor.Utils;
 using NeoCource.Editor.UI;
 using NeoCource.Editor.Quizzes;
@@ -31,6 +33,7 @@ namespace NeoCource.Editor
         private ToolbarButton nextBtn;
         private ToolbarButton reloadBtn;
         private ToolbarButton openInExplorerBtn;
+        private ToolbarButton resetProgressBtn;
 
         private int LessonDropdownMaxLength => Math.Max(5, ScriptableSingleton<CourseSettings>.instance?.maxLessonTitleLength ?? 20);
 
@@ -123,10 +126,6 @@ namespace NeoCource.Editor
                     SaveLastSession();
                 }
             });
-            lessonSearchField = new TextField { tooltip = "Фильтр уроков", value = string.Empty };
-            lessonSearchField.style.maxWidth = 200;
-            lessonSearchField.RegisterValueChangedCallback(_ => RefreshLessonsList());
-            toolbar.Add(lessonSearchField);
             toolbar.Add(lessonDropdown);
 
             toolbar.Add(new ToolbarSpacer());
@@ -158,6 +157,8 @@ namespace NeoCource.Editor
             var refreshTex = (Texture2D)(EditorGUIUtility.IconContent("d_Refresh").image ?? EditorGUIUtility.IconContent("Refresh").image);
             reloadBtn = CreateIconButton(refreshTex, "Обновить уроки", () => { DoRefreshLessonsAndCurrent(); });
             reloadBtn.style.color = new StyleColor(new Color(0.2f, 0.8f, 0.8f));
+            var resetTex = (Texture2D)(EditorGUIUtility.IconContent("d_TreeEditor.Trash").image ?? EditorGUIUtility.IconContent("TreeEditor.Trash").image);
+            resetProgressBtn = CreateIconButton(resetTex, "Сбросить локальный прогресс", ResetProgressAndReload);
             openInExplorerBtn = new ToolbarButton(() =>
             {
                 if (!string.IsNullOrEmpty(currentLessonFilePath) && File.Exists(currentLessonFilePath))
@@ -171,6 +172,7 @@ namespace NeoCource.Editor
             openInExplorerBtn.tooltip = "Показать файл";
 
             toolbar.Add(reloadBtn);
+            toolbar.Add(resetProgressBtn);
             toolbar.Add(openInExplorerBtn);
 
             rootVisualElement.Add(toolbar);
@@ -288,7 +290,7 @@ namespace NeoCource.Editor
         private void PopulateDocsMenu()
         {
             docsMenu.menu.ClearItems();
-            string root = "Assets/_AlgoNeoCourse/Docs/Examples";
+            string root = AlgoNeoPackageAssetLocator.ToAbsolutePath(AlgoNeoPackageAssetLocator.DocsExamplesFolderAssetPath);
             if (!System.IO.Directory.Exists(root))
             {
                 docsMenu.menu.AppendAction("Нет примеров", _ => { }, DropdownMenuAction.Status.Disabled);
@@ -341,7 +343,7 @@ namespace NeoCource.Editor
             try
             {
                 // Подключим стили квизов, если файл есть
-                var stylePath = "Assets/_AlgoNeoCourse/Plugins/markdownrenderer/Styles/Quiz.uss";
+                var stylePath = AlgoNeoPackageAssetLocator.QuizStylesheetAssetPath;
                 var styleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>(stylePath);
                 if (styleSheet != null)
                 {
@@ -443,7 +445,7 @@ namespace NeoCource.Editor
 
             try
             {
-                string folder = settings.downloadFolderRelative?.Replace("\\", "/");
+                string folder = settings.GetDownloadFolderPath();
                 if (!string.IsNullOrEmpty(folder) && Directory.Exists(folder))
                 {
                     var knownPaths = new HashSet<string>(availableLessons.Select(l => Path.GetFullPath(l.filePath)), StringComparer.OrdinalIgnoreCase);
@@ -490,8 +492,7 @@ namespace NeoCource.Editor
                 titles.Add("Нет загруженных уроков — скачайте их в CourseSettings");
             }
 
-            string savedPath = EditorPrefs.GetString(LastLessonPathKey, string.Empty);
-            int savedSlide = EditorPrefs.GetInt(LastSlideIndexKey, 0);
+            CourseProgressStore.TryGetLastSession(out string savedPath, out int savedSlide);
             int selectedIndex = 0;
             if (!string.IsNullOrEmpty(savedPath))
             {
@@ -532,8 +533,8 @@ namespace NeoCource.Editor
 
         private static string ResolveLocalLessonPath(CourseSettings settings, string id, string remotePath)
         {
-            if (string.IsNullOrEmpty(settings.downloadFolderRelative)) return null;
-            string folder = settings.downloadFolderRelative.Replace("\\", "/");
+            string folder = settings.GetDownloadFolderPath();
+            if (string.IsNullOrEmpty(folder)) return null;
             if (!Directory.Exists(folder)) return null;
 
             if (!string.IsNullOrEmpty(remotePath))
@@ -568,16 +569,12 @@ namespace NeoCource.Editor
             {
                 BuildContent();
             }
-            // Перед сменой урока сохраним квиз-состояние и сбросим in-memory (если не нужна персистенция)
+            // Перед сменой урока сохраним единый прогресс курса
             try
             {
                 if (!string.IsNullOrEmpty(currentLessonFilePath))
                 {
                     QuizStateStore.SaveLessonState(currentLessonFilePath);
-                }
-                if (!NeoCource.Editor.Settings.QuizSettings.instance.persistState)
-                {
-                    QuizStateStore.ResetInMemory();
                 }
             }
             catch { }
@@ -768,21 +765,18 @@ namespace NeoCource.Editor
             catch { return true; }
         }
 
-        private const string LastLessonPathKey = "AlgoNeoCourse.LastLessonPath";
-        private const string LastSlideIndexKey = "AlgoNeoCourse.LastSlideIndex";
-
         private void SaveLastSession()
         {
-            if (!string.IsNullOrEmpty(currentLessonFilePath))
-                EditorPrefs.SetString(LastLessonPathKey, currentLessonFilePath);
-            EditorPrefs.SetInt(LastSlideIndexKey, currentSlideIndex);
+            CourseProgressStore.SaveLastSession(currentLessonFilePath, currentSlideIndex);
         }
 
         private void RestoreLastSession()
         {
             if (mdRenderer == null) BuildContent();
-            string lastPath = EditorPrefs.GetString(LastLessonPathKey, string.Empty);
-            int lastSlide = EditorPrefs.GetInt(LastSlideIndexKey, 0);
+            if (!CourseProgressStore.TryGetLastSession(out string lastPath, out int lastSlide))
+            {
+                return;
+            }
             if (string.IsNullOrEmpty(lastPath) || !File.Exists(lastPath)) return;
 
             if (availableLessons == null || availableLessons.Count == 0)
@@ -810,6 +804,21 @@ namespace NeoCource.Editor
                 LoadLesson(found);
                 ShowSlide(Mathf.Clamp(lastSlide, 0, Math.Max(0, slides.Count - 1)));
             }
+        }
+
+        private void ResetProgressAndReload()
+        {
+            if (!EditorUtility.DisplayDialog("AlgoNeoCourse", "Сбросить локальный прогресс курса и сохранения всех квизов?", "Сбросить", "Отмена"))
+            {
+                return;
+            }
+
+            QuizSettings.instance.ClearState();
+            currentLessonFilePath = null;
+            currentLessonTitle = null;
+            currentSlideIndex = 0;
+            slides.Clear();
+            RefreshLessonsList();
         }
 
         private string InjectCheckBlocksIfDebug(string md)

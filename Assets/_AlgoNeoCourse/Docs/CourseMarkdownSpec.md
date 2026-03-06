@@ -125,7 +125,8 @@ answers:
 
 Где менять настройки:
 - Tools → AlgoNeoCourse → Settings → Open Quiz Settings (`QuizSettings`).
-- Доступные опции: `maxAttemptsPerQuestion`, `randomizeAnswersOnCourseOpen`, `guardSlideNavigation`, `persistState`, `saveStateAsJson`, `stateJsonFolder`.
+- Основные опции: `maxAttemptsPerQuestion`, `randomizeAnswersOnCourseOpen`, `guardSlideNavigation`, `stateJsonFolder`.
+- Прогресс квизов и последняя позиция курса сохраняются автоматически в локальный JSON.
 
 Пример single-choice:
 
@@ -169,6 +170,7 @@ answers:
 Заметки:
 - Ответы перемешиваются один раз при открытии курса (настраивается в `Tools/AlgoNeoCourse/Settings/Open Quiz Settings`).
 - Количество попыток на вопрос задаётся в Quiz Settings.
+- Предыдущие квизы не нужно проходить заново: их состояние сохраняется автоматически между сессиями Unity.
 - Объяснения к ответам сейчас не отображаются (рекомендуется выносить на следующий слайд).
 - Переход к следующему слайду может блокироваться при незавершённых вопросах.
 

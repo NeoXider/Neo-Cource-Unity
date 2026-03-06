@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
+using NeoCource.Editor.Infrastructure;
 using NeoCource.Editor.Settings;
 
 namespace NeoCource.Editor.GifSupport
@@ -15,11 +16,12 @@ namespace NeoCource.Editor.GifSupport
             var settings = CourseSettings.instance;
             if (!settings.autoConvertGifToMp4) return null;
             // Resolve ffmpeg path (supports Assets/...)
-            string ffmpegExe = settings.ffmpegPath;
-            if (!string.IsNullOrEmpty(ffmpegExe) && ffmpegExe.StartsWith("Assets/", StringComparison.OrdinalIgnoreCase))
+            string ffmpegExe = settings.GetFfmpegAssetPath();
+            if (!string.IsNullOrEmpty(ffmpegExe) &&
+                (ffmpegExe.StartsWith("Assets/", StringComparison.OrdinalIgnoreCase) ||
+                 ffmpegExe.StartsWith("Packages/", StringComparison.OrdinalIgnoreCase)))
             {
-                var projectRoot = Path.GetDirectoryName(Application.dataPath);
-                ffmpegExe = Path.Combine(projectRoot ?? string.Empty, ffmpegExe).Replace('\\', '/');
+                ffmpegExe = AlgoNeoPackageAssetLocator.ToAbsolutePath(ffmpegExe);
             }
             if (string.IsNullOrEmpty(ffmpegExe) || !File.Exists(ffmpegExe))
             {
@@ -31,8 +33,7 @@ namespace NeoCource.Editor.GifSupport
             try
             {
                 // Создадим кэш-папку
-                string cacheDir = settings.gifVideoCacheFolder;
-                if (string.IsNullOrEmpty(cacheDir)) cacheDir = "Assets/_AlgoNeoCourse/VideoCache";
+                string cacheDir = settings.GetGifVideoCacheFolderPath();
                 if (!Directory.Exists(cacheDir)) Directory.CreateDirectory(cacheDir);
 
                 // Имя файла по хэшу URL
