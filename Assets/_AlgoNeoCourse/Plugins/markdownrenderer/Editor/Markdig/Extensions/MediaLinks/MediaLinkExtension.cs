@@ -11,7 +11,7 @@ using Markdig.Syntax.Inlines;
 namespace Markdig.Extensions.MediaLinks
 {
     /// <summary>
-    /// Extension for extending image Markdown links in case a video or an audio file is linked and output proper link.
+    ///     Extension for extending image Markdown links in case a video or an audio file is linked and output proper link.
     /// </summary>
     /// <seealso cref="IMarkdownExtension" />
     public class MediaLinkExtension : IMarkdownExtension
@@ -35,7 +35,7 @@ namespace Markdig.Extensions.MediaLinks
         {
             if (renderer is HtmlRenderer htmlRenderer)
             {
-                var inlineRenderer = htmlRenderer.ObjectRenderers.FindExact<LinkInlineRenderer>();
+                LinkInlineRenderer? inlineRenderer = htmlRenderer.ObjectRenderers.FindExact<LinkInlineRenderer>();
                 if (inlineRenderer != null)
                 {
                     inlineRenderer.TryWriters.Remove(TryLinkInlineRenderer);
@@ -57,7 +57,8 @@ namespace Markdig.Extensions.MediaLinks
             {
                 // see https://tools.ietf.org/html/rfc3986#section-4.2
                 // since relative uri doesn't support many properties, "http" is used as a placeholder here.
-                if (linkInline.Url.StartsWith("//", StringComparison.Ordinal) && Uri.TryCreate("http:" + linkInline.Url, UriKind.Absolute, out uri))
+                if (linkInline.Url.StartsWith("//", StringComparison.Ordinal) &&
+                    Uri.TryCreate("http:" + linkInline.Url, UriKind.Absolute, out uri))
                 {
                     isSchemaRelative = true;
                 }
@@ -82,8 +83,8 @@ namespace Markdig.Extensions.MediaLinks
 
         private static HtmlAttributes GetHtmlAttributes(LinkInline linkInline)
         {
-            var htmlAttributes = new HtmlAttributes();
-            var fromAttributes = linkInline.TryGetAttributes();
+            HtmlAttributes htmlAttributes = new();
+            HtmlAttributes? fromAttributes = linkInline.TryGetAttributes();
             if (fromAttributes != null)
             {
                 fromAttributes.CopyTo(htmlAttributes, false, false);
@@ -92,17 +93,18 @@ namespace Markdig.Extensions.MediaLinks
             return htmlAttributes;
         }
 
-        private bool TryGuessAudioVideoFile(Uri uri, bool isSchemaRelative, HtmlRenderer renderer, LinkInline linkInline)
+        private bool TryGuessAudioVideoFile(Uri uri, bool isSchemaRelative, HtmlRenderer renderer,
+            LinkInline linkInline)
         {
-            var path = uri.GetComponents(UriComponents.Path, UriFormat.Unescaped);
+            string path = uri.GetComponents(UriComponents.Path, UriFormat.Unescaped);
             // Otherwise try to detect if we have an audio/video from the file extension
-            var lastDot = path.LastIndexOf('.');
+            int lastDot = path.LastIndexOf('.');
             if (lastDot >= 0 &&
                 Options.ExtensionToMimeType.TryGetValue(path.Substring(lastDot), out string? mimeType))
             {
-                var htmlAttributes = GetHtmlAttributes(linkInline);
-                var isAudio = mimeType.StartsWith("audio", StringComparison.Ordinal);
-                var tagType = isAudio ? "audio" : "video";
+                HtmlAttributes htmlAttributes = GetHtmlAttributes(linkInline);
+                bool isAudio = mimeType.StartsWith("audio", StringComparison.Ordinal);
+                string tagType = isAudio ? "audio" : "video";
 
                 renderer.Write($"<{tagType}");
                 htmlAttributes.AddPropertyIfNotExist("width", Options.Width);
@@ -110,10 +112,13 @@ namespace Markdig.Extensions.MediaLinks
                 {
                     htmlAttributes.AddPropertyIfNotExist("height", Options.Height);
                 }
+
                 htmlAttributes.AddPropertyIfNotExist("controls", null);
 
                 if (!string.IsNullOrEmpty(Options.Class))
+                {
                     htmlAttributes.AddClass(Options.Class);
+                }
 
                 renderer.WriteAttributes(htmlAttributes);
 
@@ -121,17 +126,22 @@ namespace Markdig.Extensions.MediaLinks
 
                 return true;
             }
+
             return false;
         }
 
-        private bool TryRenderIframeFromKnownProviders(Uri uri, bool isSchemaRelative, HtmlRenderer renderer, LinkInline linkInline)
+        private bool TryRenderIframeFromKnownProviders(Uri uri, bool isSchemaRelative, HtmlRenderer renderer,
+            LinkInline linkInline)
         {
             IHostProvider? foundProvider = null;
             string? iframeUrl = null;
-            foreach (var provider in Options.Hosts)
+            foreach (IHostProvider? provider in Options.Hosts)
             {
                 if (!provider.TryHandle(uri, isSchemaRelative, out iframeUrl))
+                {
                     continue;
+                }
+
                 foundProvider = provider;
                 break;
             }
@@ -141,28 +151,37 @@ namespace Markdig.Extensions.MediaLinks
                 return false;
             }
 
-            var htmlAttributes = GetHtmlAttributes(linkInline);
+            HtmlAttributes htmlAttributes = GetHtmlAttributes(linkInline);
             renderer.Write("<iframe src=\"");
             renderer.WriteEscapeUrl(iframeUrl);
             renderer.Write('"');
 
             if (!string.IsNullOrEmpty(Options.Width))
+            {
                 htmlAttributes.AddPropertyIfNotExist("width", Options.Width);
+            }
 
             if (!string.IsNullOrEmpty(Options.Height))
+            {
                 htmlAttributes.AddPropertyIfNotExist("height", Options.Height);
+            }
 
             if (!string.IsNullOrEmpty(Options.Class))
+            {
                 htmlAttributes.AddClass(Options.Class);
+            }
 
             if (foundProvider.Class is { Length: > 0 } className)
+            {
                 htmlAttributes.AddClass(className);
+            }
 
             htmlAttributes.AddPropertyIfNotExist("frameborder", "0");
             if (foundProvider.AllowFullScreen)
             {
                 htmlAttributes.AddPropertyIfNotExist("allowfullscreen", null);
             }
+
             renderer.WriteAttributes(htmlAttributes);
             renderer.Write("></iframe>");
 

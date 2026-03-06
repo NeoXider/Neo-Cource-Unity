@@ -10,14 +10,14 @@ using Markdig.Syntax;
 namespace Markdig.Extensions.Mathematics
 {
     /// <summary>
-    /// An inline parser for <see cref="MathInline"/>.
+    ///     An inline parser for <see cref="MathInline" />.
     /// </summary>
     /// <seealso cref="InlineParser" />
     /// <seealso cref="IPostInlineProcessor" />
     public class MathInlineParser : InlineParser
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MathInlineParser"/> class.
+        ///     Initializes a new instance of the <see cref="MathInlineParser" /> class.
         /// </summary>
         public MathInlineParser()
         {
@@ -26,24 +26,24 @@ namespace Markdig.Extensions.Mathematics
         }
 
         /// <summary>
-        /// Gets or sets the default class to use when creating a math inline block.
+        ///     Gets or sets the default class to use when creating a math inline block.
         /// </summary>
         public string DefaultClass { get; set; }
 
         public override bool Match(InlineProcessor processor, ref StringSlice slice)
         {
-            var match = slice.CurrentChar;
-            var pc = slice.PeekCharExtra(-1);
+            char match = slice.CurrentChar;
+            char pc = slice.PeekCharExtra(-1);
             if (pc == match)
             {
                 return false;
             }
 
-            var startPosition = slice.Start;
+            int startPosition = slice.Start;
 
             // Match the opened $ or $$
             int openDollars = 1; // we have at least a $
-            var c = slice.NextChar();
+            char c = slice.NextChar();
             if (c == match)
             {
                 openDollars++;
@@ -55,7 +55,7 @@ namespace Markdig.Extensions.Mathematics
 
             // Check that opening $/$$ is correct, using the different heuristics than for emphasis delimiters
             // If a $/$$ is not preceded by a whitespace or punctuation, this is a not a math block
-            if ((!openPrevIsWhiteSpace && !openPrevIsPunctuation))
+            if (!openPrevIsWhiteSpace && !openPrevIsPunctuation)
             {
                 return false;
             }
@@ -69,11 +69,11 @@ namespace Markdig.Extensions.Mathematics
                 c = slice.NextChar();
             }
 
-            var start = slice.Start;
-            var end = 0;
+            int start = slice.Start;
+            int end = 0;
 
             pc = match;
-            var lastWhiteSpace = -1;
+            int lastWhiteSpace = -1;
             while (c != '\0')
             {
                 // Don't allow newline in an inline math expression
@@ -135,7 +135,8 @@ namespace Markdig.Extensions.Mathematics
                 // A closing $/$$ should be followed by at least a punctuation or a whitespace
                 // and if the character after an opening $/$$ was a whitespace, it should be
                 // a whitespace as well for the character preceding the closing of $/$$
-                if ((!closeNextIsPunctuation && !closeNextIsWhiteSpace) || (openNextIsWhiteSpace != closePrevIsWhiteSpace))
+                if ((!closeNextIsPunctuation && !closeNextIsWhiteSpace) ||
+                    openNextIsWhiteSpace != closePrevIsWhiteSpace)
                 {
                     return false;
                 }
@@ -150,9 +151,10 @@ namespace Markdig.Extensions.Mathematics
                 }
 
                 // Create a new MathInline
-                var inline = new MathInline()
+                MathInline inline = new()
                 {
-                    Span = new SourceSpan(processor.GetSourcePosition(startPosition, out int line, out int column), processor.GetSourcePosition(slice.End)),
+                    Span = new SourceSpan(processor.GetSourcePosition(startPosition, out int line, out int column),
+                        processor.GetSourcePosition(slice.End)),
                     Line = line,
                     Column = column,
                     Delimiter = match,
@@ -168,6 +170,7 @@ namespace Markdig.Extensions.Mathematics
                 {
                     inline.GetAttributes().AddClass(DefaultClass);
                 }
+
                 processor.Inline = inline;
                 isMatching = true;
             }

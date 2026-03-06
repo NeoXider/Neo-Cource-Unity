@@ -9,13 +9,13 @@ using Markdig.Syntax.Inlines;
 namespace Markdig.Parsers.Inlines
 {
     /// <summary>
-    /// An inline parser for <see cref="LineBreakInline"/>.
+    ///     An inline parser for <see cref="LineBreakInline" />.
     /// </summary>
     /// <seealso cref="InlineParser" />
     public class LineBreakInlineParser : InlineParser
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="LineBreakInlineParser"/> class.
+        ///     Initializes a new instance of the <see cref="LineBreakInlineParser" /> class.
         /// </summary>
         public LineBreakInlineParser()
         {
@@ -23,7 +23,7 @@ namespace Markdig.Parsers.Inlines
         }
 
         /// <summary>
-        /// Gets or sets a value indicating whether to interpret softline breaks as hardline breaks. Default is false
+        ///     Gets or sets a value indicating whether to interpret softline breaks as hardline breaks. Default is false
         /// </summary>
         public bool EnableSoftAsHard { get; set; }
 
@@ -35,9 +35,9 @@ namespace Markdig.Parsers.Inlines
                 return false;
             }
 
-            var startPosition = slice.Start;
-            var hasDoubleSpacesBefore = slice.PeekCharExtra(-1).IsSpace() && slice.PeekCharExtra(-2).IsSpace();
-            var newLine = NewLine.LineFeed;
+            int startPosition = slice.Start;
+            bool hasDoubleSpacesBefore = slice.PeekCharExtra(-1).IsSpace() && slice.PeekCharExtra(-2).IsSpace();
+            NewLine newLine = NewLine.LineFeed;
             if (processor.TrackTrivia)
             {
                 if (slice.CurrentChar == '\r')
@@ -64,6 +64,7 @@ namespace Markdig.Parsers.Inlines
                     slice.SkipChar(); // Skip \n
                 }
             }
+
             slice.SkipChar(); // Skip \r or \n
 
             processor.Inline = new LineBreakInline
@@ -74,7 +75,8 @@ namespace Markdig.Parsers.Inlines
                 Column = column,
                 NewLine = newLine
             };
-            processor.Inline.Span.End = processor.Inline.Span.Start + (newLine == NewLine.CarriageReturnLineFeed ? 1 : 0);
+            processor.Inline.Span.End =
+                processor.Inline.Span.Start + (newLine == NewLine.CarriageReturnLineFeed ? 1 : 0);
             return true;
         }
     }

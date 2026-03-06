@@ -3,21 +3,23 @@
 // See the license.txt file in the project root for more information.
 
 using System.IO;
-using Markdig.Syntax;
-using Markdig.Renderers.Roundtrip.Inlines;
 using Markdig.Helpers;
+using Markdig.Renderers.Roundtrip.Inlines;
+using Markdig.Syntax;
 
 namespace Markdig.Renderers.Roundtrip
 {
     /// <summary>
-    /// Markdown renderer honoring trivia for a  <see cref="MarkdownDocument"/> object.
+    ///     Markdown renderer honoring trivia for a  <see cref="MarkdownDocument" /> object.
     /// </summary>
-    /// Ensure to call the <see cref="MarkdownExtensions.EnableTrackTrivia"/> extension method when
+    /// Ensure to call the
+    /// <see cref="MarkdownExtensions.EnableTrackTrivia" />
+    /// extension method when
     /// parsing markdown to have trivia available for rendering.
     public class RoundtripRenderer : TextRendererBase<RoundtripRenderer>
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="RoundtripRenderer"/> class.
+        ///     Initializes a new instance of the <see cref="RoundtripRenderer" /> class.
         /// </summary>
         /// <param name="writer">The writer.</param>
         public RoundtripRenderer(TextWriter writer) : base(writer)
@@ -41,26 +43,30 @@ namespace Markdig.Renderers.Roundtrip
             ObjectRenderers.Add(new EmphasisInlineRenderer());
             ObjectRenderers.Add(new LineBreakInlineRenderer());
             ObjectRenderers.Add(new RoundtripHtmlInlineRenderer());
-            ObjectRenderers.Add(new RoundtripHtmlEntityInlineRenderer());            
+            ObjectRenderers.Add(new RoundtripHtmlEntityInlineRenderer());
             ObjectRenderers.Add(new LinkInlineRenderer());
             ObjectRenderers.Add(new LiteralInlineRenderer());
         }
 
         /// <summary>
-        /// Writes the lines of a <see cref="LeafBlock"/>
+        ///     Writes the lines of a <see cref="LeafBlock" />
         /// </summary>
         /// <param name="leafBlock">The leaf block.</param>
         /// <returns>This instance</returns>
         public void WriteLeafRawLines(LeafBlock leafBlock)
         {
-            if (leafBlock is null) ThrowHelper.ArgumentNullException_leafBlock();
+            if (leafBlock is null)
+            {
+                ThrowHelper.ArgumentNullException_leafBlock();
+            }
+
             if (leafBlock.Lines.Lines != null)
             {
-                var lines = leafBlock.Lines;
-                var slices = lines.Lines;
+                StringLineGroup lines = leafBlock.Lines;
+                StringLine[] slices = lines.Lines;
                 for (int i = 0; i < lines.Count; i++)
                 {
-                    var slice = slices[i].Slice;
+                    StringSlice slice = slices[i].Slice;
                     Write(ref slice);
                     WriteLine(slice.NewLine);
                 }
@@ -73,7 +79,8 @@ namespace Markdig.Renderers.Roundtrip
             {
                 return;
             }
-            foreach (var line in block.LinesBefore)
+
+            foreach (StringSlice line in block.LinesBefore)
             {
                 Write(line);
                 WriteLine(line.NewLine);
@@ -87,11 +94,12 @@ namespace Markdig.Renderers.Roundtrip
             {
                 return;
             }
-            foreach (var line in block.LinesAfter)
+
+            foreach (StringSlice line in block.LinesAfter)
             {
                 Write(line);
                 WriteLine(line.NewLine);
             }
         }
-   }
+    }
 }

@@ -7,13 +7,13 @@ using Markdig.Helpers;
 namespace Markdig.Parsers
 {
     /// <summary>
-    /// Base class for parsing an <see cref="Syntax.Inlines.Inline"/>.
+    ///     Base class for parsing an <see cref="Syntax.Inlines.Inline" />.
     /// </summary>
     /// <seealso cref="InlineProcessor" />
     public abstract class InlineParser : ParserBase<InlineProcessor>, IInlineParser<InlineProcessor>
     {
         /// <summary>
-        /// Tries to match the specified slice.
+        ///     Tries to match the specified slice.
         /// </summary>
         /// <param name="processor">The parser processor.</param>
         /// <param name="slice">The text slice.</param>

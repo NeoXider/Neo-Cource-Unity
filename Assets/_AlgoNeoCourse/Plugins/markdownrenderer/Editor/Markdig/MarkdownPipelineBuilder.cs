@@ -11,7 +11,7 @@ using Markdig.Parsers.Inlines;
 namespace Markdig
 {
     /// <summary>
-    /// This class allows to modify the pipeline to parse and render a Markdown document.
+    ///     This class allows to modify the pipeline to parse and render a Markdown document.
     /// </summary>
     /// <remarks>NOTE: A pipeline is not thread-safe.</remarks>
     public class MarkdownPipelineBuilder
@@ -19,12 +19,12 @@ namespace Markdig
         private MarkdownPipeline? pipeline;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MarkdownPipeline" /> class.
+        ///     Initializes a new instance of the <see cref="MarkdownPipeline" /> class.
         /// </summary>
         public MarkdownPipelineBuilder()
         {
             // Add all default parsers
-            BlockParsers = new OrderedList<BlockParser>()
+            BlockParsers = new OrderedList<BlockParser>
             {
                 new ThematicBreakParser(),
                 new HeadingBlockParser(),
@@ -34,10 +34,10 @@ namespace Markdig
                 new HtmlBlockParser(),
                 new FencedCodeBlockParser(),
                 new IndentedCodeBlockParser(),
-                new ParagraphBlockParser(),
+                new ParagraphBlockParser()
             };
 
-            InlineParsers = new OrderedList<InlineParser>()
+            InlineParsers = new OrderedList<InlineParser>
             {
                 new HtmlEntityParser(),
                 new LinkInlineParser(),
@@ -45,52 +45,53 @@ namespace Markdig
                 new EmphasisInlineParser(),
                 new CodeInlineParser(),
                 new AutolinkInlineParser(),
-                new LineBreakInlineParser(),
+                new LineBreakInlineParser()
             };
 
             Extensions = new OrderedList<IMarkdownExtension>();
         }
 
         /// <summary>
-        /// Gets the block parsers.
+        ///     Gets the block parsers.
         /// </summary>
-        public OrderedList<BlockParser> BlockParsers { get; private set; }
+        public OrderedList<BlockParser> BlockParsers { get; }
 
         /// <summary>
-        /// Gets the inline parsers.
+        ///     Gets the inline parsers.
         /// </summary>
-        public OrderedList<InlineParser> InlineParsers { get; private set; }
+        public OrderedList<InlineParser> InlineParsers { get; }
 
         /// <summary>
-        /// Gets the register extensions.
+        ///     Gets the register extensions.
         /// </summary>
         public OrderedList<IMarkdownExtension> Extensions { get; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether to enable precise source location (slower parsing but accurate position for block and inline elements)
+        ///     Gets or sets a value indicating whether to enable precise source location (slower parsing but accurate position for
+        ///     block and inline elements)
         /// </summary>
         public bool PreciseSourceLocation { get; set; }
 
         /// <summary>
-        /// Gets or sets the debug log.
+        ///     Gets or sets the debug log.
         /// </summary>
         public TextWriter? DebugLog { get; set; }
 
         /// <summary>
-        /// True to parse trivia such as whitespace, extra heading characters and unescaped
-        /// string values.
+        ///     True to parse trivia such as whitespace, extra heading characters and unescaped
+        ///     string values.
         /// </summary>
         public bool TrackTrivia { get; internal set; }
-
-        /// <summary>
-        /// Occurs when a document has been processed after the <see cref="MarkdownParser.Parse()"/> method.
-        /// </summary>
-        public event ProcessDocumentDelegate? DocumentProcessed;
 
         internal ProcessDocumentDelegate? GetDocumentProcessed => DocumentProcessed;
 
         /// <summary>
-        /// Builds a pipeline from this instance. Once the pipeline is build, it cannot be modified.
+        ///     Occurs when a document has been processed after the <see cref="MarkdownParser.Parse()" /> method.
+        /// </summary>
+        public event ProcessDocumentDelegate? DocumentProcessed;
+
+        /// <summary>
+        ///     Builds a pipeline from this instance. Once the pipeline is build, it cannot be modified.
         /// </summary>
         /// <exception cref="InvalidOperationException">An extension cannot be null</exception>
         public MarkdownPipeline Build()
@@ -106,12 +107,13 @@ namespace Markdig
             // We should find a proper way to make the pipeline safely modifiable/freezable (PipelineBuilder -> Pipeline)
 
             // Allow extensions to modify existing BlockParsers, InlineParsers and Renderer
-            foreach (var extension in Extensions)
+            foreach (IMarkdownExtension? extension in Extensions)
             {
                 if (extension is null)
                 {
                     ThrowHelper.InvalidOperationException("An extension cannot be null");
                 }
+
                 extension.Setup(this);
             }
 
@@ -123,7 +125,7 @@ namespace Markdig
                 GetDocumentProcessed)
             {
                 PreciseSourceLocation = PreciseSourceLocation,
-                TrackTrivia = TrackTrivia,
+                TrackTrivia = TrackTrivia
             };
             return pipeline;
         }

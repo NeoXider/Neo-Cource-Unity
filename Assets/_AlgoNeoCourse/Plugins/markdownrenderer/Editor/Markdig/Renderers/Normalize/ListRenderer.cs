@@ -8,7 +8,7 @@ using Markdig.Syntax;
 namespace Markdig.Renderers.Normalize
 {
     /// <summary>
-    /// A Normalize renderer for a <see cref="ListBlock"/>.
+    ///     A Normalize renderer for a <see cref="ListBlock" />.
     /// </summary>
     /// <seealso cref="NormalizeObjectRenderer{ListBlock}" />
     public class ListRenderer : NormalizeObjectRenderer<ListBlock>
@@ -16,7 +16,7 @@ namespace Markdig.Renderers.Normalize
         protected override void Write(NormalizeRenderer renderer, ListBlock listBlock)
         {
             renderer.EnsureLine();
-            var compact = renderer.CompactParagraph;
+            bool compact = renderer.CompactParagraph;
             renderer.CompactParagraph = !listBlock.IsLoose;
             if (listBlock.IsOrdered)
             {
@@ -30,10 +30,11 @@ namespace Markdig.Renderers.Normalize
                             break;
                     }
                 }
-                for (var i = 0; i < listBlock.Count; i++)
+
+                for (int i = 0; i < listBlock.Count; i++)
                 {
-                    var item = listBlock[i];
-                    var listItem = (ListItemBlock) item;
+                    Block item = listBlock[i];
+                    ListItemBlock listItem = (ListItemBlock)item;
                     renderer.EnsureLine();
 
                     renderer.Write(index.ToString(CultureInfo.InvariantCulture));
@@ -48,6 +49,7 @@ namespace Markdig.Renderers.Normalize
                             index++;
                             break;
                     }
+
                     if (i + 1 < listBlock.Count && listBlock.IsLoose)
                     {
                         renderer.EnsureLine();
@@ -57,10 +59,10 @@ namespace Markdig.Renderers.Normalize
             }
             else
             {
-                for (var i = 0; i < listBlock.Count; i++)
+                for (int i = 0; i < listBlock.Count; i++)
                 {
-                    var item = listBlock[i];
-                    var listItem = (ListItemBlock) item;
+                    Block item = listBlock[i];
+                    ListItemBlock listItem = (ListItemBlock)item;
                     renderer.EnsureLine();
                     renderer.Write(renderer.Options.ListItemCharacter ?? listBlock.BulletType);
                     renderer.Write(' ');
@@ -74,21 +76,24 @@ namespace Markdig.Renderers.Normalize
                     }
                 }
             }
+
             renderer.CompactParagraph = compact;
 
             renderer.FinishBlock(true);
         }
 
 
-        private static int IntLog10Fast(int input) =>
-            (input < 10) ? 0 :
-            (input < 100) ? 1 :
-            (input < 1000) ? 2 :
-            (input < 10000) ? 3 :
-            (input < 100000) ? 4 :
-            (input < 1000000) ? 5 :
-            (input < 10000000) ? 6 :
-            (input < 100000000) ? 7 :
-            (input < 1000000000) ? 8 : 9;
+        private static int IntLog10Fast(int input)
+        {
+            return input < 10 ? 0 :
+                input < 100 ? 1 :
+                input < 1000 ? 2 :
+                input < 10000 ? 3 :
+                input < 100000 ? 4 :
+                input < 1000000 ? 5 :
+                input < 10000000 ? 6 :
+                input < 100000000 ? 7 :
+                input < 1000000000 ? 8 : 9;
+        }
     }
 }

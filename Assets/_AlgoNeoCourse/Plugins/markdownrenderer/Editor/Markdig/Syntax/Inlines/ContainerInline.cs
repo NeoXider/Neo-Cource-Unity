@@ -12,43 +12,54 @@ using Markdig.Helpers;
 namespace Markdig.Syntax.Inlines
 {
     /// <summary>
-    /// A base class for container for <see cref="Inline"/>.
+    ///     A base class for container for <see cref="Inline" />.
     /// </summary>
     /// <seealso cref="Inline" />
     public class ContainerInline : Inline, IEnumerable<Inline>
     {
         /// <summary>
-        /// Gets the parent block of this inline.
+        ///     Gets the parent block of this inline.
         /// </summary>
         public LeafBlock? ParentBlock { get; internal set; }
 
         /// <summary>
-        /// Gets the first child.
+        ///     Gets the first child.
         /// </summary>
         public Inline? FirstChild { get; private set; }
 
         /// <summary>
-        /// Gets the last child.
+        ///     Gets the last child.
         /// </summary>
         public Inline? LastChild { get; private set; }
 
+        IEnumerator<Inline> IEnumerable<Inline>.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
         /// <summary>
-        /// Clears this instance by removing all its children.
+        ///     Clears this instance by removing all its children.
         /// </summary>
         public void Clear()
         {
-            var child = LastChild;
+            Inline? child = LastChild;
             while (child != null)
             {
                 child.Parent = null;
                 child = child.PreviousSibling;
             }
+
             FirstChild = null;
             LastChild = null;
         }
 
         /// <summary>
-        /// Appends a child to this container.
+        ///     Appends a child to this container.
         /// </summary>
         /// <param name="child">The child to append to this container..</param>
         /// <returns>This instance</returns>
@@ -56,7 +67,11 @@ namespace Markdig.Syntax.Inlines
         /// <exception cref="ArgumentException">Inline has already a parent</exception>
         public virtual ContainerInline AppendChild(Inline child)
         {
-            if (child is null) ThrowHelper.ArgumentNullException(nameof(child));
+            if (child is null)
+            {
+                ThrowHelper.ArgumentNullException(nameof(child));
+            }
+
             if (child.Parent != null)
             {
                 ThrowHelper.ArgumentException("Inline has already a parent", nameof(child));
@@ -72,31 +87,34 @@ namespace Markdig.Syntax.Inlines
             {
                 LastChild!.InsertAfter(child);
             }
+
             return this;
         }
 
         /// <summary>
-        /// Checks if this instance contains the specified child.
+        ///     Checks if this instance contains the specified child.
         /// </summary>
         /// <param name="childToFind">The child to find.</param>
         /// <returns><c>true</c> if this instance contains the specified child; <c>false</c> otherwise</returns>
         public bool ContainsChild(Inline childToFind)
         {
-            var child = FirstChild;
+            Inline? child = FirstChild;
             while (child != null)
             {
-                var next = child.NextSibling;
+                Inline? next = child.NextSibling;
                 if (child == childToFind)
                 {
                     return true;
                 }
+
                 child = next;
             }
+
             return false;
         }
 
         /// <summary>
-        /// Finds all the descendants.
+        ///     Finds all the descendants.
         /// </summary>
         /// <typeparam name="T">Type of the descendants to find</typeparam>
         /// <returns>An enumeration of T</returns>
@@ -106,18 +124,17 @@ namespace Markdig.Syntax.Inlines
             {
                 return ArrayHelper.Empty<T>();
             }
-            else
-            {
-                return FindDescendantsInternal<T>();
-            }
+
+            return FindDescendantsInternal<T>();
         }
+
         internal IEnumerable<T> FindDescendantsInternal<T>() where T : MarkdownObject
         {
             Debug.Assert(typeof(T).IsSubclassOf(typeof(Inline)));
 
-            var stack = new Stack<Inline>();
+            Stack<Inline> stack = new();
 
-            var child = LastChild;
+            Inline? child = LastChild;
             while (child != null)
             {
                 stack.Push(child);
@@ -146,17 +163,21 @@ namespace Markdig.Syntax.Inlines
         }
 
         /// <summary>
-        /// Moves all the children of this container after the specified inline.
+        ///     Moves all the children of this container after the specified inline.
         /// </summary>
         /// <param name="parent">The parent.</param>
         public void MoveChildrenAfter(Inline parent)
         {
-            if (parent is null) ThrowHelper.ArgumentNullException(nameof(parent));
-            var child = FirstChild;
-            var nextSibling = parent;
+            if (parent is null)
+            {
+                ThrowHelper.ArgumentNullException(nameof(parent));
+            }
+
+            Inline? child = FirstChild;
+            Inline nextSibling = parent;
             while (child != null)
             {
-                var next = child.NextSibling;
+                Inline? next = child.NextSibling;
                 // TODO: optimize this
                 child.Remove();
                 nextSibling.InsertAfter(child);
@@ -166,22 +187,27 @@ namespace Markdig.Syntax.Inlines
         }
 
         /// <summary>
-        /// Embraces this instance by the specified container.
+        ///     Embraces this instance by the specified container.
         /// </summary>
         /// <param name="container">The container to use to embrace this instance.</param>
         /// <exception cref="ArgumentNullException">If the container is null</exception>
         public void EmbraceChildrenBy(ContainerInline container)
         {
-            if (container is null) ThrowHelper.ArgumentNullException(nameof(container));
-            var child = FirstChild;
+            if (container is null)
+            {
+                ThrowHelper.ArgumentNullException(nameof(container));
+            }
+
+            Inline? child = FirstChild;
             while (child != null)
             {
-                var next = child.NextSibling;
+                Inline? next = child.NextSibling;
                 // TODO: optimize this
                 child.Remove();
                 container.AppendChild(child);
                 child = next;
             }
+
             AppendChild(container);
         }
 
@@ -236,6 +262,11 @@ namespace Markdig.Syntax.Inlines
             }
         }
 
+        public Enumerator GetEnumerator()
+        {
+            return new Enumerator(this);
+        }
+
         public struct Enumerator : IEnumerator<Inline>
         {
             private readonly ContainerInline container;
@@ -244,7 +275,11 @@ namespace Markdig.Syntax.Inlines
 
             public Enumerator(ContainerInline container) : this()
             {
-                if (container is null) ThrowHelper.ArgumentNullException(nameof(container));
+                if (container is null)
+                {
+                    ThrowHelper.ArgumentNullException(nameof(container));
+                }
+
                 this.container = container;
                 currentChild = nextChild = container.FirstChild;
             }
@@ -265,6 +300,7 @@ namespace Markdig.Syntax.Inlines
                     nextChild = currentChild.NextSibling;
                     return true;
                 }
+
                 nextChild = null;
                 return false;
             }
@@ -273,21 +309,6 @@ namespace Markdig.Syntax.Inlines
             {
                 currentChild = nextChild = container.FirstChild;
             }
-        }
-
-        public Enumerator GetEnumerator()
-        {
-            return new Enumerator(this);
-        }
-
-        IEnumerator<Inline> IEnumerable<Inline>.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
         }
     }
 }

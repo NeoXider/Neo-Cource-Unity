@@ -1,19 +1,19 @@
+using NeoCource.Editor.Utils;
 using UnityEditor;
 using UnityEngine;
-using NeoCource.Editor.Utils;
 
 namespace NeoCource.Editor.Settings
 {
     [CustomEditor(typeof(ValidationSettings))]
     public class ValidationSettingsEditor : UnityEditor.Editor
     {
-        private SerializedProperty enableDialogsProperty;
-        private SerializedProperty showSuccessDialogProperty;
-        private SerializedProperty showFailureDialogProperty;
-        private SerializedProperty logVerboseProperty;
-        private SerializedProperty debugRenderCheckBlocksProperty;
         private SerializedProperty debugBrowseDocsExamplesProperty;
+        private SerializedProperty debugRenderCheckBlocksProperty;
         private SerializedProperty disabledChecksProperty;
+        private SerializedProperty enableDialogsProperty;
+        private SerializedProperty logVerboseProperty;
+        private SerializedProperty showFailureDialogProperty;
+        private SerializedProperty showSuccessDialogProperty;
 
         private void OnEnable()
         {
@@ -28,7 +28,7 @@ namespace NeoCource.Editor.Settings
 
         public override void OnInspectorGUI()
         {
-            var settings = (ValidationSettings)target;
+            ValidationSettings settings = (ValidationSettings)target;
             serializedObject.Update();
 
             AlgoNeoEditorGui.DrawHeader(
@@ -50,7 +50,8 @@ namespace NeoCource.Editor.Settings
 
             AlgoNeoEditorGui.BeginSection("Отключённые проверки", new Color(0.73f, 0.58f, 0.95f));
             EditorGUILayout.PropertyField(disabledChecksProperty, true);
-            AlgoNeoEditorGui.DrawInfoBox("Список используется для временного отключения конкретных правил по их ключу.", MessageType.None);
+            AlgoNeoEditorGui.DrawInfoBox("Список используется для временного отключения конкретных правил по их ключу.",
+                MessageType.None);
             AlgoNeoEditorGui.EndSection();
 
             AlgoNeoEditorGui.BeginSection("Сброс", new Color(0.9f, 0.38f, 0.34f));
@@ -59,6 +60,7 @@ namespace NeoCource.Editor.Settings
                 settings.ResetToDefaults();
                 serializedObject.Update();
             }
+
             AlgoNeoEditorGui.EndSection();
 
             if (serializedObject.ApplyModifiedProperties())

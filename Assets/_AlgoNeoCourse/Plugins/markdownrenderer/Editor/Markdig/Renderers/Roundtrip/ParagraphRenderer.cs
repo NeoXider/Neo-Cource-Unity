@@ -2,13 +2,13 @@
 // This file is licensed under the BSD-Clause 2 license. 
 // See the license.txt file in the project root for more information.
 
-using Markdig.Syntax;
 using System.Diagnostics;
+using Markdig.Syntax;
 
 namespace Markdig.Renderers.Roundtrip
 {
     /// <summary>
-    /// A Roundtrip renderer for a <see cref="ParagraphBlock"/>.
+    ///     A Roundtrip renderer for a <see cref="ParagraphBlock" />.
     /// </summary>
     /// <seealso cref="RoundtripObjectRenderer{ParagraphBlock}" />
     [DebuggerDisplay("renderer.Writer.ToString()")]

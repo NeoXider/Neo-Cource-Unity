@@ -7,7 +7,8 @@ using Markdig.Renderers;
 namespace Markdig.Extensions.NonAsciiNoEscape
 {
     /// <summary>
-    /// Extension that will disable URI escape with % characters for non-US-ASCII characters in order to workaround a bug under IE/Edge with local file links containing non US-ASCII chars. DO NOT USE OTHERWISE.
+    ///     Extension that will disable URI escape with % characters for non-US-ASCII characters in order to workaround a bug
+    ///     under IE/Edge with local file links containing non US-ASCII chars. DO NOT USE OTHERWISE.
     /// </summary>
     public class NonAsciiNoEscapeExtension : IMarkdownExtension
     {

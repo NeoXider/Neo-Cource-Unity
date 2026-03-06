@@ -8,7 +8,7 @@ using Markdig.Renderers.Html;
 namespace Markdig.Extensions.CustomContainers
 {
     /// <summary>
-    /// A HTML renderer for a <see cref="CustomContainer"/>.
+    ///     A HTML renderer for a <see cref="CustomContainer" />.
     /// </summary>
     /// <seealso cref="HtmlObjectRenderer{CustomContainer}" />
     public class HtmlCustomContainerRenderer : HtmlObjectRenderer<CustomContainer>
@@ -20,6 +20,7 @@ namespace Markdig.Extensions.CustomContainers
             {
                 renderer.Write("<div").WriteAttributes(obj).Write('>');
             }
+
             // We don't escape a CustomContainer
             renderer.WriteChildren(obj);
             if (renderer.EnableHtmlForBlock)

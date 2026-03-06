@@ -5,28 +5,28 @@
 namespace Markdig.Syntax.Inlines
 {
     /// <summary>
-    /// Base interface for all syntax tree inlines.
+    ///     Base interface for all syntax tree inlines.
     /// </summary>
     /// <seealso cref="IMarkdownObject" />
     public interface IInline : IMarkdownObject
     {
         /// <summary>
-        /// Gets the parent container of this inline.
+        ///     Gets the parent container of this inline.
         /// </summary>
         ContainerInline? Parent { get; }
 
         /// <summary>
-        /// Gets the previous inline.
+        ///     Gets the previous inline.
         /// </summary>
         Inline? PreviousSibling { get; }
 
         /// <summary>
-        /// Gets the next sibling inline.
+        ///     Gets the next sibling inline.
         /// </summary>
         Inline? NextSibling { get; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether this instance is closed.
+        ///     Gets or sets a value indicating whether this instance is closed.
         /// </summary>
         bool IsClosed { get; set; }
     }

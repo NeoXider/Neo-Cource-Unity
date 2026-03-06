@@ -7,13 +7,13 @@ using Markdig.Parsers;
 namespace Markdig.Syntax
 {
     /// <summary>
-    /// A list (Section 5.3 CommonMark specs)
+    ///     A list (Section 5.3 CommonMark specs)
     /// </summary>
     /// <seealso cref="ContainerBlock" />
     public class ListBlock : ContainerBlock
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ListBlock"/> class.
+        ///     Initializes a new instance of the <see cref="ListBlock" /> class.
         /// </summary>
         /// <param name="parser">The parser used to create this block.</param>
         public ListBlock(BlockParser parser) : base(parser)
@@ -21,32 +21,32 @@ namespace Markdig.Syntax
         }
 
         /// <summary>
-        /// Gets or sets a value indicating whether the list is ordered.
+        ///     Gets or sets a value indicating whether the list is ordered.
         /// </summary>
         public bool IsOrdered { get; set; }
 
         /// <summary>
-        /// Gets or sets the bullet character used by this list.
+        ///     Gets or sets the bullet character used by this list.
         /// </summary>
         public char BulletType { get; set; }
 
         /// <summary>
-        /// Gets or sets the ordered start number (valid when <see cref="IsOrdered"/> is <c>true</c>)
+        ///     Gets or sets the ordered start number (valid when <see cref="IsOrdered" /> is <c>true</c>)
         /// </summary>
         public string? OrderedStart { get; set; }
 
         /// <summary>
-        /// Gets or sets the default ordered start ("1" for BulletType = '1')
+        ///     Gets or sets the default ordered start ("1" for BulletType = '1')
         /// </summary>
         public string? DefaultOrderedStart { get; set; }
 
         /// <summary>
-        /// Gets or sets the ordered delimiter character (usually `.` or `)`) found after an ordered list item.
+        ///     Gets or sets the ordered delimiter character (usually `.` or `)`) found after an ordered list item.
         /// </summary>
         public char OrderedDelimiter { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether this instance is loose.
+        ///     Gets or sets a value indicating whether this instance is loose.
         /// </summary>
         public bool IsLoose { get; set; }
 

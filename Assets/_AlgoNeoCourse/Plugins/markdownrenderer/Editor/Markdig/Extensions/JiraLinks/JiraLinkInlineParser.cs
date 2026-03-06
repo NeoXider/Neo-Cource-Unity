@@ -3,6 +3,7 @@
 // See the license.txt file in the project root for more information.
 
 using System;
+using System.Text;
 using Markdig.Helpers;
 using Markdig.Parsers;
 using Markdig.Renderers.Html;
@@ -11,12 +12,12 @@ using Markdig.Syntax.Inlines;
 namespace Markdig.Extensions.JiraLinks
 {
     /// <summary>
-    /// Finds and replaces JIRA links inline
+    ///     Finds and replaces JIRA links inline
     /// </summary>
     public class JiraLinkInlineParser : InlineParser
     {
-        private readonly JiraLinkOptions _options;
         private readonly string _baseUrl;
+        private readonly JiraLinkOptions _options;
 
         public JiraLinkInlineParser(JiraLinkOptions options)
         {
@@ -29,16 +30,16 @@ namespace Markdig.Extensions.JiraLinks
         public override bool Match(InlineProcessor processor, ref StringSlice slice)
         {
             // Allow preceding whitespace or `(`
-            var pc = slice.PeekCharExtra(-1);
+            char pc = slice.PeekCharExtra(-1);
             if (!pc.IsWhiteSpaceOrZero() && pc != '(')
             {
-                return false; 
+                return false;
             }
 
-            var current = slice.CurrentChar;
+            char current = slice.CurrentChar;
 
-            var startKey = slice.Start;
-            var endKey = slice.Start;
+            int startKey = slice.Start;
+            int endKey = slice.Start;
 
             // the first character of the key can not be a digit.
             if (current.IsDigit())
@@ -67,10 +68,10 @@ namespace Markdig.Extensions.JiraLinks
                 return false;
             }
 
-            var startIssue = slice.Start;
-            var endIssue = slice.Start;
+            int startIssue = slice.Start;
+            int endIssue = slice.Start;
 
-            while (current.IsDigit()) 
+            while (current.IsDigit())
             {
                 endIssue = slice.Start;
                 current = slice.NextChar();
@@ -81,7 +82,7 @@ namespace Markdig.Extensions.JiraLinks
                 return false;
             }
 
-            var jiraLink = new JiraLink() //create the link at the relevant position
+            JiraLink jiraLink = new() //create the link at the relevant position
             {
                 Span =
                 {
@@ -90,12 +91,12 @@ namespace Markdig.Extensions.JiraLinks
                 Line = line,
                 Column = column,
                 Issue = new StringSlice(slice.Text, startIssue, endIssue),
-                ProjectKey = new StringSlice(slice.Text, startKey, endKey),
+                ProjectKey = new StringSlice(slice.Text, startKey, endKey)
             };
             jiraLink.Span.End = jiraLink.Span.Start + (endIssue - startKey);
 
             // Builds the Url
-            var builder = StringBuilderCache.Local();
+            StringBuilder builder = StringBuilderCache.Local();
             builder.Append(_baseUrl).Append('/').Append(jiraLink.ProjectKey).Append('-').Append(jiraLink.Issue);
             jiraLink.Url = builder.ToString();
 
@@ -114,5 +115,4 @@ namespace Markdig.Extensions.JiraLinks
             return true;
         }
     }
-
 }

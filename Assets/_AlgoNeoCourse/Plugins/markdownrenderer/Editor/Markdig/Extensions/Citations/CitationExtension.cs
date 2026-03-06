@@ -11,14 +11,14 @@ using Markdig.Syntax.Inlines;
 namespace Markdig.Extensions.Citations
 {
     /// <summary>
-    /// Extension for cite ""...""
+    ///     Extension for cite ""...""
     /// </summary>
     /// <seealso cref="IMarkdownExtension" />
     public class CitationExtension : IMarkdownExtension
     {
         public void Setup(MarkdownPipelineBuilder pipeline)
         {
-            var parser = pipeline.InlineParsers.FindExact<EmphasisInlineParser>();
+            EmphasisInlineParser? parser = pipeline.InlineParsers.FindExact<EmphasisInlineParser>();
             if (parser != null && !parser.HasEmphasisChar('"'))
             {
                 parser.EmphasisDescriptors.Add(new EmphasisDescriptor('"', 2, 2, false));
@@ -30,11 +30,11 @@ namespace Markdig.Extensions.Citations
             if (renderer is HtmlRenderer htmlRenderer)
             {
                 // Extend the rendering here.
-                var emphasisRenderer = renderer.ObjectRenderers.FindExact<EmphasisInlineRenderer>();
+                EmphasisInlineRenderer? emphasisRenderer = renderer.ObjectRenderers.FindExact<EmphasisInlineRenderer>();
                 if (emphasisRenderer != null)
                 {
                     // TODO: Use an ordered list instead as we don't know if this specific GetTag has been already added
-                    var previousTag = emphasisRenderer.GetTag;
+                    EmphasisInlineRenderer.GetTagDelegate previousTag = emphasisRenderer.GetTag;
                     emphasisRenderer.GetTag = inline => GetTag(inline) ?? previousTag(inline);
                 }
             }

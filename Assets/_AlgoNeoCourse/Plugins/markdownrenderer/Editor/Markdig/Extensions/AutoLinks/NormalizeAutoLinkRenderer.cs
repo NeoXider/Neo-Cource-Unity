@@ -16,15 +16,14 @@ namespace Markdig.Extensions.AutoLinks
             if (base.Accept(renderer, obj))
             {
                 return renderer is NormalizeRenderer normalizeRenderer
-                    && obj is LinkInline link
-                    && !normalizeRenderer.Options.ExpandAutoLinks
-                    && link.IsAutoLink;
+                       && obj is LinkInline link
+                       && !normalizeRenderer.Options.ExpandAutoLinks
+                       && link.IsAutoLink;
             }
-            else
-            {
-                return false;
-            }
+
+            return false;
         }
+
         protected override void Write(NormalizeRenderer renderer, LinkInline obj)
         {
             renderer.Write(obj.Url);

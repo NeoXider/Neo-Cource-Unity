@@ -8,13 +8,13 @@ using Markdig.Renderers;
 namespace Markdig.Extensions.Tables
 {
     /// <summary>
-    /// Extension that allows to use pipe tables.
+    ///     Extension that allows to use pipe tables.
     /// </summary>
     /// <seealso cref="IMarkdownExtension" />
     public class PipeTableExtension : IMarkdownExtension
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="PipeTableExtension"/> class.
+        ///     Initializes a new instance of the <see cref="PipeTableExtension" /> class.
         /// </summary>
         /// <param name="options">The options.</param>
         public PipeTableExtension(PipeTableOptions? options = null)
@@ -23,7 +23,7 @@ namespace Markdig.Extensions.Tables
         }
 
         /// <summary>
-        /// Gets the options.
+        ///     Gets the options.
         /// </summary>
         public PipeTableOptions Options { get; }
 
@@ -35,10 +35,12 @@ namespace Markdig.Extensions.Tables
             {
                 pipeline.BlockParsers.Insert(0, new PipeTableBlockParser());
             }
-            var lineBreakParser = pipeline.InlineParsers.FindExact<LineBreakInlineParser>();
+
+            LineBreakInlineParser? lineBreakParser = pipeline.InlineParsers.FindExact<LineBreakInlineParser>();
             if (!pipeline.InlineParsers.Contains<PipeTableParser>())
             {
-                pipeline.InlineParsers.InsertBefore<EmphasisInlineParser>(new PipeTableParser(lineBreakParser!, Options));
+                pipeline.InlineParsers.InsertBefore<EmphasisInlineParser>(
+                    new PipeTableParser(lineBreakParser!, Options));
             }
         }
 

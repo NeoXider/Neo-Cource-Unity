@@ -7,7 +7,7 @@ using Markdig.Syntax;
 namespace Markdig.Renderers.Html
 {
     /// <summary>
-    /// A HTML renderer for a <see cref="HtmlBlock"/>.
+    ///     A HTML renderer for a <see cref="HtmlBlock" />.
     /// </summary>
     /// <seealso cref="HtmlObjectRenderer{HtmlBlock}" />
     public class HtmlBlockRenderer : HtmlObjectRenderer<HtmlBlock>

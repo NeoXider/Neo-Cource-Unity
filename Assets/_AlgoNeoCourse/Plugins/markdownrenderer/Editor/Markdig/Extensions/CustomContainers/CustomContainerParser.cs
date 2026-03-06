@@ -7,17 +7,17 @@ using Markdig.Parsers;
 namespace Markdig.Extensions.CustomContainers
 {
     /// <summary>
-    /// The block parser for a <see cref="CustomContainer"/>.
+    ///     The block parser for a <see cref="CustomContainer" />.
     /// </summary>
     /// <seealso cref="FencedBlockParserBase{CustomContainer}" />
     public class CustomContainerParser : FencedBlockParserBase<CustomContainer>
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="CustomContainerParser"/> class.
+        ///     Initializes a new instance of the <see cref="CustomContainerParser" /> class.
         /// </summary>
         public CustomContainerParser()
         {
-            OpeningCharacters = new [] {':'};
+            OpeningCharacters = new[] { ':' };
 
             // We don't need a prefix
             InfoPrefix = null;

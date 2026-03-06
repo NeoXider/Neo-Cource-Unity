@@ -9,7 +9,7 @@ using Markdig.Syntax.Inlines;
 namespace Markdig.Parsers.Inlines
 {
     /// <summary>
-    /// An inline parser for parsing <see cref="LiteralInline"/>.
+    ///     An inline parser for parsing <see cref="LiteralInline" />.
     /// </summary>
     /// <seealso cref="InlineParser" />
     public sealed class LiteralInlineParser : InlineParser
@@ -17,27 +17,27 @@ namespace Markdig.Parsers.Inlines
         public delegate void PostMatchDelegate(InlineProcessor processor, ref StringSlice slice);
 
         /// <summary>
-        /// We don't expect the LiteralInlineParser to be instantiated a end-user, as it is part
-        /// of the default parser pipeline (and should always be the last), working as a literal character
-        /// collector.
+        ///     We don't expect the LiteralInlineParser to be instantiated a end-user, as it is part
+        ///     of the default parser pipeline (and should always be the last), working as a literal character
+        ///     collector.
         /// </summary>
         public LiteralInlineParser()
         {
         }
 
         /// <summary>
-        /// Gets or sets the post match delegate called after the inline has been processed.
+        ///     Gets or sets the post match delegate called after the inline has been processed.
         /// </summary>
         public PostMatchDelegate? PostMatch { get; set; }
 
         public override bool Match(InlineProcessor processor, ref StringSlice slice)
         {
-            var text = slice.Text;
+            string? text = slice.Text;
 
-            var startPosition = processor.GetSourcePosition(slice.Start, out int line, out int column);
+            int startPosition = processor.GetSourcePosition(slice.Start, out int line, out int column);
 
             // Slightly faster to perform our own search for opening characters
-            var nextStart = processor.Parsers.IndexOfOpeningCharacter(text, slice.Start + 1, slice.End);
+            int nextStart = processor.Parsers.IndexOfOpeningCharacter(text, slice.Start + 1, slice.End);
             //var nextStart = str.IndexOfAny(processor.SpecialCharacters, slice.Start + 1, slice.Length - 1);
             int length;
 
@@ -52,7 +52,7 @@ namespace Markdig.Parsers.Inlines
                 length = nextStart - slice.Start;
                 if (!processor.TrackTrivia)
                 {
-                    var nextText = text[nextStart];
+                    char nextText = text[nextStart];
                     if (nextText == '\n' || nextText == '\r')
                     {
                         int end = nextStart - 1;
@@ -66,7 +66,7 @@ namespace Markdig.Parsers.Inlines
             }
 
             // The LiteralInlineParser is always matching (at least an empty string)
-            var endPosition = slice.Start + length - 1;
+            int endPosition = slice.Start + length - 1;
 
             if (processor.Inline is LiteralInline previousInline
                 && ReferenceEquals(previousInline.Content.Text, slice.Text)
@@ -78,7 +78,8 @@ namespace Markdig.Parsers.Inlines
             else
             {
                 // Create a new LiteralInline only if it is not empty
-                var newSlice = length > 0 ? new StringSlice(slice.Text, slice.Start, endPosition) : StringSlice.Empty;
+                StringSlice newSlice =
+                    length > 0 ? new StringSlice(slice.Text, slice.Start, endPosition) : StringSlice.Empty;
                 if (!newSlice.IsEmpty)
                 {
                     processor.Inline = new LiteralInline
@@ -86,7 +87,7 @@ namespace Markdig.Parsers.Inlines
                         Content = length > 0 ? newSlice : StringSlice.Empty,
                         Span = new SourceSpan(startPosition, processor.GetSourcePosition(endPosition)),
                         Line = line,
-                        Column = column,
+                        Column = column
                     };
                 }
             }

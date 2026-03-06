@@ -8,13 +8,13 @@ using Markdig.Syntax;
 namespace Markdig.Extensions.DefinitionLists
 {
     /// <summary>
-    /// A definition term contains a single line with the term to define.
+    ///     A definition term contains a single line with the term to define.
     /// </summary>
     /// <seealso cref="LeafBlock" />
     public class DefinitionTerm : LeafBlock
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="DefinitionTerm"/> class.
+        ///     Initializes a new instance of the <see cref="DefinitionTerm" /> class.
         /// </summary>
         /// <param name="parser">The parser used to create this block.</param>
         public DefinitionTerm(BlockParser parser) : base(parser)

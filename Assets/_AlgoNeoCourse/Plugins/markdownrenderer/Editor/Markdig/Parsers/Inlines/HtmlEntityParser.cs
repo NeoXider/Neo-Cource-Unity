@@ -4,7 +4,6 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
-
 using Markdig.Helpers;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
@@ -12,24 +11,25 @@ using Markdig.Syntax.Inlines;
 namespace Markdig.Parsers.Inlines
 {
     /// <summary>
-    /// An inline parser for HTML entities.
+    ///     An inline parser for HTML entities.
     /// </summary>
     /// <seealso cref="InlineParser" />
     public class HtmlEntityParser : InlineParser
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="HtmlEntityParser"/> class.
+        ///     Initializes a new instance of the <see cref="HtmlEntityParser" /> class.
         /// </summary>
         public HtmlEntityParser()
         {
-            OpeningCharacters = new[] {'&'};
+            OpeningCharacters = new[] { '&' };
         }
 
 
         public static bool TryParse(ref StringSlice slice, [NotNullWhen(true)] out string? literal, out int match)
         {
             literal = null;
-            match = HtmlHelper.ScanEntity(slice, out int entityValue, out int entityNameStart, out int entityNameLength);
+            match = HtmlHelper.ScanEntity(slice, out int entityValue, out int entityNameStart,
+                out int entityNameLength);
             if (match == 0)
             {
                 return false;
@@ -43,6 +43,7 @@ namespace Markdig.Parsers.Inlines
             {
                 literal = EntityHelper.DecodeEntity(entityValue);
             }
+
             return literal != null;
         }
 
@@ -53,17 +54,18 @@ namespace Markdig.Parsers.Inlines
                 return false;
             }
 
-            var startPosition = slice.Start;
+            int startPosition = slice.Start;
 
             if (literal != null)
             {
-                var matched = slice;
+                StringSlice matched = slice;
                 matched.End = slice.Start + match - 1;
-                processor.Inline = new HtmlEntityInline()
+                processor.Inline = new HtmlEntityInline
                 {
                     Original = matched,
                     Transcoded = new StringSlice(literal),
-                    Span = new SourceSpan(processor.GetSourcePosition(startPosition, out int line, out int column), processor.GetSourcePosition(matched.End)),
+                    Span = new SourceSpan(processor.GetSourcePosition(startPosition, out int line, out int column),
+                        processor.GetSourcePosition(matched.End)),
                     Line = line,
                     Column = column
                 };

@@ -3,39 +3,40 @@
 // See the license.txt file in the project root for more information.
 
 using System;
+using Markdig.Helpers;
 using Markdig.Parsers;
 using Markdig.Syntax;
 
 namespace Markdig.Extensions.DefinitionLists
 {
     /// <summary>
-    /// The block parser for a <see cref="DefinitionList"/>.
+    ///     The block parser for a <see cref="DefinitionList" />.
     /// </summary>
     /// <seealso cref="BlockParser" />
     public class DefinitionListParser : BlockParser
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="DefinitionListParser"/> class.
+        ///     Initializes a new instance of the <see cref="DefinitionListParser" /> class.
         /// </summary>
         public DefinitionListParser()
         {
-            OpeningCharacters = new [] {':', '~'};
+            OpeningCharacters = new[] { ':', '~' };
         }
 
         public override BlockState TryOpen(BlockProcessor processor)
         {
-            var paragraphBlock = processor.LastBlock as ParagraphBlock;
+            ParagraphBlock? paragraphBlock = processor.LastBlock as ParagraphBlock;
             if (processor.IsCodeIndent || paragraphBlock is null || paragraphBlock.LastLine - processor.LineIndex > 1)
             {
                 return BlockState.None;
             }
 
-            var startPosition = processor.Start;
+            int startPosition = processor.Start;
 
-            var column = processor.ColumnBeforeIndent;
+            int column = processor.ColumnBeforeIndent;
             processor.NextChar();
             processor.ParseIndent();
-            var delta = processor.Column - column;
+            int delta = processor.Column - column;
 
             // We expect to have a least
             if (delta < 4)
@@ -50,8 +51,8 @@ namespace Markdig.Extensions.DefinitionLists
                 processor.GoToColumn(column + 4);
             }
 
-            var previousParent = paragraphBlock.Parent!;
-            var currentDefinitionList = GetCurrentDefinitionList(paragraphBlock, previousParent);
+            ContainerBlock previousParent = paragraphBlock.Parent!;
+            DefinitionList? currentDefinitionList = GetCurrentDefinitionList(paragraphBlock, previousParent);
 
             processor.Discard(paragraphBlock);
 
@@ -67,25 +68,25 @@ namespace Markdig.Extensions.DefinitionLists
                 {
                     Span = new SourceSpan(paragraphBlock.Span.Start, processor.Line.End),
                     Column = paragraphBlock.Column,
-                    Line = paragraphBlock.Line,
+                    Line = paragraphBlock.Line
                 };
                 previousParent.Add(currentDefinitionList);
             }
 
-            var definitionItem = new DefinitionItem(this)
+            DefinitionItem definitionItem = new(this)
             {
                 Line = processor.LineIndex,
                 Column = column,
                 Span = new SourceSpan(startPosition, processor.Line.End),
-                OpeningCharacter = processor.CurrentChar,
+                OpeningCharacter = processor.CurrentChar
             };
 
             for (int i = 0; i < paragraphBlock.Lines.Count; i++)
             {
-                var line = paragraphBlock.Lines.Lines[i];
-                var term = new DefinitionTerm(this)
+                StringLine line = paragraphBlock.Lines.Lines[i];
+                DefinitionTerm term = new(this)
                 {
-                    Column =  paragraphBlock.Column,
+                    Column = paragraphBlock.Column,
                     Line = line.Line,
                     Span = new SourceSpan(paragraphBlock.Span.Start, paragraphBlock.Span.End),
                     IsOpen = false
@@ -93,6 +94,7 @@ namespace Markdig.Extensions.DefinitionLists
                 term.AppendLine(ref line.Slice, line.Column, line.Line, line.Position, processor.TrackTrivia);
                 definitionItem.Add(term);
             }
+
             currentDefinitionList.Add(definitionItem);
             processor.Open(definitionItem);
 
@@ -102,39 +104,45 @@ namespace Markdig.Extensions.DefinitionLists
             return BlockState.Continue;
         }
 
-        private static DefinitionList? GetCurrentDefinitionList(ParagraphBlock paragraphBlock, ContainerBlock previousParent)
+        private static DefinitionList? GetCurrentDefinitionList(ParagraphBlock paragraphBlock,
+            ContainerBlock previousParent)
         {
-            var index = previousParent.IndexOf(paragraphBlock) - 1;
-            if (index < 0) return null;
-            var lastBlock = previousParent[index];
+            int index = previousParent.IndexOf(paragraphBlock) - 1;
+            if (index < 0)
+            {
+                return null;
+            }
+
+            Block lastBlock = previousParent[index];
             if (lastBlock is BlankLineBlock)
             {
                 lastBlock = previousParent[index - 1];
                 previousParent.RemoveAt(index);
             }
+
             return lastBlock as DefinitionList;
         }
 
         public override BlockState TryContinue(BlockProcessor processor, Block block)
         {
-            var definitionItem = (DefinitionItem)block;
+            DefinitionItem definitionItem = (DefinitionItem)block;
             if (processor.IsCodeIndent)
             {
                 processor.GoToCodeIndent();
                 return BlockState.Continue;
             }
 
-            var list = (DefinitionList)definitionItem.Parent!;
-            var lastBlankLine = definitionItem.LastChild as BlankLineBlock;
+            DefinitionList list = (DefinitionList)definitionItem.Parent!;
+            BlankLineBlock? lastBlankLine = definitionItem.LastChild as BlankLineBlock;
 
             // Check if we have another definition list
             if (Array.IndexOf(OpeningCharacters!, processor.CurrentChar) >= 0)
             {
-                var startPosition = processor.Start;
-                var column = processor.ColumnBeforeIndent;
+                int startPosition = processor.Start;
+                int column = processor.ColumnBeforeIndent;
                 processor.NextChar();
                 processor.ParseIndent();
-                var delta = processor.Column - column;
+                int delta = processor.Column - column;
 
                 // We expect to have a least
                 if (delta < 4)
@@ -155,12 +163,12 @@ namespace Markdig.Extensions.DefinitionLists
                 }
 
                 processor.Close(definitionItem);
-                var nextDefinitionItem = new DefinitionItem(this)
+                DefinitionItem nextDefinitionItem = new(this)
                 {
                     Span = new SourceSpan(startPosition, processor.Line.End),
                     Line = processor.LineIndex,
                     Column = processor.Column,
-                    OpeningCharacter = processor.CurrentChar,
+                    OpeningCharacter = processor.CurrentChar
                 };
                 list.Add(nextDefinitionItem);
                 processor.Open(nextDefinitionItem);
@@ -168,17 +176,18 @@ namespace Markdig.Extensions.DefinitionLists
                 return BlockState.Continue;
             }
 
-            var isBreakable = definitionItem.LastChild?.IsBreakable ?? true;
+            bool isBreakable = definitionItem.LastChild?.IsBreakable ?? true;
             if (processor.IsBlankLine)
             {
                 if (lastBlankLine is null && isBreakable)
                 {
                     definitionItem.Add(new BlankLineBlock());
                 }
+
                 return isBreakable ? BlockState.ContinueDiscard : BlockState.Continue;
             }
 
-            var paragraphBlock = definitionItem.LastChild as ParagraphBlock;
+            ParagraphBlock? paragraphBlock = definitionItem.LastChild as ParagraphBlock;
             if (lastBlankLine is null && paragraphBlock != null)
             {
                 return BlockState.Continue;

@@ -9,14 +9,14 @@ using Markdig.Syntax;
 namespace Markdig.Extensions.CustomContainers
 {
     /// <summary>
-    /// A block custom container.
+    ///     A block custom container.
     /// </summary>
     /// <seealso cref="ContainerBlock" />
     /// <seealso cref="IFencedBlock" />
     public class CustomContainer : ContainerBlock, IFencedBlock
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="CustomContainer"/> class.
+        ///     Initializes a new instance of the <see cref="CustomContainer" /> class.
         /// </summary>
         /// <param name="parser">The parser used to create this block.</param>
         public CustomContainer(BlockParser parser) : base(parser)

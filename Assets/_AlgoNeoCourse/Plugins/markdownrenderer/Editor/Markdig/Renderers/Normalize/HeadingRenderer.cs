@@ -7,23 +7,24 @@ using Markdig.Syntax;
 namespace Markdig.Renderers.Normalize
 {
     /// <summary>
-    /// An Normalize renderer for a <see cref="HeadingBlock"/>.
+    ///     An Normalize renderer for a <see cref="HeadingBlock" />.
     /// </summary>
     /// <seealso cref="NormalizeObjectRenderer{HeadingBlock}" />
     public class HeadingRenderer : NormalizeObjectRenderer<HeadingBlock>
     {
-        private static readonly string[] HeadingTexts = {
+        private static readonly string[] HeadingTexts =
+        {
             "#",
             "##",
             "###",
             "####",
             "#####",
-            "######",
+            "######"
         };
 
         protected override void Write(NormalizeRenderer renderer, HeadingBlock obj)
         {
-            var headingText = obj.Level > 0 && obj.Level <= 6
+            string headingText = obj.Level > 0 && obj.Level <= 6
                 ? HeadingTexts[obj.Level - 1]
                 : new string('#', obj.Level);
 

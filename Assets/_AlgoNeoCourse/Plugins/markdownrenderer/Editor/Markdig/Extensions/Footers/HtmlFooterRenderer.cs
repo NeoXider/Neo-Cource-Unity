@@ -8,7 +8,7 @@ using Markdig.Renderers.Html;
 namespace Markdig.Extensions.Footers
 {
     /// <summary>
-    /// A HTML renderer for a <see cref="FooterBlock"/>.
+    ///     A HTML renderer for a <see cref="FooterBlock" />.
     /// </summary>
     /// <seealso cref="HtmlObjectRenderer{FooterBlock}" />
     public class HtmlFooterBlockRenderer : HtmlObjectRenderer<FooterBlock>
@@ -17,7 +17,7 @@ namespace Markdig.Extensions.Footers
         {
             renderer.EnsureLine();
             renderer.Write("<footer").WriteAttributes(footer).Write(">");
-            var implicitParagraph = renderer.ImplicitParagraph;
+            bool implicitParagraph = renderer.ImplicitParagraph;
             renderer.ImplicitParagraph = true;
             renderer.WriteChildren(footer);
             renderer.ImplicitParagraph = implicitParagraph;

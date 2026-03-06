@@ -7,7 +7,7 @@ using Markdig.Renderers;
 namespace Markdig.Extensions.DefinitionLists
 {
     /// <summary>
-    /// Extension to allow definition lists
+    ///     Extension to allow definition lists
     /// </summary>
     /// <seealso cref="IMarkdownExtension" />
     public class DefinitionListExtension : IMarkdownExtension

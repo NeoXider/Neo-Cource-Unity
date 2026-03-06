@@ -19,12 +19,24 @@ namespace NeoCource.Editor.Infrastructure
         public static string PackageRootAssetPath => FindExistingRoot() ?? LegacyAssetsRoot;
 
         public static string DocsExamplesFolderAssetPath => CombineFromPackageRoot("Docs/Examples");
-        public static string CourseWindowStylesheetAssetPath => CombineFromPackageRoot("Editor/Styles/AlgoNeoCourseWindow.uss");
+
+        public static string CourseWindowStylesheetAssetPath =>
+            CombineFromPackageRoot("Editor/Styles/AlgoNeoCourseWindow.uss");
+
         public static string MarkdownRendererRootAssetPath => CombineFromPackageRoot("Plugins/markdownrenderer");
-        public static string MarkdownStylesheetAssetPath => CombineFromPackageRoot("Plugins/markdownrenderer/Styles/MarkdownRenderer.uss");
-        public static string QuizStylesheetAssetPath => CombineFromPackageRoot("Plugins/markdownrenderer/Styles/Quiz.uss");
-        public static string VideoPlayerUxmlAssetPath => CombineFromPackageRoot("Plugins/markdownrenderer/Editor/VideoElement/VideoPlayerElement.uxml");
-        public static string VideoPlayerStylesheetAssetPath => CombineFromPackageRoot("Plugins/markdownrenderer/Editor/VideoElement/VideoPlayerElement.uss");
+
+        public static string MarkdownStylesheetAssetPath =>
+            CombineFromPackageRoot("Plugins/markdownrenderer/Styles/MarkdownRenderer.uss");
+
+        public static string QuizStylesheetAssetPath =>
+            CombineFromPackageRoot("Plugins/markdownrenderer/Styles/Quiz.uss");
+
+        public static string VideoPlayerUxmlAssetPath =>
+            CombineFromPackageRoot("Plugins/markdownrenderer/Editor/VideoElement/VideoPlayerElement.uxml");
+
+        public static string VideoPlayerStylesheetAssetPath =>
+            CombineFromPackageRoot("Plugins/markdownrenderer/Editor/VideoElement/VideoPlayerElement.uss");
+
         public static string EmbeddedFfmpegAssetPath => CombineFromPackageRoot("Editor/Utils/ffmpeg.exe");
 
         public static string DefaultDownloadFolderAssetPath => LegacyAssetsRoot + "/Downloaded";
@@ -34,7 +46,7 @@ namespace NeoCource.Editor.Infrastructure
         public static string CombineFromPackageRoot(string relativePath)
         {
             string normalized = NormalizeAssetPath(relativePath);
-            foreach (var root in RootCandidates)
+            foreach (string root in RootCandidates)
             {
                 string candidate = root + "/" + normalized;
                 if (AssetExists(candidate))
@@ -107,7 +119,7 @@ namespace NeoCource.Editor.Infrastructure
 
         private static string FindExistingRoot()
         {
-            foreach (var root in RootCandidates)
+            foreach (string root in RootCandidates)
             {
                 if (AssetExists(root))
                 {

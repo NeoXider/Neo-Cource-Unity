@@ -12,14 +12,18 @@ using Markdig.Renderers;
 namespace Markdig
 {
     /// <summary>
-    /// This class is the Markdown pipeline build from a <see cref="MarkdownPipelineBuilder"/>.
+    ///     This class is the Markdown pipeline build from a <see cref="MarkdownPipelineBuilder" />.
     /// </summary>
     public sealed class MarkdownPipeline
     {
+        private HtmlRendererCache? _rendererCache;
+        private HtmlRendererCache? _rendererCacheForCustomWriter;
+
+        internal ProcessDocumentDelegate? DocumentProcessed;
         // This class is immutable
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MarkdownPipeline" /> class.
+        ///     Initializes a new instance of the <see cref="MarkdownPipeline" /> class.
         /// </summary>
         internal MarkdownPipeline(
             OrderedList<IMarkdownExtension> extensions,
@@ -28,8 +32,16 @@ namespace Markdig
             TextWriter? debugLog,
             ProcessDocumentDelegate? documentProcessed)
         {
-            if (blockParsers is null) ThrowHelper.ArgumentNullException(nameof(blockParsers));
-            if (inlineParsers is null) ThrowHelper.ArgumentNullException(nameof(inlineParsers));
+            if (blockParsers is null)
+            {
+                ThrowHelper.ArgumentNullException(nameof(blockParsers));
+            }
+
+            if (inlineParsers is null)
+            {
+                ThrowHelper.ArgumentNullException(nameof(inlineParsers));
+            }
+
             // Add all default parsers
             Extensions = extensions;
             BlockParsers = blockParsers;
@@ -41,7 +53,7 @@ namespace Markdig
         internal bool PreciseSourceLocation { get; set; }
 
         /// <summary>
-        /// The read-only list of extensions used to build this pipeline.
+        ///     The read-only list of extensions used to build this pipeline.
         /// </summary>
         public OrderedList<IMarkdownExtension> Extensions { get; }
 
@@ -52,35 +64,34 @@ namespace Markdig
         // TODO: Move the log to a better place
         internal TextWriter? DebugLog { get; }
 
-        internal ProcessDocumentDelegate? DocumentProcessed;
-
         /// <summary>
-        /// True to parse trivia such as whitespace, extra heading characters and unescaped
-        /// string values.
+        ///     True to parse trivia such as whitespace, extra heading characters and unescaped
+        ///     string values.
         /// </summary>
         public bool TrackTrivia { get; internal set; }
 
         /// <summary>
-        /// Allows to setup a <see cref="IMarkdownRenderer"/>.
+        ///     Allows to setup a <see cref="IMarkdownRenderer" />.
         /// </summary>
         /// <param name="renderer">The markdown renderer to setup</param>
         public void Setup(IMarkdownRenderer renderer)
         {
-            if (renderer is null) ThrowHelper.ArgumentNullException(nameof(renderer));
-            foreach (var extension in Extensions)
+            if (renderer is null)
+            {
+                ThrowHelper.ArgumentNullException(nameof(renderer));
+            }
+
+            foreach (IMarkdownExtension? extension in Extensions)
             {
                 extension.Setup(this, renderer);
             }
         }
 
-        private HtmlRendererCache? _rendererCache;
-        private HtmlRendererCache? _rendererCacheForCustomWriter;
-
         internal RentedHtmlRenderer RentHtmlRenderer(TextWriter? writer = null)
         {
             HtmlRendererCache cache = writer is null
-                ? _rendererCache ??= new HtmlRendererCache(this, customWriter: false)
-                : _rendererCacheForCustomWriter ??= new HtmlRendererCache(this, customWriter: true);
+                ? _rendererCache ??= new HtmlRendererCache(this)
+                : _rendererCacheForCustomWriter ??= new HtmlRendererCache(this, true);
 
             HtmlRenderer renderer = cache.Get();
 
@@ -97,9 +108,9 @@ namespace Markdig
             private const int InitialCapacity = 1024;
 
             private static readonly StringWriter _dummyWriter = new();
+            private readonly bool _customWriter;
 
             private readonly MarkdownPipeline _pipeline;
-            private readonly bool _customWriter;
 
             public HtmlRendererCache(MarkdownPipeline pipeline, bool customWriter = false)
             {
@@ -109,8 +120,9 @@ namespace Markdig
 
             protected override HtmlRenderer NewInstance()
             {
-                var writer = _customWriter ? _dummyWriter : new StringWriter(new StringBuilder(InitialCapacity));
-                var renderer = new HtmlRenderer(writer);
+                StringWriter writer =
+                    _customWriter ? _dummyWriter : new StringWriter(new StringBuilder(InitialCapacity));
+                HtmlRenderer renderer = new(writer);
                 _pipeline.Setup(renderer);
                 return renderer;
             }
@@ -141,7 +153,10 @@ namespace Markdig
                 Instance = renderer;
             }
 
-            public void Dispose() => _cache.Release(Instance);
+            public void Dispose()
+            {
+                _cache.Release(Instance);
+            }
         }
     }
 }

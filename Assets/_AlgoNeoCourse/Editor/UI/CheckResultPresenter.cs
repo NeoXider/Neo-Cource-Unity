@@ -1,5 +1,4 @@
-﻿using UnityEditor;
-using UnityEngine.UIElements;
+﻿using UnityEngine.UIElements;
 
 namespace NeoCource.Editor.UI
 {
@@ -19,15 +18,15 @@ namespace NeoCource.Editor.UI
                 return;
             }
 
-            var resultLabel = new Label(message)
+            Label resultLabel = new(message)
             {
                 enableRichText = true
             };
             resultLabel.name = "check-result-label";
             resultLabel.AddToClassList("check-result-label");
 
-            var line = anchor.parent;
-            var container = line?.parent;
+            VisualElement line = anchor.parent;
+            VisualElement container = line?.parent;
 
             if (container != null)
             {
@@ -36,7 +35,7 @@ namespace NeoCource.Editor.UI
             }
             else
             {
-                var parent = anchor.parent;
+                VisualElement parent = anchor.parent;
                 parent.Insert(parent.IndexOf(anchor) + 1, resultLabel);
             }
 

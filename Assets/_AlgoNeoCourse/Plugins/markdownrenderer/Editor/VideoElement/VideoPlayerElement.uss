@@ -9,14 +9,14 @@
 .video-control-bar {
     height: 35px;
     width: 100%;
-    background-color: rgba(0,0,0,0.5);
+    background-color: rgba(0, 0, 0, 0.5);
 
     flex-direction: column;
 
     transform-origin: bottom center;
     scale: 1 0;
 
-    transition:  scale 0.1s ease-in;
+    transition: scale 0.1s ease-in;
 }
 
 .video-control-button {
@@ -72,7 +72,7 @@
     border-color: white;
     border-width: 1px;
     padding: 1px;
-    background-color: rgb(60,60,60);
+    background-color: rgb(60, 60, 60);
 }
 
 .video-speed-label-container.selected {
@@ -95,7 +95,7 @@
 
     scale: 1 0;
 
-    transition:  scale 0.1s ease-in;
+    transition: scale 0.1s ease-in;
 }
 
 .video-speed-selector-opened {
@@ -123,7 +123,7 @@
 }
 
 .video-play-track-filler {
-    background-color: rgba(255,255,255,0.5);
+    background-color: rgba(255, 255, 255, 0.5);
 }
 
 .video-play-track-head {
@@ -145,7 +145,7 @@
     bottom: 0;
     left: 0;
     right: 0;
-    background-color: rgba(0,0,0, 0.2);
+    background-color: rgba(0, 0, 0, 0.2);
 
     align-content: center;
     align-items: center;

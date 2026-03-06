@@ -12,13 +12,13 @@ namespace NeoCource.Editor
     {
         static AlgoNeoCourseDependencyInstaller()
         {
-            EditorApplication.delayCall += () => EnsureEmbeddedMarkdownRenderer(logIfMissing: false);
+            EditorApplication.delayCall += () => EnsureEmbeddedMarkdownRenderer(false);
         }
 
         [MenuItem("Tools/AlgoNeoCourse/Dependencies/Validate Embedded Markdown", priority = 10)]
         private static void ValidateEmbeddedMarkdown()
         {
-            EnsureEmbeddedMarkdownRenderer(logIfMissing: true);
+            EnsureEmbeddedMarkdownRenderer(true);
         }
 
         [MenuItem("Tools/AlgoNeoCourse/Dependencies/Apply Embedded Markdown Fix", priority = 11)]
@@ -62,7 +62,8 @@ namespace NeoCource.Editor
             try
             {
                 string target = AlgoNeoPackageAssetLocator.ToAbsolutePath(
-                    AlgoNeoPackageAssetLocator.CombineFromPackageRoot("Plugins/markdownrenderer/Editor/VideoElement/VideoPlayerElement.cs"));
+                    AlgoNeoPackageAssetLocator.CombineFromPackageRoot(
+                        "Plugins/markdownrenderer/Editor/VideoElement/VideoPlayerElement.cs"));
                 if (!File.Exists(target))
                 {
                     return false;
@@ -76,14 +77,15 @@ namespace NeoCource.Editor
 
                 if (!updatedText.Contains("class UxmlFactory : UxmlFactory<VideoPlayerElement>"))
                 {
-                    var classMatch = Regex.Match(
+                    Match classMatch = Regex.Match(
                         updatedText,
                         @"public\s+partial\s+class\s+VideoPlayerElement\s*:\s*VisualElement\s*\{",
                         RegexOptions.Multiline);
                     if (classMatch.Success)
                     {
                         int insertPos = classMatch.Index + classMatch.Length;
-                        string insertText = "\n    public new class UxmlFactory : UxmlFactory<VideoPlayerElement> { }\n";
+                        string insertText =
+                            "\n    public new class UxmlFactory : UxmlFactory<VideoPlayerElement> { }\n";
                         updatedText = updatedText.Insert(insertPos, insertText);
                     }
                 }
@@ -98,11 +100,10 @@ namespace NeoCource.Editor
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"AlgoNeoCourse: не удалось применить фикс встроенного MarkdownRenderer: {ex.Message}");
+                Debug.LogWarning(
+                    $"AlgoNeoCourse: не удалось применить фикс встроенного MarkdownRenderer: {ex.Message}");
                 return false;
             }
         }
     }
 }
-
-

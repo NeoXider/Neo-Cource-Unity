@@ -1,11 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using NeoCource.Editor.Settings;
 using UnityEditor;
 using UnityEngine;
-using NeoCource.Editor.Settings;
+using Object = UnityEngine.Object;
 
 namespace NeoCource.Editor.Utils
 {
@@ -14,8 +16,15 @@ namespace NeoCource.Editor.Utils
         public static string OkMark => "V";
         public static string FailMark => "X";
 
-        public static string OkMarkColored() => OkMark.Color(CourseSettings.instance.okLogColor);
-        public static string FailMarkColored() => FailMark.Color(CourseSettings.instance.failLogColor);
+        public static string OkMarkColored()
+        {
+            return OkMark.Color(CourseSettings.instance.okLogColor);
+        }
+
+        public static string FailMarkColored()
+        {
+            return FailMark.Color(CourseSettings.instance.failLogColor);
+        }
 
         public static string Color(this string text, Color color)
         {
@@ -25,7 +34,10 @@ namespace NeoCource.Editor.Utils
 
         public static bool OpenAssetOrPath(string inputPath)
         {
-            if (string.IsNullOrWhiteSpace(inputPath)) return false;
+            if (string.IsNullOrWhiteSpace(inputPath))
+            {
+                return false;
+            }
 
             string resolved = inputPath.Replace('\\', '/');
 
@@ -41,25 +53,29 @@ namespace NeoCource.Editor.Utils
                 }
             }
 
-            UnityEngine.Object asset = null;
+            Object asset = null;
             if (resolved.StartsWith("Assets/", StringComparison.OrdinalIgnoreCase) ||
                 resolved.StartsWith("Packages/", StringComparison.OrdinalIgnoreCase))
             {
-                asset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(resolved);
+                asset = AssetDatabase.LoadAssetAtPath<Object>(resolved);
                 if (asset == null)
                 {
-                    var fileName = Path.GetFileName(resolved);
+                    string fileName = Path.GetFileName(resolved);
                     if (!string.IsNullOrEmpty(fileName))
                     {
                         string nameNoExt = Path.GetFileNameWithoutExtension(fileName);
-                        var guids = AssetDatabase.FindAssets(nameNoExt);
-                        foreach (var guid in guids)
+                        string[] guids = AssetDatabase.FindAssets(nameNoExt);
+                        foreach (string guid in guids)
                         {
-                            var path = AssetDatabase.GUIDToAssetPath(guid);
+                            string path = AssetDatabase.GUIDToAssetPath(guid);
                             if (path.EndsWith(fileName, StringComparison.OrdinalIgnoreCase))
                             {
-                                asset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(path);
-                                if (asset != null) { resolved = path; break; }
+                                asset = AssetDatabase.LoadAssetAtPath<Object>(path);
+                                if (asset != null)
+                                {
+                                    resolved = path;
+                                    break;
+                                }
                             }
                         }
                     }
@@ -83,27 +99,34 @@ namespace NeoCource.Editor.Utils
             string fileOnly = Path.GetFileName(filename);
             string nameNoExt = Path.GetFileNameWithoutExtension(fileOnly);
 
-            var guids = AssetDatabase.FindAssets(nameNoExt + " t:MonoScript");
-            foreach (var guid in guids)
+            string[] guids = AssetDatabase.FindAssets(nameNoExt + " t:MonoScript");
+            foreach (string guid in guids)
             {
-                var p = AssetDatabase.GUIDToAssetPath(guid);
-                if (string.Equals(Path.GetFileName(p), fileOnly, System.StringComparison.OrdinalIgnoreCase))
+                string p = AssetDatabase.GUIDToAssetPath(guid);
+                if (string.Equals(Path.GetFileName(p), fileOnly, StringComparison.OrdinalIgnoreCase))
+                {
                     return p;
+                }
             }
 
             guids = AssetDatabase.FindAssets(nameNoExt);
-            foreach (var guid in guids)
+            foreach (string guid in guids)
             {
-                var p = AssetDatabase.GUIDToAssetPath(guid);
-                if (string.Equals(Path.GetFileName(p), fileOnly, System.StringComparison.OrdinalIgnoreCase))
+                string p = AssetDatabase.GUIDToAssetPath(guid);
+                if (string.Equals(Path.GetFileName(p), fileOnly, StringComparison.OrdinalIgnoreCase))
+                {
                     return p;
+                }
             }
 
             try
             {
                 return Directory.GetFiles("Assets", fileOnly, SearchOption.AllDirectories).FirstOrDefault();
             }
-            catch { /* ignore */ }
+            catch
+            {
+                /* ignore */
+            }
 
             return null;
         }
@@ -111,7 +134,8 @@ namespace NeoCource.Editor.Utils
         public static string ReadAllTextWithRetries(string assetPath)
         {
             string projectRoot = Path.GetDirectoryName(Application.dataPath);
-            string fullPath = Path.GetFullPath(Path.Combine(projectRoot, assetPath.Replace('/', Path.DirectorySeparatorChar)));
+            string fullPath =
+                Path.GetFullPath(Path.Combine(projectRoot, assetPath.Replace('/', Path.DirectorySeparatorChar)));
             try
             {
                 return File.ReadAllText(fullPath, Encoding.UTF8);
@@ -122,24 +146,36 @@ namespace NeoCource.Editor.Utils
             }
         }
 
-        public static System.Type FindTypeByName(string name)
+        public static Type FindTypeByName(string name)
         {
-            if (name.Contains("Collider2D")) return typeof(Collider2D);
+            if (name.Contains("Collider2D"))
+            {
+                return typeof(Collider2D);
+            }
 
-            var allTypes = AppDomain.CurrentDomain.GetAssemblies()
+            IEnumerable<Type> allTypes = AppDomain.CurrentDomain.GetAssemblies()
                 .SelectMany(a =>
                 {
-                    try { return a.GetTypes(); }
-                    catch (ReflectionTypeLoadException) { return Array.Empty<System.Type>(); }
+                    try
+                    {
+                        return a.GetTypes();
+                    }
+                    catch (ReflectionTypeLoadException)
+                    {
+                        return Array.Empty<Type>();
+                    }
                 });
 
-            System.Type exactMatch = null;
-            System.Type nameMatch = null;
-            System.Type endsWithMatch = null;
+            Type exactMatch = null;
+            Type nameMatch = null;
+            Type endsWithMatch = null;
 
-            foreach (var t in allTypes)
+            foreach (Type t in allTypes)
             {
-                if (t == null) continue;
+                if (t == null)
+                {
+                    continue;
+                }
 
                 if (string.Equals(t.FullName, name, StringComparison.OrdinalIgnoreCase))
                 {
@@ -150,13 +186,17 @@ namespace NeoCource.Editor.Utils
                 if (string.Equals(t.Name, name, StringComparison.OrdinalIgnoreCase))
                 {
                     if (nameMatch == null || t.FullName.StartsWith("UnityEngine"))
+                    {
                         nameMatch = t;
+                    }
                 }
 
                 if (t.FullName.EndsWith("." + name, StringComparison.OrdinalIgnoreCase))
                 {
                     if (endsWithMatch == null || t.FullName.StartsWith("UnityEngine"))
+                    {
                         endsWithMatch = t;
+                    }
                 }
             }
 

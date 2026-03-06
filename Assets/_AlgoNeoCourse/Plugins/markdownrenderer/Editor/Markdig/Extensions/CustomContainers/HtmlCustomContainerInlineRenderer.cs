@@ -8,7 +8,7 @@ using Markdig.Renderers.Html;
 namespace Markdig.Extensions.CustomContainers
 {
     /// <summary>
-    /// A HTML renderer for a <see cref="CustomContainerInline"/>.
+    ///     A HTML renderer for a <see cref="CustomContainerInline" />.
     /// </summary>
     /// <seealso cref="HtmlObjectRenderer{CustomContainerInline}" />
     public class HtmlCustomContainerInlineRenderer : HtmlObjectRenderer<CustomContainerInline>

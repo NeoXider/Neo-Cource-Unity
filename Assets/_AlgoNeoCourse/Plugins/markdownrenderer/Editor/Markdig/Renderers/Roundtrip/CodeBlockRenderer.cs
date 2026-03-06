@@ -4,12 +4,11 @@
 
 using Markdig.Helpers;
 using Markdig.Syntax;
-using System.Collections.Generic;
 
 namespace Markdig.Renderers.Roundtrip
 {
     /// <summary>
-    /// An Roundtrip renderer for a <see cref="CodeBlock"/> and <see cref="FencedCodeBlock"/>.
+    ///     An Roundtrip renderer for a <see cref="CodeBlock" /> and <see cref="FencedCodeBlock" />.
     /// </summary>
     /// <seealso cref="RoundtripObjectRenderer{CodeBlock}" />
     public class CodeBlockRenderer : RoundtripObjectRenderer<CodeBlock>
@@ -20,25 +19,29 @@ namespace Markdig.Renderers.Roundtrip
             if (obj is FencedCodeBlock fencedCodeBlock)
             {
                 renderer.Write(obj.TriviaBefore);
-                var opening = new string(fencedCodeBlock.FencedChar, fencedCodeBlock.OpeningFencedCharCount);
+                string opening = new(fencedCodeBlock.FencedChar, fencedCodeBlock.OpeningFencedCharCount);
                 renderer.Write(opening);
 
                 if (!fencedCodeBlock.TriviaAfterFencedChar.IsEmpty)
                 {
                     renderer.Write(fencedCodeBlock.TriviaAfterFencedChar);
                 }
+
                 if (fencedCodeBlock.Info != null)
                 {
                     renderer.Write(fencedCodeBlock.UnescapedInfo);
                 }
+
                 if (!fencedCodeBlock.TriviaAfterInfo.IsEmpty)
                 {
                     renderer.Write(fencedCodeBlock.TriviaAfterInfo);
                 }
+
                 if (!string.IsNullOrEmpty(fencedCodeBlock.Arguments))
                 {
                     renderer.Write(fencedCodeBlock.UnescapedArguments);
                 }
+
                 if (!fencedCodeBlock.TriviaAfterArguments.IsEmpty)
                 {
                     renderer.Write(fencedCodeBlock.TriviaAfterArguments);
@@ -57,26 +60,28 @@ namespace Markdig.Renderers.Roundtrip
                 renderer.WriteLeafRawLines(obj);
 
                 renderer.Write(fencedCodeBlock.TriviaBeforeClosingFence);
-                var closing = new string(fencedCodeBlock.FencedChar, fencedCodeBlock.ClosingFencedCharCount);
+                string closing = new(fencedCodeBlock.FencedChar, fencedCodeBlock.ClosingFencedCharCount);
                 renderer.Write(closing);
                 if (!string.IsNullOrEmpty(closing))
                 {
                     // See example 207: "> ```\nfoo\n```"
                     renderer.WriteLine(obj.NewLine);
                 }
+
                 renderer.Write(obj.TriviaAfter);
             }
             else
             {
-                var indents = new string[obj.CodeBlockLines.Count];
+                string[] indents = new string[obj.CodeBlockLines.Count];
                 for (int i = 0; i < obj.CodeBlockLines.Count; i++)
                 {
                     indents[i] = obj.CodeBlockLines[i].TriviaBefore.ToString();
                 }
+
                 renderer.PushIndent(indents);
                 WriteLeafRawLines(renderer, obj);
                 renderer.PopIndent();
-                
+
                 // ignore block newline, as last line references it
             }
 
@@ -87,8 +92,8 @@ namespace Markdig.Renderers.Roundtrip
         {
             if (leafBlock.Lines.Lines != null)
             {
-                var lines = leafBlock.Lines;
-                var slices = lines.Lines;
+                StringLineGroup lines = leafBlock.Lines;
+                StringLine[] slices = lines.Lines;
                 for (int i = 0; i < lines.Count; i++)
                 {
                     ref StringSlice slice = ref slices[i].Slice;

@@ -1,6 +1,6 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
 using UnityEditor;
@@ -18,12 +18,12 @@ namespace NeoCource.Editor.Tests
         [Test]
         public void SplitSlides_SplitsByTripleDash()
         {
-            var t = typeof(NeoCource.Editor.CourseWindow);
-            var mi = GetPrivateMethod(t, "SplitSlides");
+            Type t = typeof(CourseWindow);
+            MethodInfo mi = GetPrivateMethod(t, "SplitSlides");
             Assert.IsNotNull(mi, "SplitSlides method not found");
 
             string md = "Slide A\n\n---\n\nSlide B\n---\nSlide C";
-            var slides = (System.Collections.Generic.List<string>)mi.Invoke(null, new object[] { md });
+            List<string> slides = (List<string>)mi.Invoke(null, new object[] { md });
             Assert.AreEqual(3, slides.Count);
             Assert.AreEqual("Slide A", slides[0]);
             Assert.AreEqual("Slide B", slides[1]);
@@ -36,22 +36,33 @@ namespace NeoCource.Editor.Tests
             // Arrange: create a temp image under Assets so that project-relative path can be built
             string assetsPath = Application.dataPath.Replace('\n', '/');
             string tempDir = Path.Combine(assetsPath, "_AlgoNeoCourse/TempTestMedia/images");
-            if (!Directory.Exists(tempDir)) Directory.CreateDirectory(tempDir);
+            if (!Directory.Exists(tempDir))
+            {
+                Directory.CreateDirectory(tempDir);
+            }
+
             string imgFull = Path.Combine(tempDir, "pic.png");
-            if (!File.Exists(imgFull)) File.WriteAllBytes(imgFull, new byte[] { 0 });
+            if (!File.Exists(imgFull))
+            {
+                File.WriteAllBytes(imgFull, new byte[] { 0 });
+            }
 
             string mdDir = Path.Combine(assetsPath, "_AlgoNeoCourse/TempTestMedia");
             string mdFull = Path.Combine(mdDir, "lesson.md");
-            if (!Directory.Exists(mdDir)) Directory.CreateDirectory(mdDir);
+            if (!Directory.Exists(mdDir))
+            {
+                Directory.CreateDirectory(mdDir);
+            }
+
             File.WriteAllText(mdFull, "# test");
 
-            var wnd = ScriptableObject.CreateInstance<NeoCource.Editor.CourseWindow>();
+            CourseWindow wnd = ScriptableObject.CreateInstance<CourseWindow>();
 
-            var t = typeof(NeoCource.Editor.CourseWindow);
-            var field = t.GetField("currentLessonFilePath", BindingFlags.NonPublic | BindingFlags.Instance);
+            Type t = typeof(CourseWindow);
+            FieldInfo field = t.GetField("currentLessonFilePath", BindingFlags.NonPublic | BindingFlags.Instance);
             field.SetValue(wnd, mdFull);
 
-            var mi = GetPrivateMethod(t, "PreprocessMediaLinks");
+            MethodInfo mi = GetPrivateMethod(t, "PreprocessMediaLinks");
             Assert.IsNotNull(mi, "PreprocessMediaLinks method not found");
 
             string input = "![img](images/pic.png)";
@@ -68,9 +79,9 @@ namespace NeoCource.Editor.Tests
                 Directory.Delete(Path.GetDirectoryName(imgFull), true);
                 Directory.Delete(mdDir, true);
             }
-            catch { }
+            catch
+            {
+            }
         }
     }
 }
-
-

@@ -7,7 +7,7 @@ namespace UIMarkdownRenderer.ObjectRenderers
     {
         protected override void Write(UIMarkdownRenderer renderer, CodeInline obj)
         {
-            renderer.WriteText(obj.Content.ToString());
+            renderer.WriteText(obj.Content);
         }
     }
 }

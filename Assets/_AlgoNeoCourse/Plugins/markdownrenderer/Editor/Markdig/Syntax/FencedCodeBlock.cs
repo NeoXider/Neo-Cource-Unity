@@ -8,15 +8,15 @@ using Markdig.Parsers;
 namespace Markdig.Syntax
 {
     /// <summary>
-    /// Represents a fenced code block.
+    ///     Represents a fenced code block.
     /// </summary>
     /// <remarks>
-    /// Related to CommonMark spec: 4.5 Fenced code blocks
+    ///     Related to CommonMark spec: 4.5 Fenced code blocks
     /// </remarks>
     public class FencedCodeBlock : CodeBlock, IFencedBlock
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="FencedCodeBlock"/> class.
+        ///     Initializes a new instance of the <see cref="FencedCodeBlock" /> class.
         /// </summary>
         /// <param name="parser">The parser.</param>
         public FencedCodeBlock(BlockParser parser) : base(parser)
@@ -29,8 +29,8 @@ namespace Markdig.Syntax
         }
 
         /// <summary>
-        /// Gets or sets the indent count when the fenced code block was indented
-        /// and we need to remove up to indent count chars spaces from the begining of a line.
+        ///     Gets or sets the indent count when the fenced code block was indented
+        ///     and we need to remove up to indent count chars spaces from the begining of a line.
         /// </summary>
         public int IndentCount { get; set; }
 

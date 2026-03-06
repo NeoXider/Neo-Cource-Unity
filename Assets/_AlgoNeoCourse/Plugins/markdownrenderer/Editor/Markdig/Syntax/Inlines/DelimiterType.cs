@@ -7,24 +7,24 @@ using System;
 namespace Markdig.Syntax.Inlines
 {
     /// <summary>
-    /// Gets the type of a <see cref="DelimiterInline"/>.
+    ///     Gets the type of a <see cref="DelimiterInline" />.
     /// </summary>
     [Flags]
     public enum DelimiterType
     {
         /// <summary>
-        /// An undefined open or close delimiter.
+        ///     An undefined open or close delimiter.
         /// </summary>
         Undefined,
 
         /// <summary>
-        /// An open delimiter.
+        ///     An open delimiter.
         /// </summary>
         Open,
 
         /// <summary>
-        /// A close delimiter.
+        ///     A close delimiter.
         /// </summary>
-        Close,
+        Close
     }
 }

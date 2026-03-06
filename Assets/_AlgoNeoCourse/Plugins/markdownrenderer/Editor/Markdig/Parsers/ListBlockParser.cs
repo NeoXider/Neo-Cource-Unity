@@ -9,7 +9,7 @@ using Markdig.Syntax;
 namespace Markdig.Parsers
 {
     /// <summary>
-    /// A parser for a list block and list item block.
+    ///     A parser for a list block and list item block.
     /// </summary>
     /// <seealso cref="BlockParser" />
     public class ListBlockParser : BlockParser
@@ -17,11 +17,11 @@ namespace Markdig.Parsers
         private CharacterMap<ListItemParser>? mapItemParsers;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ListBlockParser"/> class.
+        ///     Initializes a new instance of the <see cref="ListBlockParser" /> class.
         /// </summary>
         public ListBlockParser()
         {
-            ItemParsers = new OrderedList<ListItemParser>()
+            ItemParsers = new OrderedList<ListItemParser>
             {
                 new UnorderedListItemParser(),
                 new NumberedListItemParser()
@@ -29,31 +29,34 @@ namespace Markdig.Parsers
         }
 
         /// <summary>
-        /// Gets the parsers for items.
+        ///     Gets the parsers for items.
         /// </summary>
         public OrderedList<ListItemParser> ItemParsers { get; }
 
         public override void Initialize()
         {
-            var tempMap = new Dictionary<char, ListItemParser>();
+            Dictionary<char, ListItemParser> tempMap = new();
 
-            foreach (var itemParser in ItemParsers)
+            foreach (ListItemParser? itemParser in ItemParsers)
             {
                 if (itemParser.OpeningCharacters is null)
                 {
-                    ThrowHelper.InvalidOperationException($"The list item parser of type [{itemParser.GetType()}] cannot have OpeningCharacters to null. It must define a list of valid opening characters");
+                    ThrowHelper.InvalidOperationException(
+                        $"The list item parser of type [{itemParser.GetType()}] cannot have OpeningCharacters to null. It must define a list of valid opening characters");
                 }
 
-                foreach (var openingCharacter in itemParser.OpeningCharacters)
+                foreach (char openingCharacter in itemParser.OpeningCharacters)
                 {
                     if (tempMap.ContainsKey(openingCharacter))
                     {
                         ThrowHelper.InvalidOperationException(
                             $"A list item parser with the same opening character `{openingCharacter}` is already registered");
                     }
+
                     tempMap.Add(openingCharacter, itemParser);
                 }
             }
+
             mapItemParsers = new CharacterMap<ListItemParser>(tempMap);
         }
 
@@ -61,10 +64,10 @@ namespace Markdig.Parsers
         {
             // When both a thematic break and a list item are possible
             // interpretations of a line, the thematic break takes precedence
-            var thematicParser = ThematicBreakParser.Default;
+            ThematicBreakParser thematicParser = ThematicBreakParser.Default;
             if (thematicParser.HasOpeningCharacter(processor.CurrentChar))
             {
-                var result = thematicParser.TryOpen(processor);
+                BlockState result = thematicParser.TryOpen(processor);
                 if (result.IsBreak())
                 {
                     return result;
@@ -85,15 +88,15 @@ namespace Markdig.Parsers
             // When both a thematic break and a list item are possible
             // interpretations of a line, the thematic break takes precedence
             BlockState result;
-            var thematicParser = ThematicBreakParser.Default;
+            ThematicBreakParser thematicParser = ThematicBreakParser.Default;
             if (!(processor.LastBlock is FencedCodeBlock) && thematicParser.HasOpeningCharacter(processor.CurrentChar))
             {
                 result = thematicParser.TryOpen(processor);
                 if (result.IsBreak())
                 {
                     // TODO: We remove the thematic break, as it will be created later, but this is inefficient, try to find another way
-                    var thematicBreak = processor.NewBlocks.Pop();
-                    var linesBefore = thematicBreak.LinesBefore;
+                    Block? thematicBreak = processor.NewBlocks.Pop();
+                    List<StringSlice>? linesBefore = thematicBreak.LinesBefore;
                     processor.LinesBefore = linesBefore;
                     return BlockState.None;
                 }
@@ -119,7 +122,7 @@ namespace Markdig.Parsers
 
         private BlockState TryContinueListItem(BlockProcessor state, ListItemBlock listItem)
         {
-            var list = (ListBlock)listItem.Parent!;
+            ListBlock list = (ListBlock)listItem.Parent!;
 
             // Allow all blanks lines if the last block is a fenced code block
             // Allow 1 blank line inside a list
@@ -136,6 +139,7 @@ namespace Markdig.Parsers
                             listItem.Add(new BlankLineBlock());
                         }
                     }
+
                     list.CountBlankLinesReset++;
                 }
 
@@ -181,22 +185,23 @@ namespace Markdig.Parsers
 
         private BlockState TryParseListItem(BlockProcessor state, Block? block)
         {
-            var currentListItem = block as ListItemBlock;
-            var currentParent = block as ListBlock ?? (ListBlock)currentListItem?.Parent!;
+            ListItemBlock? currentListItem = block as ListItemBlock;
+            ListBlock? currentParent = block as ListBlock ?? (ListBlock)currentListItem?.Parent!;
 
             // We can early exit if we have a code indent and we are either (1) not in a ListItem, (2) preceded by a blank line, (3) in an unordered list
-            if (state.IsCodeIndent && (currentListItem is null || currentListItem.LastChild is BlankLineBlock || !currentParent.IsOrdered))
+            if (state.IsCodeIndent && (currentListItem is null || currentListItem.LastChild is BlankLineBlock ||
+                                       !currentParent.IsOrdered))
             {
                 return BlockState.None;
             }
 
-            var initColumnBeforeIndent = state.ColumnBeforeIndent;
-            var initColumn = state.Column;
-            var sourcePosition = state.Start;
-            var sourceEndPosition = state.Line.End;
+            int initColumnBeforeIndent = state.ColumnBeforeIndent;
+            int initColumn = state.Column;
+            int sourcePosition = state.Start;
+            int sourceEndPosition = state.Line.End;
 
-            var c = state.CurrentChar;
-            var itemParser = mapItemParsers![c];
+            char c = state.CurrentChar;
+            ListItemParser? itemParser = mapItemParsers![c];
             if (itemParser is null)
             {
                 return BlockState.None;
@@ -209,8 +214,9 @@ namespace Markdig.Parsers
                 state.GoToColumn(initColumn);
                 return BlockState.None;
             }
-            var savedTriviaStart = state.TriviaStart;
-            var triviaBefore = state.UseTrivia(sourcePosition - 1);
+
+            int savedTriviaStart = state.TriviaStart;
+            StringSlice triviaBefore = state.UseTrivia(sourcePosition - 1);
 
             // set trivia to the mandatory whitespace after the bullet
             state.TriviaStart = state.Start;
@@ -240,7 +246,7 @@ namespace Markdig.Parsers
 
                 // Parse the following indent
                 state.RestartIndent();
-                var columnBeforeIndent = state.Column;
+                int columnBeforeIndent = state.Column;
                 state.ParseIndent();
 
                 // We expect at most 4 columns after
@@ -262,7 +268,7 @@ namespace Markdig.Parsers
             if ((block ?? state.LastBlock) is ParagraphBlock previousParagraph)
             {
                 if (state.IsBlankLine ||
-                    state.IsOpen(previousParagraph) && listInfo.BulletType == '1' && listInfo.OrderedStart is not "1")
+                    (state.IsOpen(previousParagraph) && listInfo.BulletType == '1' && listInfo.OrderedStart is not "1"))
                 {
                     state.GoToColumn(initColumn);
                     state.TriviaStart = savedTriviaStart; // restore changed TriviaStart state
@@ -271,7 +277,7 @@ namespace Markdig.Parsers
             }
 
             int.TryParse(listInfo.OrderedStart, out int order);
-            var newListItem = new ListItemBlock(this)
+            ListItemBlock newListItem = new(this)
             {
                 Column = initColumn,
                 ColumnWidth = columnWidth,
@@ -280,7 +286,7 @@ namespace Markdig.Parsers
                 TriviaBefore = triviaBefore,
                 Span = new SourceSpan(sourcePosition, sourceEndPosition),
                 LinesBefore = state.UseLinesBefore(),
-                NewLine = state.Line.NewLine,
+                NewLine = state.Line.NewLine
             };
             state.NewBlocks.Push(newListItem);
 
@@ -304,7 +310,7 @@ namespace Markdig.Parsers
 
             if (currentParent is null)
             {
-                var newList = new ListBlock(this)
+                ListBlock newList = new(this)
                 {
                     Column = initColumn,
                     Span = new SourceSpan(sourcePosition, sourceEndPosition),
@@ -313,10 +319,11 @@ namespace Markdig.Parsers
                     OrderedDelimiter = listInfo.OrderedDelimiter,
                     DefaultOrderedStart = listInfo.DefaultOrderedStart,
                     OrderedStart = listInfo.OrderedStart,
-                    LinesBefore = state.UseLinesBefore(),
+                    LinesBefore = state.UseLinesBefore()
                 };
                 state.NewBlocks.Push(newList);
             }
+
             return BlockState.Continue;
         }
 
@@ -335,7 +342,7 @@ namespace Markdig.Parsers
                     lastListItem.LastChild is BlankLineBlock)
                 {
                     // Inform the outer list that we have a blank line
-                    var parentList = (ListBlock)parentListItemBlock.Parent!;
+                    ListBlock parentList = (ListBlock)parentListItemBlock.Parent!;
 
                     parentList.CountAllBlankLines++;
                     parentListItemBlock.Add(new BlankLineBlock());
@@ -343,7 +350,7 @@ namespace Markdig.Parsers
 
                 for (int listIndex = listBlock.Count - 1; listIndex >= 0; listIndex--)
                 {
-                    var listItem = (ListItemBlock)listBlock[listIndex];
+                    ListItemBlock listItem = (ListItemBlock)listBlock[listIndex];
 
                     for (int i = listItem.Count - 1; i >= 0; i--)
                     {

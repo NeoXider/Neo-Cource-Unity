@@ -10,7 +10,7 @@ using Markdig.Syntax;
 namespace Markdig.Helpers
 {
     /// <summary>
-    /// Helpers to parse Markdown links.
+    ///     Helpers to parse Markdown links.
     /// </summary>
     public static class LinkHelper
     {
@@ -21,13 +21,13 @@ namespace Markdig.Helpers
 
         public static string Urilize(string headingText, bool allowOnlyAscii, bool keepOpeningDigits = false)
         {
-            var headingBuffer = StringBuilderCache.Local();
+            StringBuilder headingBuffer = StringBuilderCache.Local();
             bool hasLetter = keepOpeningDigits && headingText.Length > 0 && char.IsLetterOrDigit(headingText[0]);
             bool previousIsSpace = false;
             for (int i = 0; i < headingText.Length; i++)
             {
-                var c = headingText[i];
-                var normalized = allowOnlyAscii ? CharNormalizer.ConvertToAscii(c) : null;
+                char c = headingText[i];
+                string? normalized = allowOnlyAscii ? CharNormalizer.ConvertToAscii(c) : null;
                 for (int j = 0; j < (normalized?.Length ?? 1); j++)
                 {
                     if (normalized != null)
@@ -41,6 +41,7 @@ namespace Markdig.Helpers
                         {
                             continue;
                         }
+
                         c = char.IsUpper(c) ? char.ToLowerInvariant(c) : c;
                         headingBuffer.Append(c);
                         hasLetter = true;
@@ -54,10 +55,12 @@ namespace Markdig.Helpers
                             {
                                 headingBuffer.Length--;
                             }
+
                             if (headingBuffer[headingBuffer.Length - 1] != c)
                             {
                                 headingBuffer.Append(c);
                             }
+
                             previousIsSpace = false;
                         }
                         else if (c.IsDigit())
@@ -67,11 +70,12 @@ namespace Markdig.Helpers
                         }
                         else if (!previousIsSpace && c.IsWhitespace())
                         {
-                            var pc = headingBuffer[headingBuffer.Length - 1];
+                            char pc = headingBuffer[headingBuffer.Length - 1];
                             if (!IsReservedPunctuation(pc))
                             {
                                 headingBuffer.Append('-');
                             }
+
                             previousIsSpace = true;
                         }
                     }
@@ -81,7 +85,7 @@ namespace Markdig.Helpers
             // Trim trailing _ - .
             while (headingBuffer.Length > 0)
             {
-                var c = headingBuffer[headingBuffer.Length - 1];
+                char c = headingBuffer[headingBuffer.Length - 1];
                 if (IsReservedPunctuation(c))
                 {
                     headingBuffer.Length--;
@@ -92,7 +96,7 @@ namespace Markdig.Helpers
                 }
             }
 
-            var text = headingBuffer.ToString();
+            string text = headingBuffer.ToString();
             headingBuffer.Length = 0;
             return text;
         }
@@ -100,15 +104,16 @@ namespace Markdig.Helpers
         public static string UrilizeAsGfm(string headingText)
         {
             // Following https://github.com/jch/html-pipeline/blob/master/lib/html/pipeline/toc_filter.rb
-            var headingBuffer = StringBuilderCache.Local();
+            StringBuilder headingBuffer = StringBuilderCache.Local();
             for (int i = 0; i < headingText.Length; i++)
             {
-                var c = headingText[i];
+                char c = headingText[i];
                 if (char.IsLetterOrDigit(c) || c == ' ' || c == '-' || c == '_')
                 {
                     headingBuffer.Append(c == ' ' ? '-' : char.ToLowerInvariant(c));
                 }
             }
+
             return headingBuffer.GetStringAndReset();
         }
 
@@ -118,12 +123,13 @@ namespace Markdig.Helpers
             return c == '_' || c == '-' || c == '.';
         }
 
-        public static bool TryParseAutolink(ref StringSlice text, [NotNullWhen(true)] out string? link, out bool isEmail)
+        public static bool TryParseAutolink(ref StringSlice text, [NotNullWhen(true)] out string? link,
+            out bool isEmail)
         {
             link = null;
             isEmail = false;
 
-            var c = text.CurrentChar;
+            char c = text.CurrentChar;
             if (c != '<')
             {
                 return false;
@@ -165,7 +171,7 @@ namespace Markdig.Helpers
                 }
             }
 
-            var builder = StringBuilderCache.Local();
+            StringBuilder builder = StringBuilderCache.Local();
 
             // ****************************
             // 1. Scan scheme or user email
@@ -176,8 +182,8 @@ namespace Markdig.Helpers
                 c = text.NextChar();
 
                 // Chars valid for both scheme and email
-                var isSpecialChar = c == '+' || c == '.' || c == '-';
-                var isValidChar = c.IsAlphaNumeric() || isSpecialChar;
+                bool isSpecialChar = c == '+' || c == '.' || c == '-';
+                bool isValidChar = c.IsAlphaNumeric() || isSpecialChar;
                 if (state <= 0 && CharHelper.IsEmailUsernameSpecialChar(c))
                 {
                     isValidChar = true;
@@ -196,6 +202,7 @@ namespace Markdig.Helpers
                         builder.Length = 0;
                         return false;
                     }
+
                     builder.Append(c);
                 }
                 else if (c == ':')
@@ -205,15 +212,18 @@ namespace Markdig.Helpers
                         builder.Length = 0;
                         return false;
                     }
+
                     state = 1;
                     break;
-                } else if (c == '@')
+                }
+                else if (c == '@')
                 {
                     if (state > 0)
                     {
                         builder.Length = 0;
                         return false;
                     }
+
                     state = -1;
                     break;
                 }
@@ -225,7 +235,7 @@ namespace Markdig.Helpers
             }
 
             // append ':' or '@' 
-            builder.Append(c); 
+            builder.Append(c);
 
             if (state < 0)
             {
@@ -267,6 +277,7 @@ namespace Markdig.Helpers
                         {
                             break;
                         }
+
                         domainCharCount = 0;
                         hasMinus = false;
                     }
@@ -274,6 +285,7 @@ namespace Markdig.Helpers
                     {
                         break;
                     }
+
                     builder.Append(c);
                     pc = c;
                 }
@@ -308,13 +320,19 @@ namespace Markdig.Helpers
                         {
                             builder.Append(c);
                         }
-                        else break;
+                        else
+                        {
+                            break;
+                        }
                     }
                     else if (!c.IsSpaceOrPunctuation())
                     {
                         builder.Append(c);
                     }
-                    else break;
+                    else
+                    {
+                        break;
+                    }
                 }
             }
 
@@ -327,7 +345,8 @@ namespace Markdig.Helpers
             return TryParseInlineLink(ref text, out link, out title, out _, out _);
         }
 
-        public static bool TryParseInlineLink(StringSlice text, out string? link, out string? title, out SourceSpan linkSpan, out SourceSpan titleSpan)
+        public static bool TryParseInlineLink(StringSlice text, out string? link, out string? title,
+            out SourceSpan linkSpan, out SourceSpan titleSpan)
         {
             return TryParseInlineLink(ref text, out link, out title, out linkSpan, out titleSpan);
         }
@@ -337,7 +356,8 @@ namespace Markdig.Helpers
             return TryParseInlineLink(ref text, out link, out title, out SourceSpan linkSpan, out SourceSpan titleSpan);
         }
 
-        public static bool TryParseInlineLink(ref StringSlice text, out string? link, out string? title, out SourceSpan linkSpan, out SourceSpan titleSpan)
+        public static bool TryParseInlineLink(ref StringSlice text, out string? link, out string? title,
+            out SourceSpan linkSpan, out SourceSpan titleSpan)
         {
             // 1. An inline link consists of a link text followed immediately by a left parenthesis (, 
             // 2. optional whitespace,  TODO: specs: is it whitespace or multiple whitespaces?
@@ -346,7 +366,7 @@ namespace Markdig.Helpers
             // 5. optional whitespace,  TODO: specs: is it whitespace or multiple whitespaces?
             // 6. and a right parenthesis )
             bool isValid = false;
-            var c = text.CurrentChar;
+            char c = text.CurrentChar;
             link = null;
             title = null;
 
@@ -359,7 +379,7 @@ namespace Markdig.Helpers
                 text.SkipChar();
                 text.TrimStart(); // this breaks whitespace before an uri
 
-                var pos = text.Start;
+                int pos = text.Start;
                 if (TryParseUrl(ref text, out link, out _))
                 {
                     linkSpan.Start = pos;
@@ -370,7 +390,7 @@ namespace Markdig.Helpers
                     }
 
                     text.TrimStart(out int spaceCount);
-                    var hasWhiteSpaces = spaceCount > 0;
+                    bool hasWhiteSpaces = spaceCount > 0;
 
                     c = text.CurrentChar;
                     if (c == ')')
@@ -393,6 +413,7 @@ namespace Markdig.Helpers
                             {
                                 titleSpan = SourceSpan.Empty;
                             }
+
                             text.TrimStart();
                             c = text.CurrentChar;
 
@@ -436,7 +457,7 @@ namespace Markdig.Helpers
             // 5. optional whitespace,  TODO: specs: is it whitespace or multiple whitespaces?
             // 6. and a right parenthesis )
             bool isValid = false;
-            var c = text.CurrentChar;
+            char c = text.CurrentChar;
             link = null;
             unescapedLink = SourceSpan.Empty;
             title = null;
@@ -454,10 +475,10 @@ namespace Markdig.Helpers
             if (c == '(')
             {
                 text.SkipChar();
-                var sourcePosition = text.Start;
+                int sourcePosition = text.Start;
                 text.TrimStart();
                 triviaBeforeLink = new SourceSpan(sourcePosition, text.Start - 1);
-                var pos = text.Start;
+                int pos = text.Start;
                 if (TryParseUrlTrivia(ref text, out link, out urlHasPointyBrackets))
                 {
                     linkSpan.Start = pos;
@@ -473,7 +494,7 @@ namespace Markdig.Helpers
                     text.TrimStart(out int spaceCount);
 
                     triviaAfterLink = new SourceSpan(triviaStart, text.Start - 1);
-                    var hasWhiteSpaces = spaceCount > 0;
+                    bool hasWhiteSpaces = spaceCount > 0;
 
                     c = text.CurrentChar;
                     if (c == ')')
@@ -498,7 +519,8 @@ namespace Markdig.Helpers
                             {
                                 titleSpan = SourceSpan.Empty;
                             }
-                            var startTrivia = text.Start;
+
+                            int startTrivia = text.Start;
                             text.TrimStart();
                             triviaAfterTitle = new SourceSpan(startTrivia, text.Start - 1);
                             c = text.CurrentChar;
@@ -518,6 +540,7 @@ namespace Markdig.Helpers
                 text.SkipChar();
                 title ??= string.Empty;
             }
+
             return isValid;
         }
 
@@ -526,19 +549,20 @@ namespace Markdig.Helpers
             return TryParseTitle(ref text, out title, out _);
         }
 
-        public static bool TryParseTitle<T>(ref T text, out string? title, out char enclosingCharacter) where T : ICharIterator
+        public static bool TryParseTitle<T>(ref T text, out string? title, out char enclosingCharacter)
+            where T : ICharIterator
         {
             bool isValid = false;
-            var buffer = StringBuilderCache.Local();
+            StringBuilder buffer = StringBuilderCache.Local();
             enclosingCharacter = '\0';
 
             // a sequence of zero or more characters between straight double-quote characters ("), including a " character only if it is backslash-escaped, or
             // a sequence of zero or more characters between straight single-quote characters ('), including a ' character only if it is backslash-escaped, or
-            var c = text.CurrentChar;
+            char c = text.CurrentChar;
             if (c == '\'' || c == '"' || c == '(')
             {
                 enclosingCharacter = c;
-                var closingQuote = c == '(' ? ')' : c;
+                char closingQuote = c == '(' ? ')' : c;
                 bool hasEscape = false;
                 // -1: undefined
                 //  0: has only spaces
@@ -556,13 +580,16 @@ namespace Markdig.Helpers
                             {
                                 break;
                             }
+
                             hasOnlyWhiteSpacesSinceLastLine = -1;
                         }
+
                         buffer.Append(c);
                         if (c == '\r' && text.PeekChar() == '\n')
                         {
                             buffer.Append('\n');
                         }
+
                         continue;
                     }
 
@@ -606,7 +633,7 @@ namespace Markdig.Helpers
                             hasOnlyWhiteSpacesSinceLastLine = 1;
                         }
                     }
-                    else if (c != '\n' && c != '\r' && (c != '\r' && text.PeekChar() != '\n'))
+                    else if (c != '\n' && c != '\r' && c != '\r' && text.PeekChar() != '\n')
                     {
                         hasOnlyWhiteSpacesSinceLastLine = 0;
                     }
@@ -620,19 +647,20 @@ namespace Markdig.Helpers
             return isValid;
         }
 
-        public static bool TryParseTitleTrivia<T>(ref T text, out string? title, out char enclosingCharacter) where T : ICharIterator
+        public static bool TryParseTitleTrivia<T>(ref T text, out string? title, out char enclosingCharacter)
+            where T : ICharIterator
         {
             bool isValid = false;
-            var buffer = StringBuilderCache.Local();
+            StringBuilder buffer = StringBuilderCache.Local();
             enclosingCharacter = '\0';
 
             // a sequence of zero or more characters between straight double-quote characters ("), including a " character only if it is backslash-escaped, or
             // a sequence of zero or more characters between straight single-quote characters ('), including a ' character only if it is backslash-escaped, or
-            var c = text.CurrentChar;
+            char c = text.CurrentChar;
             if (c == '\'' || c == '"' || c == '(')
             {
                 enclosingCharacter = c;
-                var closingQuote = c == '(' ? ')' : c;
+                char closingQuote = c == '(' ? ')' : c;
                 bool hasEscape = false;
                 // -1: undefined
                 //  0: has only spaces
@@ -650,13 +678,16 @@ namespace Markdig.Helpers
                             {
                                 break;
                             }
+
                             hasOnlyWhiteSpacesSinceLastLine = -1;
                         }
+
                         buffer.Append(c);
                         if (c == '\r' && text.PeekChar() == '\n')
                         {
                             buffer.Append('\n');
                         }
+
                         continue;
                     }
 
@@ -700,7 +731,7 @@ namespace Markdig.Helpers
                             hasOnlyWhiteSpacesSinceLastLine = 1;
                         }
                     }
-                    else if (c != '\n' && c != '\r' && (c != '\r' && text.PeekChar() != '\n'))
+                    else if (c != '\n' && c != '\r' && c != '\r' && text.PeekChar() != '\n')
                     {
                         hasOnlyWhiteSpacesSinceLastLine = 0;
                     }
@@ -719,13 +750,14 @@ namespace Markdig.Helpers
             return TryParseUrl(ref text, out link, out _);
         }
 
-        public static bool TryParseUrl<T>(ref T text, [NotNullWhen(true)] out string? link, out bool hasPointyBrackets, bool isAutoLink = false) where T : ICharIterator
+        public static bool TryParseUrl<T>(ref T text, [NotNullWhen(true)] out string? link, out bool hasPointyBrackets,
+            bool isAutoLink = false) where T : ICharIterator
         {
             bool isValid = false;
             hasPointyBrackets = false;
-            var buffer = StringBuilderCache.Local();
+            StringBuilder buffer = StringBuilderCache.Local();
 
-            var c = text.CurrentChar;
+            char c = text.CurrentChar;
 
             // a sequence of zero or more characters between an opening < and a closing > 
             // that contains no line breaks, or unescaped < or > characters, or
@@ -767,7 +799,6 @@ namespace Markdig.Helpers
                     hasEscape = false;
 
                     buffer.Append(c);
-
                 } while (c != '\0');
             }
             else
@@ -836,6 +867,7 @@ namespace Markdig.Helpers
                                 break;
                             }
                         }
+
                         if (IsTrailingUrlStopCharacter(c) && IsEndOfUri(text.PeekChar(), true))
                         {
                             isValid = true;
@@ -859,14 +891,15 @@ namespace Markdig.Helpers
             return isValid;
         }
 
-        public static bool TryParseUrlTrivia<T>(ref T text, out string? link, out bool hasPointyBrackets, bool isAutoLink = false) where T : ICharIterator
+        public static bool TryParseUrlTrivia<T>(ref T text, out string? link, out bool hasPointyBrackets,
+            bool isAutoLink = false) where T : ICharIterator
         {
             bool isValid = false;
             hasPointyBrackets = false;
-            var buffer = StringBuilderCache.Local();
-            var unescaped = new StringBuilder();
+            StringBuilder buffer = StringBuilderCache.Local();
+            StringBuilder unescaped = new();
 
-            var c = text.CurrentChar;
+            char c = text.CurrentChar;
 
             // a sequence of zero or more characters between an opening < and a closing > 
             // that contains no line breaks, or unescaped < or > characters, or
@@ -911,7 +944,6 @@ namespace Markdig.Helpers
 
                     buffer.Append(c);
                     unescaped.Append(c);
-
                 } while (c != '\0');
             }
             else
@@ -981,6 +1013,7 @@ namespace Markdig.Helpers
                                 break;
                             }
                         }
+
                         if (IsTrailingUrlStopCharacter(c) && IsEndOfUri(text.PeekChar(), true))
                         {
                             isValid = true;
@@ -1009,13 +1042,15 @@ namespace Markdig.Helpers
         private static bool IsTrailingUrlStopCharacter(char c)
         {
             // Trailing punctuation (specifically, ?, !, ., ,, :, *, _, and ~) will not be considered part of the autolink, though they may be included in the interior of the link:
-            return c == '?' || c == '!' || c == '.' || c == ',' || c == ':' || c == '*' || c == '*' || c == '_' || c == '~';
+            return c == '?' || c == '!' || c == '.' || c == ',' || c == ':' || c == '*' || c == '*' || c == '_' ||
+                   c == '~';
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool IsEndOfUri(char c, bool isAutoLink)
         {
-            return c == '\0' || c.IsSpaceOrTab() || c.IsControl() || (isAutoLink && c == '<'); // TODO: specs unclear. space is strict or relaxed? (includes tabs?)
+            return c == '\0' || c.IsSpaceOrTab() || c.IsControl() ||
+                   (isAutoLink && c == '<'); // TODO: specs unclear. space is strict or relaxed? (includes tabs?)
         }
 
         public static bool IsValidDomain(string link, int prefixLength)
@@ -1038,7 +1073,9 @@ namespace Markdig.Helpers
                 if (c == '.') // New segment
                 {
                     if (!segmentHasCharacters)
+                    {
                         return false;
+                    }
 
                     segmentCount++;
                     segmentHasCharacters = false;
@@ -1048,7 +1085,9 @@ namespace Markdig.Helpers
                 if (!c.IsAlphaNumeric())
                 {
                     if (c == '/' || c == '?' || c == '#' || c == ':') // End of domain name
+                    {
                         break;
+                    }
 
                     if (c == '_')
                     {
@@ -1065,8 +1104,9 @@ namespace Markdig.Helpers
             }
 
             return segmentCount != 1 && // At least one dot was present
-                segmentHasCharacters && // Last segment has valid characters
-                segmentCount - lastUnderscoreSegment >= 2; // No underscores are present in the last two segments of the domain
+                   segmentHasCharacters && // Last segment has valid characters
+                   segmentCount - lastUnderscoreSegment >=
+                   2; // No underscores are present in the last two segments of the domain
         }
 
         public static bool TryParseLinkReferenceDefinition<T>(ref T text,
@@ -1093,6 +1133,7 @@ namespace Markdig.Helpers
                 label = null;
                 return false;
             }
+
             text.SkipChar(); // Skip ':'
 
             // Skip any whitespace before the url
@@ -1104,11 +1145,12 @@ namespace Markdig.Helpers
             {
                 return false;
             }
+
             urlSpan.End = text.Start - 1;
 
-            var saved = text;
-            var hasWhiteSpaces = CharIteratorHelper.TrimStartAndCountNewLines(ref text, out int newLineCount);
-            var c = text.CurrentChar;
+            T saved = text;
+            bool hasWhiteSpaces = CharIteratorHelper.TrimStartAndCountNewLines(ref text, out int newLineCount);
+            char c = text.CurrentChar;
             if (c == '\'' || c == '"' || c == '(')
             {
                 titleSpan.Start = text.Start;
@@ -1203,6 +1245,7 @@ namespace Markdig.Helpers
             {
                 return false;
             }
+
             labelWithTrivia.End = text.Start - 2; // skip closing ] and subsequent :
 
             if (text.CurrentChar != ':')
@@ -1210,8 +1253,9 @@ namespace Markdig.Helpers
                 label = null;
                 return false;
             }
+
             text.SkipChar(); // Skip ':'
-            var triviaBeforeUrlStart = text.Start;
+            int triviaBeforeUrlStart = text.Start;
 
             // Skip any whitespace before the url
             text.TrimStart();
@@ -1220,21 +1264,24 @@ namespace Markdig.Helpers
             urlSpan.Start = text.Start;
             bool isAngleBracketsUrl = text.CurrentChar == '<';
             unescapedUrl.Start = text.Start + (isAngleBracketsUrl ? 1 : 0);
-            if (!TryParseUrlTrivia(ref text, out url, out urlHasPointyBrackets) || (!isAngleBracketsUrl && string.IsNullOrEmpty(url)))
+            if (!TryParseUrlTrivia(ref text, out url, out urlHasPointyBrackets) ||
+                (!isAngleBracketsUrl && string.IsNullOrEmpty(url)))
             {
                 return false;
             }
+
             urlSpan.End = text.Start - 1;
             unescapedUrl.End = text.Start - 1 - (isAngleBracketsUrl ? 1 : 0);
             int triviaBeforeTitleStart = text.Start;
 
-            var saved = text;
-            var hasWhiteSpaces = CharIteratorHelper.TrimStartAndCountNewLines(ref text, out int newLineCount, out newLine);
+            T saved = text;
+            bool hasWhiteSpaces =
+                CharIteratorHelper.TrimStartAndCountNewLines(ref text, out int newLineCount, out newLine);
 
             // Remove the newline from the trivia (as it may have multiple lines)
-            var triviaBeforeTitleEnd = text.Start - 1;
+            int triviaBeforeTitleEnd = text.Start - 1;
             triviaBeforeTitle = new SourceSpan(triviaBeforeTitleStart, triviaBeforeTitleEnd);
-            var c = text.CurrentChar;
+            char c = text.CurrentChar;
             if (c == '\'' || c == '"' || c == '(')
             {
                 titleSpan.Start = text.Start;
@@ -1242,7 +1289,7 @@ namespace Markdig.Helpers
                 if (TryParseTitleTrivia(ref text, out title, out titleEnclosingCharacter))
                 {
                     titleSpan.End = text.Start - 1;
-                    unescapedTitle.End = text.Start - 1 - 1;  // skip closing enclosing character
+                    unescapedTitle.End = text.Start - 1 - 1; // skip closing enclosing character
                     // If we have a title, it requires a whitespace after the url
                     if (!hasWhiteSpaces)
                     {
@@ -1276,7 +1323,7 @@ namespace Markdig.Helpers
                 c = text.NextChar();
             }
 
-            if (c != '\0' && c != '\n' && c != '\r' && (c != '\r' && text.PeekChar() != '\n'))
+            if (c != '\0' && c != '\n' && c != '\r' && c != '\r' && text.PeekChar() != '\n')
             {
                 // If we were able to parse the url but the title doesn't end with space, 
                 // we are still returning a valid definition
@@ -1297,6 +1344,7 @@ namespace Markdig.Helpers
                 unescapedTitle = SourceSpan.Empty;
                 return false;
             }
+
             triviaAfterTitle = new SourceSpan(triviaAfterTitleStart, text.Start - 1);
             if (c != '\0')
             {
@@ -1322,7 +1370,8 @@ namespace Markdig.Helpers
             return TryParseLabel(ref lines, false, out label, out SourceSpan labelSpan);
         }
 
-        public static bool TryParseLabel<T>(T lines, [NotNullWhen(true)] out string? label, out SourceSpan labelSpan) where T : ICharIterator
+        public static bool TryParseLabel<T>(T lines, [NotNullWhen(true)] out string? label, out SourceSpan labelSpan)
+            where T : ICharIterator
         {
             return TryParseLabel(ref lines, false, out label, out labelSpan);
         }
@@ -1332,17 +1381,20 @@ namespace Markdig.Helpers
             return TryParseLabel(ref lines, false, out label, out SourceSpan labelSpan);
         }
 
-        public static bool TryParseLabel<T>(ref T lines, [NotNullWhen(true)] out string? label, out SourceSpan labelSpan) where T : ICharIterator
+        public static bool TryParseLabel<T>(ref T lines, [NotNullWhen(true)] out string? label,
+            out SourceSpan labelSpan) where T : ICharIterator
         {
             return TryParseLabel(ref lines, false, out label, out labelSpan);
         }
 
-        public static bool TryParseLabelTrivia<T>(ref T lines, [NotNullWhen(true)] out string? label, out SourceSpan labelSpan) where T : ICharIterator
+        public static bool TryParseLabelTrivia<T>(ref T lines, [NotNullWhen(true)] out string? label,
+            out SourceSpan labelSpan) where T : ICharIterator
         {
             return TryParseLabelTrivia(ref lines, false, out label, out labelSpan);
         }
 
-        public static bool TryParseLabel<T>(ref T lines, bool allowEmpty, [NotNullWhen(true)] out string? label, out SourceSpan labelSpan) where T : ICharIterator
+        public static bool TryParseLabel<T>(ref T lines, bool allowEmpty, [NotNullWhen(true)] out string? label,
+            out SourceSpan labelSpan) where T : ICharIterator
         {
             label = null;
             char c = lines.CurrentChar;
@@ -1351,10 +1403,11 @@ namespace Markdig.Helpers
             {
                 return false;
             }
-            var buffer = StringBuilderCache.Local();
 
-            var startLabel = -1;
-            var endLabel = -1;
+            StringBuilder buffer = StringBuilderCache.Local();
+
+            int startLabel = -1;
+            int endLabel = -1;
 
             bool hasEscape = false;
             bool previousWhitespace = true;
@@ -1394,6 +1447,7 @@ namespace Markdig.Helpers
                                 {
                                     break;
                                 }
+
                                 buffer.Length = i;
                                 endLabel--;
                             }
@@ -1412,11 +1466,12 @@ namespace Markdig.Helpers
                                 isValid = true;
                             }
                         }
+
                         break;
                     }
                 }
 
-                var isWhitespace = c.IsWhitespace();
+                bool isWhitespace = c.IsWhitespace();
                 if (isWhitespace)
                 {
                     // Replace any whitespace by a single ' '
@@ -1429,6 +1484,7 @@ namespace Markdig.Helpers
                     {
                         startLabel = lines.Start;
                     }
+
                     hasEscape = true;
                 }
                 else
@@ -1441,6 +1497,7 @@ namespace Markdig.Helpers
                         {
                             startLabel = lines.Start;
                         }
+
                         endLabel = lines.Start;
                         buffer.Append(c);
                         if (!isWhitespace)
@@ -1449,6 +1506,7 @@ namespace Markdig.Helpers
                         }
                     }
                 }
+
                 previousWhitespace = isWhitespace;
             }
 
@@ -1457,7 +1515,8 @@ namespace Markdig.Helpers
             return isValid;
         }
 
-        public static bool TryParseLabelTrivia<T>(ref T lines, bool allowEmpty, out string? label, out SourceSpan labelSpan) where T : ICharIterator
+        public static bool TryParseLabelTrivia<T>(ref T lines, bool allowEmpty, out string? label,
+            out SourceSpan labelSpan) where T : ICharIterator
         {
             label = null;
             char c = lines.CurrentChar;
@@ -1466,10 +1525,11 @@ namespace Markdig.Helpers
             {
                 return false;
             }
-            var buffer = StringBuilderCache.Local();
 
-            var startLabel = -1;
-            var endLabel = -1;
+            StringBuilder buffer = StringBuilderCache.Local();
+
+            int startLabel = -1;
+            int endLabel = -1;
 
             bool hasEscape = false;
             bool previousWhitespace = true;
@@ -1509,6 +1569,7 @@ namespace Markdig.Helpers
                                 {
                                     break;
                                 }
+
                                 buffer.Length = i;
                                 endLabel--;
                             }
@@ -1527,11 +1588,12 @@ namespace Markdig.Helpers
                                 isValid = true;
                             }
                         }
+
                         break;
                     }
                 }
 
-                var isWhitespace = c.IsWhitespace();
+                bool isWhitespace = c.IsWhitespace();
 
 
                 if (!hasEscape && c == '\\')
@@ -1540,6 +1602,7 @@ namespace Markdig.Helpers
                     {
                         startLabel = lines.Start;
                     }
+
                     hasEscape = true;
                 }
                 else
@@ -1552,6 +1615,7 @@ namespace Markdig.Helpers
                         {
                             startLabel = lines.Start;
                         }
+
                         endLabel = lines.Start;
                         if (isWhitespace)
                         {
@@ -1562,12 +1626,14 @@ namespace Markdig.Helpers
                         {
                             buffer.Append(c);
                         }
+
                         if (!isWhitespace)
                         {
                             hasNonWhiteSpace = true;
                         }
                     }
                 }
+
                 previousWhitespace = isWhitespace;
             }
 
@@ -1575,6 +1641,5 @@ namespace Markdig.Helpers
 
             return isValid;
         }
-
     }
 }

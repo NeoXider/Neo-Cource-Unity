@@ -27,13 +27,13 @@ namespace Markdig.Extensions.ReferralLinks
         {
             string relString = string.Join(" ", Rels.Where(r => !string.IsNullOrEmpty(r)));
 
-            var linkRenderer = renderer.ObjectRenderers.Find<LinkInlineRenderer>();
+            LinkInlineRenderer? linkRenderer = renderer.ObjectRenderers.Find<LinkInlineRenderer>();
             if (linkRenderer != null)
             {
                 linkRenderer.Rel = relString;
             }
 
-            var autolinkRenderer = renderer.ObjectRenderers.Find<AutolinkInlineRenderer>();
+            AutolinkInlineRenderer? autolinkRenderer = renderer.ObjectRenderers.Find<AutolinkInlineRenderer>();
             if (autolinkRenderer != null)
             {
                 autolinkRenderer.Rel = relString;

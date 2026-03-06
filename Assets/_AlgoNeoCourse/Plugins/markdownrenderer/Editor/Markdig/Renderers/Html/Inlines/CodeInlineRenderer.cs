@@ -7,7 +7,7 @@ using Markdig.Syntax.Inlines;
 namespace Markdig.Renderers.Html.Inlines
 {
     /// <summary>
-    /// A HTML renderer for a <see cref="CodeInline"/>.
+    ///     A HTML renderer for a <see cref="CodeInline" />.
     /// </summary>
     /// <seealso cref="HtmlObjectRenderer{CodeInline}" />
     public class CodeInlineRenderer : HtmlObjectRenderer<CodeInline>
@@ -18,6 +18,7 @@ namespace Markdig.Renderers.Html.Inlines
             {
                 renderer.Write("<code").WriteAttributes(obj).Write('>');
             }
+
             if (renderer.EnableHtmlEscape)
             {
                 renderer.WriteEscape(obj.Content);
@@ -26,6 +27,7 @@ namespace Markdig.Renderers.Html.Inlines
             {
                 renderer.Write(obj.Content);
             }
+
             if (renderer.EnableHtmlForInline)
             {
                 renderer.Write("</code>");

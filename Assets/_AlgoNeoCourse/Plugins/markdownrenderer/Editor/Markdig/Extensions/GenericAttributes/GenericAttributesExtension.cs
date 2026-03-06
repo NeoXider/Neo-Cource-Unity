@@ -12,8 +12,9 @@ using Markdig.Syntax.Inlines;
 namespace Markdig.Extensions.GenericAttributes
 {
     /// <summary>
-    /// Extension that allows to attach HTML attributes to the previous <see cref="Inline"/> or current <see cref="Block"/>.
-    /// This extension should be enabled last after enabling other extensions.
+    ///     Extension that allows to attach HTML attributes to the previous <see cref="Inline" /> or current
+    ///     <see cref="Block" />.
+    ///     This extension should be enabled last after enabling other extensions.
     /// </summary>
     /// <seealso cref="IMarkdownExtension" />
     public class GenericAttributesExtension : IMarkdownExtension
@@ -26,7 +27,7 @@ namespace Markdig.Extensions.GenericAttributes
             }
 
             // Plug into all IAttributesParseable
-            foreach (var parser in pipeline.BlockParsers)
+            foreach (BlockParser? parser in pipeline.BlockParsers)
             {
                 if (parser is IAttributesParseable attributesParseable)
                 {
@@ -48,17 +49,18 @@ namespace Markdig.Extensions.GenericAttributes
                 if (indexOfAttributes >= 0)
                 {
                     // Work on a copy
-                    var copy = line;
+                    StringSlice copy = line;
                     copy.Start = indexOfAttributes;
-                    var startOfAttributes = copy.Start;
+                    int startOfAttributes = copy.Start;
                     if (GenericAttributesParser.TryParse(ref copy, out HtmlAttributes? attributes))
                     {
-                        var htmlAttributes = block.GetAttributes();
+                        HtmlAttributes htmlAttributes = block.GetAttributes();
                         attributes.CopyTo(htmlAttributes);
 
                         // Update position for HtmlAttributes
                         htmlAttributes.Line = processor.LineIndex;
-                        htmlAttributes.Column = startOfAttributes - processor.CurrentLineStartPosition; // This is not accurate with tabs!
+                        htmlAttributes.Column =
+                            startOfAttributes - processor.CurrentLineStartPosition; // This is not accurate with tabs!
                         htmlAttributes.Span.Start = startOfAttributes;
                         htmlAttributes.Span.End = copy.Start - 1;
 
@@ -67,6 +69,7 @@ namespace Markdig.Extensions.GenericAttributes
                     }
                 }
             }
+
             return false;
         }
     }

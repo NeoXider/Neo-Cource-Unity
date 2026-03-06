@@ -8,13 +8,13 @@ using Markdig.Renderers.Html;
 namespace Markdig.Extensions.Footnotes
 {
     /// <summary>
-    /// A HTML renderer for a <see cref="FootnoteGroup"/>.
+    ///     A HTML renderer for a <see cref="FootnoteGroup" />.
     /// </summary>
     /// <seealso cref="HtmlObjectRenderer{FootnoteGroup}" />
     public class HtmlFootnoteGroupRenderer : HtmlObjectRenderer<FootnoteGroup>
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="HtmlFootnoteGroupRenderer"/> class.
+        ///     Initializes a new instance of the <see cref="HtmlFootnoteGroupRenderer" /> class.
         /// </summary>
         public HtmlFootnoteGroupRenderer()
         {
@@ -22,7 +22,7 @@ namespace Markdig.Extensions.Footnotes
         }
 
         /// <summary>
-        /// Gets or sets the CSS group class used when rendering the &lt;div&gt; of this instance.
+        ///     Gets or sets the CSS group class used when rendering the &lt;div&gt; of this instance.
         /// </summary>
         public string GroupClass { get; set; }
 
@@ -35,11 +35,12 @@ namespace Markdig.Extensions.Footnotes
 
             for (int i = 0; i < footnotes.Count; i++)
             {
-                var footnote = (Footnote)footnotes[i];
+                Footnote footnote = (Footnote)footnotes[i];
                 renderer.WriteLine($"<li id=\"fn:{footnote.Order}\">");
                 renderer.WriteChildren(footnote);
                 renderer.WriteLine("</li>");
             }
+
             renderer.WriteLine("</ol>");
             renderer.WriteLine("</div>");
         }

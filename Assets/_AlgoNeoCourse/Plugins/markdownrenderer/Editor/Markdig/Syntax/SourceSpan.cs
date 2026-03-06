@@ -7,14 +7,14 @@ using System;
 namespace Markdig.Syntax
 {
     /// <summary>
-    /// A span of text.
+    ///     A span of text.
     /// </summary>
     public struct SourceSpan : IEquatable<SourceSpan>
     {
-        public static readonly SourceSpan Empty = new SourceSpan(0, -1);
+        public static readonly SourceSpan Empty = new(0, -1);
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SourceSpan"/> struct.
+        ///     Initializes a new instance of the <see cref="SourceSpan" /> struct.
         /// </summary>
         /// <param name="start">The start.</param>
         /// <param name="end">The end.</param>
@@ -25,19 +25,21 @@ namespace Markdig.Syntax
         }
 
         /// <summary>
-        /// Gets or sets the starting character position from the original text source. 
-        /// Note that for inline elements, this is only valid if <see cref="MarkdownExtensions.UsePreciseSourceLocation"/> is setup on the pipeline.
+        ///     Gets or sets the starting character position from the original text source.
+        ///     Note that for inline elements, this is only valid if <see cref="MarkdownExtensions.UsePreciseSourceLocation" /> is
+        ///     setup on the pipeline.
         /// </summary>
         public int Start { get; set; }
 
         /// <summary>
-        /// Gets or sets the ending character position from the original text source.
-        /// Note that for inline elements, this is only valid if <see cref="MarkdownExtensions.UsePreciseSourceLocation"/> is setup on the pipeline.
+        ///     Gets or sets the ending character position from the original text source.
+        ///     Note that for inline elements, this is only valid if <see cref="MarkdownExtensions.UsePreciseSourceLocation" /> is
+        ///     setup on the pipeline.
         /// </summary>
         public int End { get; set; }
 
         /// <summary>
-        /// Gets the character length of this element within the original source code.
+        ///     Gets the character length of this element within the original source code.
         /// </summary>
         public int Length => End - Start + 1;
 
@@ -62,7 +64,7 @@ namespace Markdig.Syntax
         {
             unchecked
             {
-                return (Start*397) ^ End;
+                return (Start * 397) ^ End;
             }
         }
 

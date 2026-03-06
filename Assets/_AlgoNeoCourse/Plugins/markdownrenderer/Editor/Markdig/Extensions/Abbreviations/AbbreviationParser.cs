@@ -12,13 +12,13 @@ using Markdig.Syntax.Inlines;
 namespace Markdig.Extensions.Abbreviations
 {
     /// <summary>
-    /// A block parser for abbreviations.
+    ///     A block parser for abbreviations.
     /// </summary>
     /// <seealso cref="BlockParser" />
     public class AbbreviationParser : BlockParser
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="AbbreviationParser"/> class.
+        ///     Initializes a new instance of the <see cref="AbbreviationParser" /> class.
         /// </summary>
         public AbbreviationParser()
         {
@@ -33,9 +33,9 @@ namespace Markdig.Extensions.Abbreviations
             }
 
             // A link must be of the form *[Some Text]: An abbreviation 
-            var slice = processor.Line;
-            var startPosition = slice.Start;
-            var c = slice.NextChar();
+            StringSlice slice = processor.Line;
+            int startPosition = slice.Start;
+            char c = slice.NextChar();
             if (c != '[')
             {
                 return BlockState.None;
@@ -51,23 +51,25 @@ namespace Markdig.Extensions.Abbreviations
             {
                 return BlockState.None;
             }
+
             slice.SkipChar();
 
             slice.Trim();
 
-            var abbr = new Abbreviation(this)
+            Abbreviation abbr = new(this)
             {
                 Label = label,
                 Text = slice,
                 Span = new SourceSpan(startPosition, slice.End),
                 Line = processor.LineIndex,
                 Column = processor.Column,
-                LabelSpan = labelSpan,
+                LabelSpan = labelSpan
             };
             if (!processor.Document.HasAbbreviations())
             {
                 processor.Document.ProcessInlinesBegin += DocumentOnProcessInlinesBegin;
             }
+
             processor.Document.AddAbbreviation(abbr.Label, abbr);
 
             return BlockState.BreakDiscard;
@@ -77,7 +79,7 @@ namespace Markdig.Extensions.Abbreviations
         {
             inlineProcessor.Document.ProcessInlinesBegin -= DocumentOnProcessInlinesBegin;
 
-            var abbreviations = inlineProcessor.Document.GetAbbreviations();
+            Dictionary<string, Abbreviation>? abbreviations = inlineProcessor.Document.GetAbbreviations();
             // Should not happen, but another extension could decide to remove them, so...
             if (abbreviations is null)
             {
@@ -85,18 +87,18 @@ namespace Markdig.Extensions.Abbreviations
             }
 
             // Build a text matcher from the abbreviations labels
-            var prefixTree = new CompactPrefixTree<Abbreviation>(abbreviations);
+            CompactPrefixTree<Abbreviation> prefixTree = new(abbreviations);
 
             inlineProcessor.LiteralInlineParser.PostMatch += (InlineProcessor processor, ref StringSlice slice) =>
             {
-                var literal = (LiteralInline)processor.Inline!;
-                var originalLiteral = literal;
+                LiteralInline? literal = (LiteralInline)processor.Inline!;
+                LiteralInline originalLiteral = literal;
 
                 ContainerInline? container = null;
 
                 // This is slow, but we don't have much the choice
-                var content = literal.Content;
-                var text = content.Text;
+                StringSlice content = literal.Content;
+                string? text = content.Text;
 
                 for (int i = content.Start; i <= content.End; i++)
                 {
@@ -111,38 +113,40 @@ namespace Markdig.Extensions.Abbreviations
                                 goto ValidAbbreviationStart;
                             }
                         }
+
                         break;
                     }
 
-                ValidAbbreviationStart:;
+                    ValidAbbreviationStart: ;
 
-                    if (prefixTree.TryMatchLongest(text.AsSpan(i, content.End - i + 1), out KeyValuePair<string, Abbreviation> abbreviationMatch))
+                    if (prefixTree.TryMatchLongest(text.AsSpan(i, content.End - i + 1),
+                            out KeyValuePair<string, Abbreviation> abbreviationMatch))
                     {
-                        var match = abbreviationMatch.Key;
+                        string? match = abbreviationMatch.Key;
                         if (!IsValidAbbreviationEnding(match, content, i))
                         {
                             continue;
                         }
 
-                        var indexAfterMatch = i + match.Length;
+                        int indexAfterMatch = i + match.Length;
 
                         // If we don't have a container, create a new one
                         if (container is null)
                         {
                             container = literal.Parent ??
-                                new ContainerInline
-                                {
-                                    Span = originalLiteral.Span,
-                                    Line = originalLiteral.Line,
-                                    Column = originalLiteral.Column,
-                                };
+                                        new ContainerInline
+                                        {
+                                            Span = originalLiteral.Span,
+                                            Line = originalLiteral.Line,
+                                            Column = originalLiteral.Column
+                                        };
                         }
 
-                        var abbrInline = new AbbreviationInline(abbreviationMatch.Value)
+                        AbbreviationInline abbrInline = new(abbreviationMatch.Value)
                         {
                             Span =
                             {
-                                Start = processor.GetSourcePosition(i, out int line, out int column),
+                                Start = processor.GetSourcePosition(i, out int line, out int column)
                             },
                             Line = line,
                             Column = column
@@ -171,11 +175,11 @@ namespace Markdig.Extensions.Abbreviations
                         }
 
                         // Process the remaining literal
-                        literal = new LiteralInline()
+                        literal = new LiteralInline
                         {
                             Span = new SourceSpan(abbrInline.Span.End + 1, literal.Span.End),
                             Line = line,
-                            Column = column + match.Length,
+                            Column = column + match.Length
                         };
                         content.Start = indexAfterMatch;
                         literal.Content = content;
@@ -190,6 +194,7 @@ namespace Markdig.Extensions.Abbreviations
                     {
                         container.AppendChild(literal);
                     }
+
                     processor.Inline = container;
                 }
             };
@@ -198,12 +203,12 @@ namespace Markdig.Extensions.Abbreviations
         private static bool IsValidAbbreviationEnding(string match, StringSlice content, int matchIndex)
         {
             // This will check if the next char at the end of the StringSlice is whitespace, punctuation or \0.
-            var contentNew = content;
+            StringSlice contentNew = content;
             contentNew.End = content.End + 1;
             int index = matchIndex + match.Length;
             while (index <= contentNew.End)
             {
-                var c = contentNew.PeekCharAbsolute(index);
+                char c = contentNew.PeekCharAbsolute(index);
                 if (!(c == '\0' || c.IsWhitespace() || c.IsAsciiPunctuation()))
                 {
                     return false;
@@ -218,8 +223,10 @@ namespace Markdig.Extensions.Abbreviations
                 {
                     break;
                 }
+
                 index++;
             }
+
             return true;
         }
     }

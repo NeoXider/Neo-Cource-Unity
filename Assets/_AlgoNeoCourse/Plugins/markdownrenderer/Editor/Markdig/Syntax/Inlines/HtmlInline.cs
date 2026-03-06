@@ -7,7 +7,7 @@ using System.Diagnostics;
 namespace Markdig.Syntax.Inlines
 {
     /// <summary>
-    /// A Raw HTML (Section 6.8 CommonMark specs).
+    ///     A Raw HTML (Section 6.8 CommonMark specs).
     /// </summary>
     /// <seealso cref="LeafInline" />
     [DebuggerDisplay("{Tag}")]
@@ -19,7 +19,7 @@ namespace Markdig.Syntax.Inlines
         }
 
         /// <summary>
-        /// Gets or sets the full declaration of this tag.
+        ///     Gets or sets the full declaration of this tag.
         /// </summary>
         public string Tag { get; set; }
     }

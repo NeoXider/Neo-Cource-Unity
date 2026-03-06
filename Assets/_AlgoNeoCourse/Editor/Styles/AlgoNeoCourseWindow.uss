@@ -29,6 +29,8 @@
 .algo-course-docs-menu {
     min-height: 28px;
     min-width: 28px;
+    margin-left: 3px;
+    margin-right: 3px;
     border-radius: 7px;
     border-width: 1px;
     border-color: rgba(100, 127, 171, 0.25);
@@ -43,9 +45,16 @@
 }
 
 .algo-course-nav-button {
-    min-width: 34px;
+    min-width: 32px;
+    max-width: 32px;
+    min-height: 30px;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 1px;
     -unity-font-style: bold;
-    font-size: 13px;
+    font-size: 14px;
+    -unity-text-align: middle-center;
 }
 
 .algo-course-nav-button.prev {
@@ -70,8 +79,8 @@
 
 .algo-course-slide-indicator {
     min-width: 62px;
-    margin-left: 4px;
-    margin-right: 4px;
+    margin-left: 6px;
+    margin-right: 6px;
     padding-top: 5px;
     padding-bottom: 5px;
     border-radius: 7px;
@@ -88,4 +97,9 @@
     border-width: 1px;
     border-color: rgba(74, 100, 141, 0.24);
     background-color: rgba(20, 24, 33, 0.86);
+}
+
+.algo-course-docs-menu {
+    padding-left: 8px;
+    padding-right: 8px;
 }

@@ -10,46 +10,50 @@ using Markdig.Helpers;
 namespace Markdig.Syntax.Inlines
 {
     /// <summary>
-    /// Base class for all syntax tree inlines.
+    ///     Base class for all syntax tree inlines.
     /// </summary>
     /// <seealso cref="MarkdownObject" />
     public abstract class Inline : MarkdownObject, IInline
     {
         /// <summary>
-        /// Gets the parent container of this inline.
+        ///     Gets the parent container of this inline.
         /// </summary>
         public ContainerInline? Parent { get; internal set; }
 
         /// <summary>
-        /// Gets the previous inline.
+        ///     Gets the previous inline.
         /// </summary>
         public Inline? PreviousSibling { get; private set; }
 
         /// <summary>
-        /// Gets the next sibling inline.
+        ///     Gets the next sibling inline.
         /// </summary>
         public Inline? NextSibling { get; internal set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether this instance is closed.
+        ///     Gets or sets a value indicating whether this instance is closed.
         /// </summary>
         public bool IsClosed { get; set; }
 
         /// <summary>
-        /// Inserts the specified inline after this instance.
+        ///     Inserts the specified inline after this instance.
         /// </summary>
         /// <param name="next">The inline to insert after this instance.</param>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="ArgumentException">Inline has already a parent</exception>
         public void InsertAfter(Inline next)
         {
-            if (next is null) ThrowHelper.ArgumentNullException(nameof(next));
+            if (next is null)
+            {
+                ThrowHelper.ArgumentNullException(nameof(next));
+            }
+
             if (next.Parent != null)
             {
                 ThrowHelper.ArgumentException("Inline has already a parent", nameof(next));
             }
 
-            var previousNext = NextSibling;
+            Inline? previousNext = NextSibling;
             if (previousNext != null)
             {
                 previousNext.PreviousSibling = next;
@@ -67,20 +71,24 @@ namespace Markdig.Syntax.Inlines
         }
 
         /// <summary>
-        /// Inserts the specified inline before this instance.
+        ///     Inserts the specified inline before this instance.
         /// </summary>
         /// <param name="previous">The inline previous to insert before this instance.</param>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="ArgumentException">Inline has already a parent</exception>
         public void InsertBefore(Inline previous)
         {
-            if (previous is null) ThrowHelper.ArgumentNullException(nameof(previous));
+            if (previous is null)
+            {
+                ThrowHelper.ArgumentNullException(nameof(previous));
+            }
+
             if (previous.Parent != null)
             {
                 ThrowHelper.ArgumentException("Inline has already a parent", nameof(previous));
             }
 
-            var previousSibling = PreviousSibling;
+            Inline? previousSibling = PreviousSibling;
             if (previousSibling != null)
             {
                 previousSibling.NextSibling = previous;
@@ -97,7 +105,7 @@ namespace Markdig.Syntax.Inlines
         }
 
         /// <summary>
-        /// Removes this instance from the current list and its parent
+        ///     Removes this instance from the current list and its parent
         /// </summary>
         public void Remove()
         {
@@ -122,7 +130,7 @@ namespace Markdig.Syntax.Inlines
         }
 
         /// <summary>
-        /// Replaces this inline by the specified inline.
+        ///     Replaces this inline by the specified inline.
         /// </summary>
         /// <param name="inline">The inline.</param>
         /// <param name="copyChildren">if set to <c>true</c> the children of this instance are copied to the specified inline.</param>
@@ -130,12 +138,15 @@ namespace Markdig.Syntax.Inlines
         /// <exception cref="ArgumentNullException">If inline is null</exception>
         public Inline ReplaceBy(Inline inline, bool copyChildren = true)
         {
-            if (inline is null) ThrowHelper.ArgumentNullException(nameof(inline));
+            if (inline is null)
+            {
+                ThrowHelper.ArgumentNullException(nameof(inline));
+            }
 
             // Save sibling
-            var parent = Parent;
-            var previousSibling = PreviousSibling;
-            var nextSibling = NextSibling;
+            ContainerInline? parent = Parent;
+            Inline? previousSibling = PreviousSibling;
+            Inline? nextSibling = NextSibling;
             Remove();
 
             if (previousSibling != null)
@@ -151,22 +162,23 @@ namespace Markdig.Syntax.Inlines
                 parent.AppendChild(inline);
             }
 
-            var container = this as ContainerInline;
+            ContainerInline? container = this as ContainerInline;
             if (copyChildren && container != null)
             {
-                var newContainer = inline as ContainerInline;
+                ContainerInline? newContainer = inline as ContainerInline;
                 // Don't append to a closed container
                 if (newContainer != null && newContainer.IsClosed)
                 {
                     newContainer = null;
                 }
+
                 // TODO: This part is not efficient as it is using child.Remove()
                 // We need a method to quickly move all children without having to mess Next/Prev sibling
-                var child = container.FirstChild;
-                var lastChild = inline;
+                Inline? child = container.FirstChild;
+                Inline lastChild = inline;
                 while (child != null)
                 {
-                    var nextChild = child.NextSibling;
+                    Inline? nextChild = child.NextSibling;
                     child.Remove();
                     if (newContainer != null)
                     {
@@ -176,6 +188,7 @@ namespace Markdig.Syntax.Inlines
                     {
                         lastChild.InsertAfter(child);
                     }
+
                     lastChild = child;
                     child = nextChild;
                 }
@@ -187,60 +200,65 @@ namespace Markdig.Syntax.Inlines
         }
 
         /// <summary>
-        /// Determines whether this instance contains a parent of the specified type.
+        ///     Determines whether this instance contains a parent of the specified type.
         /// </summary>
         /// <typeparam name="T">Type of the parent to check</typeparam>
         /// <returns><c>true</c> if this instance contains a parent of the specified type; <c>false</c> otherwise</returns>
         public bool ContainsParentOfType<T>() where T : Inline
         {
-            var inline = this;
+            Inline? inline = this;
             while (inline != null)
             {
-                var delimiter = inline as T;
+                T? delimiter = inline as T;
                 if (delimiter != null)
                 {
                     return true;
                 }
+
                 inline = inline.Parent;
             }
+
             return false;
         }
 
         /// <summary>
-        /// Iterates on parents of the specified type.
+        ///     Iterates on parents of the specified type.
         /// </summary>
         /// <typeparam name="T">Type of the parent to iterate over</typeparam>
         /// <returns>An enumeration on the parents of the specified type</returns>
         public IEnumerable<T> FindParentOfType<T>() where T : Inline
         {
-            var inline = this;
+            Inline? inline = this;
             while (inline != null)
             {
                 if (inline is T inlineOfT)
                 {
                     yield return inlineOfT;
                 }
+
                 inline = inline.Parent;
             }
         }
 
         public T? FirstParentOfType<T>() where T : notnull, Inline
         {
-            var inline = this;
+            Inline? inline = this;
             while (inline != null)
             {
                 if (inline is T inlineOfT)
                 {
                     return inlineOfT;
                 }
+
                 inline = inline.Parent;
             }
+
             return null;
         }
 
         public Inline FindBestParent()
         {
-            var current = this;
+            Inline? current = this;
 
             while (current.Parent != null || current.PreviousSibling != null)
             {
@@ -258,7 +276,6 @@ namespace Markdig.Syntax.Inlines
 
         protected virtual void OnChildRemove(Inline child)
         {
-
         }
 
         protected virtual void OnChildInsert(Inline child)
@@ -266,31 +283,39 @@ namespace Markdig.Syntax.Inlines
         }
 
         /// <summary>
-        /// Dumps this instance to <see cref="TextWriter"/>.
+        ///     Dumps this instance to <see cref="TextWriter" />.
         /// </summary>
         /// <param name="writer">The writer.</param>
         /// <exception cref="ArgumentNullException"></exception>
         public void DumpTo(TextWriter writer)
         {
-            if (writer is null) ThrowHelper.ArgumentNullException_writer();
+            if (writer is null)
+            {
+                ThrowHelper.ArgumentNullException_writer();
+            }
+
             DumpTo(writer, 0);
         }
 
         /// <summary>
-        /// Dumps this instance to <see cref="TextWriter"/>.
+        ///     Dumps this instance to <see cref="TextWriter" />.
         /// </summary>
         /// <param name="writer">The writer.</param>
         /// <param name="level">The level of indent.</param>
         /// <exception cref="ArgumentNullException">if writer is null</exception>
         public void DumpTo(TextWriter writer, int level)
         {
-            if (writer is null) ThrowHelper.ArgumentNullException_writer();
+            if (writer is null)
+            {
+                ThrowHelper.ArgumentNullException_writer();
+            }
+
             for (int i = 0; i < level; i++)
             {
                 writer.Write(' ');
             }
 
-            writer.WriteLine("-> " + this.GetType().Name + " = " + this);
+            writer.WriteLine("-> " + GetType().Name + " = " + this);
 
             DumpChildTo(writer, level + 1);
 

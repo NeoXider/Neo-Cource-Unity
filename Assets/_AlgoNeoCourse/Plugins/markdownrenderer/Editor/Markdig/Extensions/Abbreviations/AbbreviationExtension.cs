@@ -7,7 +7,7 @@ using Markdig.Renderers;
 namespace Markdig.Extensions.Abbreviations
 {
     /// <summary>
-    /// Extension to allow abbreviations.
+    ///     Extension to allow abbreviations.
     /// </summary>
     /// <seealso cref="IMarkdownExtension" />
     public class AbbreviationExtension : IMarkdownExtension
@@ -19,7 +19,8 @@ namespace Markdig.Extensions.Abbreviations
 
         public void Setup(MarkdownPipeline pipeline, IMarkdownRenderer renderer)
         {
-            if (renderer is HtmlRenderer htmlRenderer && !htmlRenderer.ObjectRenderers.Contains<HtmlAbbreviationRenderer>())
+            if (renderer is HtmlRenderer htmlRenderer &&
+                !htmlRenderer.ObjectRenderers.Contains<HtmlAbbreviationRenderer>())
             {
                 // Must be inserted before CodeBlockRenderer
                 htmlRenderer.ObjectRenderers.Insert(0, new HtmlAbbreviationRenderer());

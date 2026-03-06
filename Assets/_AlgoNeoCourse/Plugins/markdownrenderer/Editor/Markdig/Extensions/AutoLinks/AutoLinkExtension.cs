@@ -10,7 +10,7 @@ using Markdig.Syntax.Inlines;
 namespace Markdig.Extensions.AutoLinks
 {
     /// <summary>
-    /// Extension to automatically create <see cref="LinkInline"/> when a link url http: or mailto: is found.
+    ///     Extension to automatically create <see cref="LinkInline" /> when a link url http: or mailto: is found.
     /// </summary>
     /// <seealso cref="IMarkdownExtension" />
     public class AutoLinkExtension : IMarkdownExtension
@@ -33,7 +33,8 @@ namespace Markdig.Extensions.AutoLinks
 
         public void Setup(MarkdownPipeline pipeline, IMarkdownRenderer renderer)
         {
-            if (renderer is NormalizeRenderer normalizeRenderer && !normalizeRenderer.ObjectRenderers.Contains<NormalizeAutoLinkRenderer>())
+            if (renderer is NormalizeRenderer normalizeRenderer &&
+                !normalizeRenderer.ObjectRenderers.Contains<NormalizeAutoLinkRenderer>())
             {
                 normalizeRenderer.ObjectRenderers.InsertBefore<LinkInlineRenderer>(new NormalizeAutoLinkRenderer());
             }

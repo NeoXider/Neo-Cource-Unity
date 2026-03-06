@@ -10,7 +10,7 @@ using Markdig.Parsers;
 namespace Markdig.Extensions.Emoji
 {
     /// <summary>
-    /// The inline parser used for emojis.
+    ///     The inline parser used for emojis.
     /// </summary>
     /// <seealso cref="InlineParser" />
     public class EmojiParser : InlineParser
@@ -18,7 +18,7 @@ namespace Markdig.Extensions.Emoji
         private readonly EmojiMapping _emojiMapping;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="EmojiParser"/> class.
+        ///     Initializes a new instance of the <see cref="EmojiParser" /> class.
         /// </summary>
         public EmojiParser(EmojiMapping emojiMapping)
         {
@@ -35,7 +35,8 @@ namespace Markdig.Extensions.Emoji
             }
 
             // Try to match an emoji shortcode or smiley
-            if (!_emojiMapping.PrefixTree.TryMatchLongest(slice.Text.AsSpan(slice.Start, slice.Length), out KeyValuePair<string, string> match))
+            if (!_emojiMapping.PrefixTree.TryMatchLongest(slice.Text.AsSpan(slice.Start, slice.Length),
+                    out KeyValuePair<string, string> match))
             {
                 return false;
             }
@@ -45,7 +46,7 @@ namespace Markdig.Extensions.Emoji
             {
                 Span =
                 {
-                    Start = processor.GetSourcePosition(slice.Start, out int line, out int column),
+                    Start = processor.GetSourcePosition(slice.Start, out int line, out int column)
                 },
                 Line = line,
                 Column = column,

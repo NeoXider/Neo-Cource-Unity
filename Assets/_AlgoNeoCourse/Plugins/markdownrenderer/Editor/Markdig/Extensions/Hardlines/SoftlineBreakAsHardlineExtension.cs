@@ -8,7 +8,7 @@ using Markdig.Renderers;
 namespace Markdig.Extensions.Hardlines
 {
     /// <summary>
-    /// Extension to generate hardline break for softline breaks.
+    ///     Extension to generate hardline break for softline breaks.
     /// </summary>
     /// <seealso cref="IMarkdownExtension" />
     public class SoftlineBreakAsHardlineExtension : IMarkdownExtension
@@ -17,7 +17,7 @@ namespace Markdig.Extensions.Hardlines
         {
             // Simply modify the LineBreakInlineParser
             // TODO: We might want more options (like pandoc)
-            var parser = pipeline.InlineParsers.Find<LineBreakInlineParser>();
+            LineBreakInlineParser? parser = pipeline.InlineParsers.Find<LineBreakInlineParser>();
             if (parser != null)
             {
                 parser.EnableSoftAsHard = true;

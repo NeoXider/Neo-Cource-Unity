@@ -5,17 +5,17 @@
 namespace Markdig.Extensions.Tables
 {
     /// <summary>
-    /// Defines a column.
+    ///     Defines a column.
     /// </summary>
     public class TableColumnDefinition
     {
         /// <summary>
-        /// Gets or sets the width (in percentage) of this column. A value of 0 is unspecified.
+        ///     Gets or sets the width (in percentage) of this column. A value of 0 is unspecified.
         /// </summary>
         public float Width { get; set; }
 
         /// <summary>
-        /// Gets or sets the column alignment.
+        ///     Gets or sets the column alignment.
         /// </summary>
         public TableColumnAlign? Alignment { get; set; }
     }

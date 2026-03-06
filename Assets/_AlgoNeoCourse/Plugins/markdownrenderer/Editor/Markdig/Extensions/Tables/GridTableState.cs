@@ -9,10 +9,12 @@ using Markdig.Parsers;
 namespace Markdig.Extensions.Tables
 {
     /// <summary>
-    /// Internal state used by the <see cref="GridTableParser"/>
+    ///     Internal state used by the <see cref="GridTableParser" />
     /// </summary>
     internal sealed class GridTableState
     {
+        public StringLineGroup Lines;
+
         public GridTableState(int start, bool expectRow)
         {
             Start = start;
@@ -20,8 +22,6 @@ namespace Markdig.Extensions.Tables
         }
 
         public int Start { get; }
-
-        public StringLineGroup Lines;
 
         public List<ColumnSlice>? ColumnSlices { get; private set; }
 
@@ -42,7 +42,7 @@ namespace Markdig.Extensions.Tables
         public void AddColumn(int start, int end, TableColumnAlign? align)
         {
             ColumnSlices ??= new List<ColumnSlice>();
-            
+
             ColumnSlices.Add(new ColumnSlice(start, end, align));
         }
 
@@ -57,7 +57,7 @@ namespace Markdig.Extensions.Tables
             }
 
             /// <summary>
-            /// Gets or sets the index position of this column (after the |)
+            ///     Gets or sets the index position of this column (after the |)
             /// </summary>
             public int Start { get; }
 

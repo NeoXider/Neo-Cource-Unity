@@ -17,8 +17,8 @@
 .quiz-title {
     -unity-font-style: bold;
     margin-bottom: 6px;
-    font-size: 15px;                 
-    color: rgb(180, 235, 255);      
+    font-size: 15px;
+    color: rgb(180, 235, 255);
     white-space: normal;
     overflow: visible;
     min-width: 0;
@@ -119,6 +119,7 @@
     min-height: 26px;
     -unity-font-style: bold;
 }
+
 .check-button:hover {
     background-color: rgba(255, 190, 90, 1.0);
 }

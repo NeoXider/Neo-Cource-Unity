@@ -2,13 +2,11 @@
 // This file is licensed under the BSD-Clause 2 license.
 // See the license.txt file in the project root for more information.
 
-using System;
-
 namespace Markdig.Helpers
 {
     /// <summary>
-    /// Represents a character or set of characters that represent a separation
-    /// between two lines of text
+    ///     Represents a character or set of characters that represent a separation
+    ///     between two lines of text
     /// </summary>
     public enum NewLine : byte
     {
@@ -21,15 +19,20 @@ namespace Markdig.Helpers
 
     public static class NewLineExtensions
     {
-        public static string AsString(this NewLine newLine) => newLine switch
+        public static string AsString(this NewLine newLine)
         {
-            NewLine.CarriageReturnLineFeed => "\r\n",
-            NewLine.LineFeed => "\n",
-            NewLine.CarriageReturn => "\r",
-            _ => string.Empty,
-        };
+            return newLine switch
+            {
+                NewLine.CarriageReturnLineFeed => "\r\n",
+                NewLine.LineFeed => "\n",
+                NewLine.CarriageReturn => "\r",
+                _ => string.Empty
+            };
+        }
 
-        public static int Length(this NewLine newLine) => (int)newLine & 3;
+        public static int Length(this NewLine newLine)
+        {
+            return (int)newLine & 3;
+        }
     }
 }
-

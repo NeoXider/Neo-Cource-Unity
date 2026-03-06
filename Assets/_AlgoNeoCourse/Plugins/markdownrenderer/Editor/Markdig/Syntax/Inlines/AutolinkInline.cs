@@ -7,7 +7,7 @@ using System.Diagnostics;
 namespace Markdig.Syntax.Inlines
 {
     /// <summary>
-    /// An autolink (Section 6.7 CommonMark specs)
+    ///     An autolink (Section 6.7 CommonMark specs)
     /// </summary>
     /// <seealso cref="LeafInline" />
     [DebuggerDisplay("<{Url}>")]
@@ -19,12 +19,12 @@ namespace Markdig.Syntax.Inlines
         }
 
         /// <summary>
-        /// Gets or sets a value indicating whether this instance is an email link.
+        ///     Gets or sets a value indicating whether this instance is an email link.
         /// </summary>
         public bool IsEmail { get; set; }
 
         /// <summary>
-        /// Gets or sets the URL of this link.
+        ///     Gets or sets the URL of this link.
         /// </summary>
         public string Url { get; set; }
 

@@ -11,7 +11,7 @@ using Markdig.Syntax.Inlines;
 namespace Markdig.Extensions.PragmaLines
 {
     /// <summary>
-    /// Extension to a span for each line containing the original line id (using id = pragma-line#line_number_zero_based)
+    ///     Extension to a span for each line containing the original line id (using id = pragma-line#line_number_zero_based)
     /// </summary>
     /// <seealso cref="IMarkdownExtension" />
     public class PragmaLineExtension : IMarkdownExtension
@@ -34,19 +34,19 @@ namespace Markdig.Extensions.PragmaLines
 
         private static void AddPragmas(Block block, ref int index)
         {
-            var attribute = block.GetAttributes();
-            var pragmaId = GetPragmaId(block);
-            if ( attribute.Id is null)
+            HtmlAttributes attribute = block.GetAttributes();
+            string pragmaId = GetPragmaId(block);
+            if (attribute.Id is null)
             {
                 attribute.Id = pragmaId;
             }
             else if (block.Parent != null)
             {
-                var heading = block as HeadingBlock;
+                HeadingBlock? heading = block as HeadingBlock;
 
                 // If we have a heading, we will try to add the tag inside it
                 // otherwise we will add it just before
-                var tag = $"<a id=\"{pragmaId}\"></a>";
+                string tag = $"<a id=\"{pragmaId}\"></a>";
                 if (heading?.Inline?.FirstChild != null)
                 {
                     heading.Inline.FirstChild.InsertBefore(new HtmlInline(tag));
@@ -58,12 +58,12 @@ namespace Markdig.Extensions.PragmaLines
                 }
             }
 
-            var container = block as ContainerBlock;
+            ContainerBlock? container = block as ContainerBlock;
             if (container != null)
             {
                 for (int i = 0; i < container.Count; i++)
                 {
-                    var subBlock = container[i];
+                    Block subBlock = container[i];
                     AddPragmas(subBlock, ref i);
                 }
             }

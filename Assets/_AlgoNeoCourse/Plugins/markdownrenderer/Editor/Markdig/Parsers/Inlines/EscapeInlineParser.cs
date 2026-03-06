@@ -8,32 +8,32 @@ using Markdig.Syntax.Inlines;
 namespace Markdig.Parsers.Inlines
 {
     /// <summary>
-    /// An inline parser for escape characters.
+    ///     An inline parser for escape characters.
     /// </summary>
     /// <seealso cref="InlineParser" />
     public class EscapeInlineParser : InlineParser
     {
         public EscapeInlineParser()
         {
-            OpeningCharacters = new[] {'\\'};
+            OpeningCharacters = new[] { '\\' };
         }
 
         public override bool Match(InlineProcessor processor, ref StringSlice slice)
         {
-            var startPosition = slice.Start;
+            int startPosition = slice.Start;
             // Go to escape character
-            var c = slice.NextChar();
+            char c = slice.NextChar();
             int line;
             int column;
             if (c.IsAsciiPunctuation())
             {
-                processor.Inline = new LiteralInline()
+                processor.Inline = new LiteralInline
                 {
                     Content = new StringSlice(slice.Text, slice.Start, slice.Start),
                     Span = { Start = processor.GetSourcePosition(startPosition, out line, out column) },
                     Line = line,
                     Column = column,
-                    IsFirstCharacterEscaped = true,
+                    IsFirstCharacterEscaped = true
                 };
                 processor.Inline.Span.End = processor.Inline.Span.Start + 1;
                 slice.SkipChar();
@@ -45,12 +45,13 @@ namespace Markdig.Parsers.Inlines
             {
                 if (c == '\n' || c == '\r')
                 {
-                    var newLine = c == '\n' ? NewLine.LineFeed : NewLine.CarriageReturn;
+                    NewLine newLine = c == '\n' ? NewLine.LineFeed : NewLine.CarriageReturn;
                     if (c == '\r' && slice.PeekChar() == '\n')
                     {
                         newLine = NewLine.CarriageReturnLineFeed;
                     }
-                    processor.Inline = new LineBreakInline()
+
+                    processor.Inline = new LineBreakInline
                     {
                         IsHard = true,
                         IsBackslash = true,
@@ -68,7 +69,7 @@ namespace Markdig.Parsers.Inlines
             {
                 if (c == '\n' || c == '\r')
                 {
-                    processor.Inline = new LineBreakInline()
+                    processor.Inline = new LineBreakInline
                     {
                         IsHard = true,
                         IsBackslash = true,

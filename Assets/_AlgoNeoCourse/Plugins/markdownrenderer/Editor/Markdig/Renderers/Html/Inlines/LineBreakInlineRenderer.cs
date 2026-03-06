@@ -7,13 +7,13 @@ using Markdig.Syntax.Inlines;
 namespace Markdig.Renderers.Html.Inlines
 {
     /// <summary>
-    /// A HTML renderer for a <see cref="LineBreakInline"/>.
+    ///     A HTML renderer for a <see cref="LineBreakInline" />.
     /// </summary>
     /// <seealso cref="HtmlObjectRenderer{LineBreakInline}" />
     public class LineBreakInlineRenderer : HtmlObjectRenderer<LineBreakInline>
     {
         /// <summary>
-        /// Gets or sets a value indicating whether to render this softline break as a HTML hardline break tag (&lt;br /&gt;)
+        ///     Gets or sets a value indicating whether to render this softline break as a HTML hardline break tag (&lt;br /&gt;)
         /// </summary>
         public bool RenderAsHardlineBreak { get; set; }
 

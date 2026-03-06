@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using NeoCource.Editor.Infrastructure;
 using NeoCource.Editor.Quizzes;
@@ -22,7 +23,7 @@ namespace NeoCource.Editor.Progress
 
             if (s_cachedData.lessonStates == null)
             {
-                s_cachedData.lessonStates = new System.Collections.Generic.Dictionary<string, LessonQuizState>();
+                s_cachedData.lessonStates = new Dictionary<string, LessonQuizState>();
             }
 
             return s_cachedData;
@@ -36,8 +37,8 @@ namespace NeoCource.Editor.Progress
                 return null;
             }
 
-            var data = GetData();
-            if (!data.lessonStates.TryGetValue(key, out var state) && createIfMissing)
+            CourseProgressData data = GetData();
+            if (!data.lessonStates.TryGetValue(key, out LessonQuizState state) && createIfMissing)
             {
                 state = new LessonQuizState
                 {
@@ -51,7 +52,7 @@ namespace NeoCource.Editor.Progress
 
         public static void SaveLastSession(string lessonPath, int slideIndex)
         {
-            var data = GetData();
+            CourseProgressData data = GetData();
             data.lastLessonPath = lessonPath ?? string.Empty;
             data.lastSlideIndex = Math.Max(0, slideIndex);
             SaveToDisk();
@@ -59,7 +60,7 @@ namespace NeoCource.Editor.Progress
 
         public static bool TryGetLastSession(out string lessonPath, out int slideIndex)
         {
-            var data = GetData();
+            CourseProgressData data = GetData();
             lessonPath = data.lastLessonPath ?? string.Empty;
             slideIndex = Math.Max(0, data.lastSlideIndex);
             return !string.IsNullOrWhiteSpace(lessonPath);
@@ -70,7 +71,8 @@ namespace NeoCource.Editor.Progress
             try
             {
                 string assetPath = GetProgressFileAssetPath();
-                string directoryAssetPath = Path.GetDirectoryName(assetPath)?.Replace('\\', '/') ?? AlgoNeoPackageAssetLocator.DefaultProgressFolderAssetPath;
+                string directoryAssetPath = Path.GetDirectoryName(assetPath)?.Replace('\\', '/') ??
+                                            AlgoNeoPackageAssetLocator.DefaultProgressFolderAssetPath;
                 AlgoNeoPackageAssetLocator.EnsureProjectFolder(directoryAssetPath);
 
                 string fullPath = AlgoNeoPackageAssetLocator.ToAbsolutePath(assetPath);
@@ -118,7 +120,8 @@ namespace NeoCource.Editor.Progress
         public static string GetProgressDirectoryAssetPath()
         {
             string assetPath = GetProgressFileAssetPath();
-            return Path.GetDirectoryName(assetPath)?.Replace('\\', '/') ?? AlgoNeoPackageAssetLocator.DefaultProgressFolderAssetPath;
+            return Path.GetDirectoryName(assetPath)?.Replace('\\', '/') ??
+                   AlgoNeoPackageAssetLocator.DefaultProgressFolderAssetPath;
         }
 
         public static string NormalizeLessonPathKey(string lessonPath)

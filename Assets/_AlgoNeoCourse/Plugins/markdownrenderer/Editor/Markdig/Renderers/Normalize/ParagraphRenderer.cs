@@ -7,7 +7,7 @@ using Markdig.Syntax;
 namespace Markdig.Renderers.Normalize
 {
     /// <summary>
-    /// A Normalize renderer for a <see cref="ParagraphBlock"/>.
+    ///     A Normalize renderer for a <see cref="ParagraphBlock" />.
     /// </summary>
     /// <seealso cref="NormalizeObjectRenderer{ParagraphBlock}" />
     public class ParagraphRenderer : NormalizeObjectRenderer<ParagraphBlock>

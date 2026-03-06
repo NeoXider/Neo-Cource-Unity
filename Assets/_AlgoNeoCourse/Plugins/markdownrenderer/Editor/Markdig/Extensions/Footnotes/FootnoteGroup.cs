@@ -8,13 +8,13 @@ using Markdig.Syntax;
 namespace Markdig.Extensions.Footnotes
 {
     /// <summary>
-    /// A block that contains all the footnotes at the end of a <see cref="MarkdownDocument"/>.
+    ///     A block that contains all the footnotes at the end of a <see cref="MarkdownDocument" />.
     /// </summary>
     /// <seealso cref="ContainerBlock" />
     public class FootnoteGroup : ContainerBlock
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="FootnoteGroup"/> class.
+        ///     Initializes a new instance of the <see cref="FootnoteGroup" /> class.
         /// </summary>
         /// <param name="parser">The parser used to create this block.</param>
         public FootnoteGroup(BlockParser parser) : base(parser)

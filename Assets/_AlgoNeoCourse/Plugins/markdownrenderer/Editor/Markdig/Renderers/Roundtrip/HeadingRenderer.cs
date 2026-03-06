@@ -7,18 +7,19 @@ using Markdig.Syntax;
 namespace Markdig.Renderers.Roundtrip
 {
     /// <summary>
-    /// An Roundtrip renderer for a <see cref="HeadingBlock"/>.
+    ///     An Roundtrip renderer for a <see cref="HeadingBlock" />.
     /// </summary>
     /// <seealso cref="RoundtripObjectRenderer{HeadingBlock}" />
     public class HeadingRenderer : RoundtripObjectRenderer<HeadingBlock>
     {
-        private static readonly string[] HeadingTexts = {
+        private static readonly string[] HeadingTexts =
+        {
             "#",
             "##",
             "###",
             "####",
             "#####",
-            "######",
+            "######"
         };
 
         protected override void Write(RoundtripRenderer renderer, HeadingBlock obj)
@@ -27,8 +28,8 @@ namespace Markdig.Renderers.Roundtrip
             {
                 renderer.RenderLinesBefore(obj);
 
-                var headingChar = obj.Level == 1 ? '=' : '-';
-                var line = new string(headingChar, obj.HeaderCharCount);
+                char headingChar = obj.Level == 1 ? '=' : '-';
+                string line = new(headingChar, obj.HeaderCharCount);
 
                 renderer.WriteLeafInline(obj);
                 renderer.WriteLine(obj.SetextNewline);
@@ -43,7 +44,7 @@ namespace Markdig.Renderers.Roundtrip
             {
                 renderer.RenderLinesBefore(obj);
 
-                var headingText = obj.Level > 0 && obj.Level <= 6
+                string headingText = obj.Level > 0 && obj.Level <= 6
                     ? HeadingTexts[obj.Level - 1]
                     : new string('#', obj.Level);
 

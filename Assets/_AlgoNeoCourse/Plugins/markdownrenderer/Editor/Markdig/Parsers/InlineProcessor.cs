@@ -14,101 +14,110 @@ using Markdig.Syntax.Inlines;
 namespace Markdig.Parsers
 {
     /// <summary>
-    /// A delegate called at inline processing stage.
+    ///     A delegate called at inline processing stage.
     /// </summary>
     /// <param name="processor">The processor.</param>
     /// <param name="inline">The inline being processed.</param>
     public delegate void ProcessInlineDelegate(InlineProcessor processor, Inline? inline);
 
     /// <summary>
-    /// The inline parser state used by all <see cref="InlineParser"/>.
+    ///     The inline parser state used by all <see cref="InlineParser" />.
     /// </summary>
     public class InlineProcessor
     {
+        private static readonly InlineProcessorCache _cache = new();
         private readonly List<StringLineGroup.LineOffset> lineOffsets = new();
-        private int previousSliceOffset;
         private int previousLineIndexForSliceOffset;
+        private int previousSliceOffset;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="InlineProcessor" /> class.
+        ///     Initializes a new instance of the <see cref="InlineProcessor" /> class.
         /// </summary>
         /// <param name="document">The document.</param>
         /// <param name="parsers">The parsers.</param>
         /// <param name="preciseSourcelocation">A value indicating whether to provide precise source location.</param>
         /// <param name="context">A parser context used for the parsing.</param>
-        /// <param name="trackTrivia">Whether to parse trivia such as whitespace, extra heading characters and unescaped string values.</param>
+        /// <param name="trackTrivia">
+        ///     Whether to parse trivia such as whitespace, extra heading characters and unescaped string
+        ///     values.
+        /// </param>
         /// <exception cref="ArgumentNullException">
         /// </exception>
-        public InlineProcessor(MarkdownDocument document, InlineParserList parsers, bool preciseSourcelocation, MarkdownParserContext? context, bool trackTrivia = false)
+        public InlineProcessor(MarkdownDocument document, InlineParserList parsers, bool preciseSourcelocation,
+            MarkdownParserContext? context, bool trackTrivia = false)
         {
             Setup(document, parsers, preciseSourcelocation, context, trackTrivia);
         }
 
-        private InlineProcessor() { }
+        private InlineProcessor()
+        {
+        }
 
         /// <summary>
-        /// Gets the current block being processed.
+        ///     Gets the current block being processed.
         /// </summary>
         public LeafBlock? Block { get; private set; }
 
         /// <summary>
-        /// Gets a value indicating whether to provide precise source location.
+        ///     Gets a value indicating whether to provide precise source location.
         /// </summary>
         public bool PreciseSourceLocation { get; private set; }
 
         /// <summary>
-        /// Gets or sets the new block to replace the block being processed.
+        ///     Gets or sets the new block to replace the block being processed.
         /// </summary>
         public Block? BlockNew { get; set; }
 
         /// <summary>
-        /// Gets or sets the current inline. Used by <see cref="InlineParser"/> to return a new inline if match was successfull
+        ///     Gets or sets the current inline. Used by <see cref="InlineParser" /> to return a new inline if match was
+        ///     successfull
         /// </summary>
         public Inline? Inline { get; set; }
 
         /// <summary>
-        /// Gets the root container of the current <see cref="Block"/>.
+        ///     Gets the root container of the current <see cref="Block" />.
         /// </summary>
         public ContainerInline? Root { get; internal set; }
 
         /// <summary>
-        /// Gets the list of inline parsers.
+        ///     Gets the list of inline parsers.
         /// </summary>
         public InlineParserList Parsers { get; private set; } = null!; // Set in Setup
 
         /// <summary>
-        /// Gets the parser context or <c>null</c> if none is available.
+        ///     Gets the parser context or <c>null</c> if none is available.
         /// </summary>
         public MarkdownParserContext? Context { get; private set; }
 
         /// <summary>
-        /// Gets the root document.
+        ///     Gets the root document.
         /// </summary>
         public MarkdownDocument Document { get; private set; } = null!; // Set in Setup
 
         /// <summary>
-        /// Gets or sets the index of the line from the begining of the document being processed.
+        ///     Gets or sets the index of the line from the begining of the document being processed.
         /// </summary>
         public int LineIndex { get; private set; }
 
         /// <summary>
-        /// Gets the parser states that can be used by <see cref="InlineParser"/> using their <see cref="ParserBase{Inline}.Index"/> property.
+        ///     Gets the parser states that can be used by <see cref="InlineParser" /> using their
+        ///     <see cref="ParserBase{Inline}.Index" /> property.
         /// </summary>
         public object[] ParserStates { get; private set; } = null!; // Set in Setup
 
         /// <summary>
-        /// Gets or sets the debug log writer. No log if null.
+        ///     Gets or sets the debug log writer. No log if null.
         /// </summary>
         public TextWriter? DebugLog { get; set; }
 
         /// <summary>
-        /// True to parse trivia such as whitespace, extra heading characters and unescaped
-        /// string values.
+        ///     True to parse trivia such as whitespace, extra heading characters and unescaped
+        ///     string values.
         /// </summary>
         public bool TrackTrivia { get; private set; }
 
         /// <summary>
-        /// Gets the literal inline parser.
+        ///     Gets the literal inline parser.
         /// </summary>
         public LiteralInlineParser LiteralInlineParser { get; } = new();
 
@@ -124,11 +133,12 @@ namespace Markdig.Parsers
                 return SourceSpan.Empty;
             }
 
-            return new SourceSpan(GetSourcePosition(span.Start, out _, out _), GetSourcePosition(span.End, out _, out _));
+            return new SourceSpan(GetSourcePosition(span.Start, out _, out _),
+                GetSourcePosition(span.End, out _, out _));
         }
 
         /// <summary>
-        /// Gets the source position for the specified offset within the current slice.
+        ///     Gets the source position for the specified offset within the current slice.
         /// </summary>
         /// <param name="sliceOffset">The slice offset.</param>
         /// <param name="lineIndex">The line index.</param>
@@ -143,13 +153,13 @@ namespace Markdig.Parsers
             {
                 for (; lineIndex < lineOffsets.Count; lineIndex++)
                 {
-                    var lineOffset = lineOffsets[lineIndex];
+                    StringLineGroup.LineOffset lineOffset = lineOffsets[lineIndex];
                     if (sliceOffset <= lineOffset.End)
                     {
                         // Use the beginning of the line as a previous slice offset
                         // (since it is on the same line)
                         previousSliceOffset = lineOffsets[lineIndex].Start;
-                        var delta = sliceOffset - previousSliceOffset;
+                        int delta = sliceOffset - previousSliceOffset;
                         column = lineOffsets[lineIndex].Column + delta;
                         position = lineOffset.LinePosition + delta + lineOffsets[lineIndex].Offset;
                         previousLineIndexForSliceOffset = lineIndex;
@@ -160,21 +170,25 @@ namespace Markdig.Parsers
                     }
                 }
             }
+
             return position;
         }
 
         /// <summary>
-        /// Processes the inline of the specified <see cref="LeafBlock"/>.
+        ///     Processes the inline of the specified <see cref="LeafBlock" />.
         /// </summary>
         /// <param name="leafBlock">The leaf block.</param>
         public void ProcessInlineLeaf(LeafBlock leafBlock)
         {
-            if (leafBlock is null) ThrowHelper.ArgumentNullException_leafBlock();
+            if (leafBlock is null)
+            {
+                ThrowHelper.ArgumentNullException_leafBlock();
+            }
 
             // clear parser states
             Array.Clear(ParserStates, 0, ParserStates.Length);
 
-            Root = new ContainerInline() { IsClosed = false };
+            Root = new ContainerInline { IsClosed = false };
             leafBlock.Inline = Root;
             Inline = null;
             Block = leafBlock;
@@ -184,7 +198,7 @@ namespace Markdig.Parsers
             previousSliceOffset = 0;
             previousLineIndexForSliceOffset = 0;
             lineOffsets.Clear();
-            var text = leafBlock.Lines.ToSlice(lineOffsets);
+            StringSlice text = leafBlock.Lines.ToSlice(lineOffsets);
             leafBlock.Lines.Release();
             int previousStart = -1;
 
@@ -193,14 +207,16 @@ namespace Markdig.Parsers
                 // Security check so that the parser can't go into a crazy infinite loop if one extension is messing
                 if (previousStart == text.Start)
                 {
-                    ThrowHelper.InvalidOperationException($"The parser is in an invalid infinite loop while trying to parse inlines for block [{leafBlock.GetType().Name}] at position ({leafBlock.ToPositionText()}");
+                    ThrowHelper.InvalidOperationException(
+                        $"The parser is in an invalid infinite loop while trying to parse inlines for block [{leafBlock.GetType().Name}] at position ({leafBlock.ToPositionText()}");
                 }
+
                 previousStart = text.Start;
 
-                var c = text.CurrentChar;
+                char c = text.CurrentChar;
 
-                var textSaved = text;
-                var parsers = Parsers.GetParsersForOpeningCharacter(c);
+                StringSlice textSaved = text;
+                InlineParser[]? parsers = Parsers.GetParsersForOpeningCharacter(c);
                 if (parsers != null)
                 {
                     for (int i = 0; i < parsers.Length; i++)
@@ -212,6 +228,7 @@ namespace Markdig.Parsers
                         }
                     }
                 }
+
                 parsers = Parsers.GlobalParsers;
                 if (parsers != null)
                 {
@@ -230,13 +247,13 @@ namespace Markdig.Parsers
                 LiteralInlineParser.Match(this, ref text);
 
                 done:
-                var nextInline = Inline;
+                Inline? nextInline = Inline;
                 if (nextInline != null)
                 {
                     if (nextInline.Parent is null)
                     {
                         // Get deepest container
-                        var container = FindLastContainer();
+                        ContainerInline container = FindLastContainer();
                         if (!ReferenceEquals(container, nextInline))
                         {
                             container.AppendChild(nextInline);
@@ -248,15 +265,15 @@ namespace Markdig.Parsers
                             {
                                 container.Span = nextInline.Span;
                             }
+
                             container.Span.End = nextInline.Span.End;
                         }
-
                     }
                 }
                 else
                 {
                     // Get deepest container
-                    var container = FindLastContainer();
+                    ContainerInline container = FindLastContainer();
 
                     Inline = container.LastChild is LeafInline ? container.LastChild : container;
                     if (Inline == Root)
@@ -276,7 +293,7 @@ namespace Markdig.Parsers
             {
                 if (!(leafBlock is HeadingBlock))
                 {
-                    var newLine = leafBlock.NewLine;
+                    NewLine newLine = leafBlock.NewLine;
                     leafBlock.Inline.AppendChild(new LineBreakInline { NewLine = newLine });
                 }
             }
@@ -305,7 +322,7 @@ namespace Markdig.Parsers
         {
             for (int i = startingIndex; i < Parsers.PostInlineProcessors.Length; i++)
             {
-                var postInlineProcessor = Parsers.PostInlineProcessors[i];
+                IPostInlineProcessor postInlineProcessor = Parsers.PostInlineProcessors[i];
                 if (!postInlineProcessor.PostProcess(this, root, lastChild, i, isFinalProcessing))
                 {
                     break;
@@ -315,8 +332,8 @@ namespace Markdig.Parsers
 
         private ContainerInline FindLastContainer()
         {
-            var container = Block!.Inline!;
-            for (int depth = 0; ; depth++)
+            ContainerInline container = Block!.Inline!;
+            for (int depth = 0;; depth++)
             {
                 if (container.LastChild is ContainerInline nextContainer && !nextContainer.IsClosed)
                 {
@@ -324,7 +341,7 @@ namespace Markdig.Parsers
                 }
                 else
                 {
-                    ThrowHelper.CheckDepthLimit(depth, useLargeLimit: true);
+                    ThrowHelper.CheckDepthLimit(depth, true);
                     return container;
                 }
             }
@@ -332,10 +349,18 @@ namespace Markdig.Parsers
 
 
         [MemberNotNull(nameof(Document), nameof(Parsers), nameof(ParserStates))]
-        private void Setup(MarkdownDocument document, InlineParserList parsers, bool preciseSourcelocation, MarkdownParserContext? context, bool trackTrivia)
+        private void Setup(MarkdownDocument document, InlineParserList parsers, bool preciseSourcelocation,
+            MarkdownParserContext? context, bool trackTrivia)
         {
-            if (document is null) ThrowHelper.ArgumentNullException(nameof(document));
-            if (parsers is null) ThrowHelper.ArgumentNullException(nameof(parsers));
+            if (document is null)
+            {
+                ThrowHelper.ArgumentNullException(nameof(document));
+            }
+
+            if (parsers is null)
+            {
+                ThrowHelper.ArgumentNullException(nameof(parsers));
+            }
 
             Document = document;
             Parsers = parsers;
@@ -373,11 +398,10 @@ namespace Markdig.Parsers
             Array.Clear(ParserStates, 0, ParserStates.Length);
         }
 
-        private static readonly InlineProcessorCache _cache = new();
-
-        internal static InlineProcessor Rent(MarkdownDocument document, InlineParserList parsers, bool preciseSourcelocation, MarkdownParserContext? context, bool trackTrivia)
+        internal static InlineProcessor Rent(MarkdownDocument document, InlineParserList parsers,
+            bool preciseSourcelocation, MarkdownParserContext? context, bool trackTrivia)
         {
-            var processor = _cache.Get();
+            InlineProcessor processor = _cache.Get();
             processor.Setup(document, parsers, preciseSourcelocation, context, trackTrivia);
             return processor;
         }
@@ -389,9 +413,15 @@ namespace Markdig.Parsers
 
         private sealed class InlineProcessorCache : ObjectCache<InlineProcessor>
         {
-            protected override InlineProcessor NewInstance() => new InlineProcessor();
+            protected override InlineProcessor NewInstance()
+            {
+                return new InlineProcessor();
+            }
 
-            protected override void Reset(InlineProcessor instance) => instance.Reset();
+            protected override void Reset(InlineProcessor instance)
+            {
+                instance.Reset();
+            }
         }
     }
 }

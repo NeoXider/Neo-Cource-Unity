@@ -8,13 +8,13 @@ using Markdig.Syntax;
 namespace Markdig.Extensions.Figures
 {
     /// <summary>
-    /// Defines a figure caption.
+    ///     Defines a figure caption.
     /// </summary>
     /// <seealso cref="LeafBlock" />
     public class FigureCaption : LeafBlock
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="FigureCaption"/> class.
+        ///     Initializes a new instance of the <see cref="FigureCaption" /> class.
         /// </summary>
         /// <param name="parser">The parser used to create this block.</param>
         public FigureCaption(BlockParser parser) : base(parser)

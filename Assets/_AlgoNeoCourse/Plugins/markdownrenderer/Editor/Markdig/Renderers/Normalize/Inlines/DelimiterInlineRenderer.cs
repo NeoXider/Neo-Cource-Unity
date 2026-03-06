@@ -7,7 +7,7 @@ using Markdig.Syntax.Inlines;
 namespace Markdig.Renderers.Normalize.Inlines
 {
     /// <summary>
-    /// A Normalize renderer for a <see cref="DelimiterInline"/>.
+    ///     A Normalize renderer for a <see cref="DelimiterInline" />.
     /// </summary>
     /// <seealso cref="NormalizeObjectRenderer{DelimiterInline}" />
     public class DelimiterInlineRenderer : NormalizeObjectRenderer<DelimiterInline>

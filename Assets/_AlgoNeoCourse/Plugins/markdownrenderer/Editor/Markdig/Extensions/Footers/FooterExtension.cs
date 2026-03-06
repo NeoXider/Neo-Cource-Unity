@@ -8,7 +8,7 @@ using Markdig.Renderers;
 namespace Markdig.Extensions.Footers
 {
     /// <summary>
-    /// Extension that provides footer.
+    ///     Extension that provides footer.
     /// </summary>
     /// <seealso cref="IMarkdownExtension" />
     public class FooterExtension : IMarkdownExtension

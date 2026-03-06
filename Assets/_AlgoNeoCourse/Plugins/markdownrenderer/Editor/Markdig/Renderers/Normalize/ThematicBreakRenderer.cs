@@ -7,7 +7,7 @@ using Markdig.Syntax;
 namespace Markdig.Renderers.Normalize
 {
     /// <summary>
-    /// A Normalize renderer for a <see cref="ThematicBreakBlock"/>.
+    ///     A Normalize renderer for a <see cref="ThematicBreakBlock" />.
     /// </summary>
     /// <seealso cref="NormalizeObjectRenderer{ThematicBreakBlock}" />
     public class ThematicBreakRenderer : NormalizeObjectRenderer<ThematicBreakBlock>

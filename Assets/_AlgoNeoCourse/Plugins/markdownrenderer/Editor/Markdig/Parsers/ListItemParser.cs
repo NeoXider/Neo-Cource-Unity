@@ -5,17 +5,17 @@
 namespace Markdig.Parsers
 {
     /// <summary>
-    /// A parser base class for a list item.
+    ///     A parser base class for a list item.
     /// </summary>
     public abstract class ListItemParser
     {
         /// <summary>
-        /// Defines the characters that are used for detecting this list item.
+        ///     Defines the characters that are used for detecting this list item.
         /// </summary>
         public char[]? OpeningCharacters { get; protected set; }
 
         /// <summary>
-        /// Tries to parse the current input as a list item for this particular instance.
+        ///     Tries to parse the current input as a list item for this particular instance.
         /// </summary>
         /// <param name="state">The block processor</param>
         /// <param name="pendingBulletType">The type of the current bullet type</param>

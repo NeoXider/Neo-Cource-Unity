@@ -8,22 +8,22 @@ using System.Diagnostics;
 namespace Markdig.Syntax.Inlines
 {
     /// <summary>
-    /// An emphasis and strong emphasis (Section 6.4 CommonMark specs).
+    ///     An emphasis and strong emphasis (Section 6.4 CommonMark specs).
     /// </summary>
     /// <seealso cref="ContainerInline" />
     [DebuggerDisplay("{DelimiterChar} Count: {DelimiterCount}")]
     public class EmphasisInline : ContainerInline
     {
         /// <summary>
-        /// Gets or sets the delimiter character of this emphasis.
+        ///     Gets or sets the delimiter character of this emphasis.
         /// </summary>
         public char DelimiterChar { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether this <see cref="EmphasisInline"/> is strong.
-        /// <para>Marked obsolete as EmphasisInline can now be represented by more than two delimiter characters</para>
+        ///     Gets or sets a value indicating whether this <see cref="EmphasisInline" /> is strong.
+        ///     <para>Marked obsolete as EmphasisInline can now be represented by more than two delimiter characters</para>
         /// </summary>
-        [Obsolete("Use `DelimiterCount == 2` instead", error: false)]
+        [Obsolete("Use `DelimiterCount == 2` instead", false)]
         public bool IsDouble
         {
             get => DelimiterCount == 2;
@@ -31,7 +31,7 @@ namespace Markdig.Syntax.Inlines
         }
 
         /// <summary>
-        /// Gets or sets the number of delimiter characters for this emphasis.
+        ///     Gets or sets the number of delimiter characters for this emphasis.
         /// </summary>
         public int DelimiterCount { get; set; }
     }

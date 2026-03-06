@@ -9,7 +9,7 @@ using Markdig.Parsers;
 namespace Markdig.Syntax.Inlines
 {
     /// <summary>
-    /// Internal delimiter used by some parsers (e.g emphasis, tables).
+    ///     Internal delimiter used by some parsers (e.g emphasis, tables).
     /// </summary>
     /// <seealso cref="ContainerInline" />
     [DebuggerDisplay("{ToLiteral()} {Type}")]
@@ -17,35 +17,39 @@ namespace Markdig.Syntax.Inlines
     {
         protected DelimiterInline(InlineParser parser)
         {
-            if (parser is null) ThrowHelper.ArgumentNullException(nameof(parser));
+            if (parser is null)
+            {
+                ThrowHelper.ArgumentNullException(nameof(parser));
+            }
+
             Parser = parser;
             IsActive = true;
         }
 
         /// <summary>
-        /// Gets the parser.
+        ///     Gets the parser.
         /// </summary>
         public InlineParser Parser { get; }
 
         /// <summary>
-        /// Gets or sets the type of this delimiter.
+        ///     Gets or sets the type of this delimiter.
         /// </summary>
         public DelimiterType Type { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether this instance is active.
+        ///     Gets or sets a value indicating whether this instance is active.
         /// </summary>
         public bool IsActive { get; set; }
 
         /// <summary>
-        /// Converts this delimiter to a literal.
+        ///     Converts this delimiter to a literal.
         /// </summary>
         /// <returns>The string representation of this delimiter</returns>
         public abstract string ToLiteral();
 
         public void ReplaceByLiteral()
         {
-            var literalInline = new LiteralInline()
+            LiteralInline literalInline = new()
             {
                 Content = new StringSlice(ToLiteral()),
                 Span = Span,

@@ -11,7 +11,7 @@ namespace Markdig.Renderers.Normalize
         protected override void Write(NormalizeRenderer renderer, LinkReferenceDefinition linkDef)
         {
             renderer.EnsureLine();
-            renderer.Write('[');            
+            renderer.Write('[');
             renderer.Write(linkDef.Label);
             renderer.Write("]: ");
 
@@ -23,6 +23,7 @@ namespace Markdig.Renderers.Normalize
                 renderer.Write(linkDef.Title.Replace("\"", "\\\""));
                 renderer.Write('"');
             }
+
             renderer.FinishBlock(false);
         }
     }

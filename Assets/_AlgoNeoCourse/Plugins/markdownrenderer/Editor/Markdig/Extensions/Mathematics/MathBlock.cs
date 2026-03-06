@@ -8,13 +8,13 @@ using Markdig.Syntax;
 namespace Markdig.Extensions.Mathematics
 {
     /// <summary>
-    /// A math block.
+    ///     A math block.
     /// </summary>
     /// <seealso cref="FencedCodeBlock" />
     public class MathBlock : FencedCodeBlock
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MathBlock"/> class.
+        ///     Initializes a new instance of the <see cref="MathBlock" /> class.
         /// </summary>
         /// <param name="parser">The parser.</param>
         public MathBlock(BlockParser parser) : base(parser)

@@ -2,15 +2,15 @@
 // This file is licensed under the BSD-Clause 2 license. 
 // See the license.txt file in the project root for more information.
 
+using System.Collections.Generic;
 using Markdig.Helpers;
 using Markdig.Syntax;
-using System.Collections.Generic;
 using static Markdig.Syntax.CodeBlock;
 
 namespace Markdig.Parsers
 {
     /// <summary>
-    /// Block parser for an indented <see cref="CodeBlock"/>.
+    ///     Block parser for an indented <see cref="CodeBlock" />.
     /// </summary>
     /// <seealso cref="BlockParser" />
     public class IndentedCodeBlockParser : BlockParser
@@ -22,24 +22,24 @@ namespace Markdig.Parsers
 
         public override BlockState TryOpen(BlockProcessor processor)
         {
-            var result = TryContinue(processor, null);
+            BlockState result = TryContinue(processor, null);
             if (result == BlockState.Continue)
             {
                 // Save the column where we need to go back
-                var column = processor.Column;
-                var sourceStartPosition = processor.Start;
+                int column = processor.Column;
+                int sourceStartPosition = processor.Start;
 
                 // Unwind all indents all spaces before in order to calculate correct span
                 processor.UnwindAllIndents();
 
-                var codeBlock = new CodeBlock(this)
+                CodeBlock codeBlock = new(this)
                 {
                     Column = processor.Column,
                     Span = new SourceSpan(processor.Start, processor.Line.End),
                     LinesBefore = processor.UseLinesBefore(),
-                    NewLine = processor.Line.NewLine,
+                    NewLine = processor.Line.NewLine
                 };
-                var codeBlockLine = new CodeBlockLine
+                CodeBlockLine codeBlockLine = new()
                 {
                     TriviaBefore = processor.UseTrivia(sourceStartPosition - 1)
                 };
@@ -49,6 +49,7 @@ namespace Markdig.Parsers
                 // Go back to the correct column
                 processor.GoToColumn(column);
             }
+
             return result;
         }
 
@@ -60,11 +61,11 @@ namespace Markdig.Parsers
                 {
                     if (block != null)
                     {
-                        var codeBlock = (CodeBlock)block;
+                        CodeBlock codeBlock = (CodeBlock)block;
                         // add trailing blank lines to blank lines stack of processor
                         for (int i = codeBlock.Lines.Count - 1; i >= 0; i--)
                         {
-                            var line = codeBlock.Lines.Lines[i];
+                            StringLine line = codeBlock.Lines.Lines[i];
                             if (line.Slice.IsEmpty)
                             {
                                 codeBlock.Lines.RemoveAt(i);
@@ -77,6 +78,7 @@ namespace Markdig.Parsers
                             }
                         }
                     }
+
                     return BlockState.None;
                 }
             }
@@ -86,13 +88,14 @@ namespace Markdig.Parsers
             {
                 processor.GoToCodeIndent();
             }
+
             if (block != null)
             {
                 block.UpdateSpanEnd(processor.Line.End);
 
                 // lines
-                var cb = (CodeBlock)block;
-                var codeBlockLine = new CodeBlockLine
+                CodeBlock cb = (CodeBlock)block;
+                CodeBlockLine codeBlockLine = new()
                 {
                     TriviaBefore = processor.UseTrivia(processor.Start - 1)
                 };
@@ -105,7 +108,7 @@ namespace Markdig.Parsers
 
         public override bool Close(BlockProcessor processor, Block block)
         {
-            var codeBlock = (CodeBlock)block;
+            CodeBlock? codeBlock = (CodeBlock)block;
             if (codeBlock is null)
             {
                 return true;
@@ -114,7 +117,7 @@ namespace Markdig.Parsers
             // Remove any trailing blankline
             for (int i = codeBlock.Lines.Count - 1; i >= 0; i--)
             {
-                var line = codeBlock.Lines.Lines[i];
+                StringLine line = codeBlock.Lines.Lines[i];
                 if (line.Slice.IsEmpty)
                 {
                     codeBlock.Lines.RemoveAt(i);
@@ -124,8 +127,9 @@ namespace Markdig.Parsers
                     // we get that back from the beforeWhitespace on the CodeBlockLine.
                     if (processor.TrackTrivia)
                     {
-                        var quoteLine = codeBlock.CodeBlockLines[i];
-                        var emptyLine = new StringSlice(line.Slice.Text, quoteLine.TriviaBefore.Start, line.Slice.End, line.NewLine);
+                        CodeBlockLine? quoteLine = codeBlock.CodeBlockLines[i];
+                        StringSlice emptyLine = new(line.Slice.Text, quoteLine.TriviaBefore.Start, line.Slice.End,
+                            line.NewLine);
                         block.LinesAfter ??= new List<StringSlice>();
                         block.LinesAfter.Add(emptyLine);
                     }
@@ -135,6 +139,7 @@ namespace Markdig.Parsers
                     break;
                 }
             }
+
             return true;
         }
     }

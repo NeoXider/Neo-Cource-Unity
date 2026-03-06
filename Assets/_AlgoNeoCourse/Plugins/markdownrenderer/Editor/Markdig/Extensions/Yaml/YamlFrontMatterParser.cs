@@ -9,7 +9,7 @@ using Markdig.Syntax;
 namespace Markdig.Extensions.Yaml
 {
     /// <summary>
-    /// Block parser for a YAML frontmatter.
+    ///     Block parser for a YAML frontmatter.
     /// </summary>
     /// <seealso cref="YamlFrontMatterBlock" />
     public class YamlFrontMatterParser : BlockParser
@@ -17,15 +17,15 @@ namespace Markdig.Extensions.Yaml
         // We reuse a FencedCodeBlock parser to grab a frontmatter, only active if it happens on the first line of the document.
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="YamlFrontMatterParser"/> class.
+        ///     Initializes a new instance of the <see cref="YamlFrontMatterParser" /> class.
         /// </summary>
         public YamlFrontMatterParser()
         {
-            this.OpeningCharacters = new[] { '-' };
+            OpeningCharacters = new[] { '-' };
         }
 
         /// <summary>
-        /// Creates the front matter block.
+        ///     Creates the front matter block.
         /// </summary>
         /// <param name="processor">The block processor</param>
         /// <returns>The front matter block</returns>
@@ -35,7 +35,7 @@ namespace Markdig.Extensions.Yaml
         }
 
         /// <summary>
-        /// Tries to match a block opening.
+        ///     Tries to match a block opening.
         /// </summary>
         /// <param name="processor">The parser processor.</param>
         /// <returns>The result of the match</returns>
@@ -54,7 +54,7 @@ namespace Markdig.Extensions.Yaml
             }
 
             int count = 0;
-            var line = processor.Line;
+            StringSlice line = processor.Line;
             char c = line.CurrentChar;
 
             // Must consist of exactly three dashes
@@ -71,22 +71,25 @@ namespace Markdig.Extensions.Yaml
                 bool hasFullYamlFrontMatter = false;
                 // We make sure that there is a closing frontmatter somewhere in the document
                 // so here we work on the full document instead of just the line
-                var fullLine = new StringSlice(line.Text, line.Start, line.Text.Length - 1);
+                StringSlice fullLine = new(line.Text, line.Start, line.Text.Length - 1);
                 c = fullLine.CurrentChar;
                 while (c != '\0')
                 {
                     c = fullLine.NextChar();
                     if (c == '\n' || c == '\r')
                     {
-                        var nc = fullLine.PeekChar();
+                        char nc = fullLine.PeekChar();
                         if (c == '\r' && nc == '\n')
                         {
                             c = fullLine.NextChar();
                         }
+
                         nc = fullLine.PeekChar();
                         if (nc == '-')
                         {
-                            if (fullLine.NextChar() == '-' && fullLine.NextChar() == '-' && fullLine.NextChar() == '-' && (fullLine.NextChar() == '\0' || fullLine.SkipSpacesToEndOfLineOrEndOfDocument()))
+                            if (fullLine.NextChar() == '-' && fullLine.NextChar() == '-' &&
+                                fullLine.NextChar() == '-' && (fullLine.NextChar() == '\0' ||
+                                                               fullLine.SkipSpacesToEndOfLineOrEndOfDocument()))
                             {
                                 hasFullYamlFrontMatter = true;
                                 break;
@@ -94,7 +97,9 @@ namespace Markdig.Extensions.Yaml
                         }
                         else if (nc == '.')
                         {
-                            if (fullLine.NextChar() == '.' && fullLine.NextChar() == '.' && fullLine.NextChar() == '.' && (fullLine.NextChar() == '\0' || fullLine.SkipSpacesToEndOfLineOrEndOfDocument()))
+                            if (fullLine.NextChar() == '.' && fullLine.NextChar() == '.' &&
+                                fullLine.NextChar() == '.' && (fullLine.NextChar() == '\0' ||
+                                                               fullLine.SkipSpacesToEndOfLineOrEndOfDocument()))
                             {
                                 hasFullYamlFrontMatter = true;
                                 break;
@@ -106,7 +111,7 @@ namespace Markdig.Extensions.Yaml
                 if (hasFullYamlFrontMatter)
                 {
                     // Create a front matter block
-                    var block = this.CreateFrontMatterBlock(processor);
+                    YamlFrontMatterBlock block = CreateFrontMatterBlock(processor);
                     block.Column = processor.Column;
                     block.Span.Start = 0;
                     block.Span.End = line.Start;
@@ -123,7 +128,7 @@ namespace Markdig.Extensions.Yaml
         }
 
         /// <summary>
-        /// Tries to continue matching a block already opened.
+        ///     Tries to continue matching a block already opened.
         /// </summary>
         /// <param name="processor">The parser processor.</param>
         /// <param name="block">The block already opened.</param>
@@ -132,8 +137,8 @@ namespace Markdig.Extensions.Yaml
         {
             // Determine if we have a closing fence.
             // It can start or end with either <c>---</c> or <c>...</c>
-            var line = processor.Line;
-            var c = line.CurrentChar;
+            StringSlice line = processor.Line;
+            char c = line.CurrentChar;
             if (processor.Column == 0 && (c == '-' || c == '.'))
             {
                 int count = line.CountAndSkipChar(c);

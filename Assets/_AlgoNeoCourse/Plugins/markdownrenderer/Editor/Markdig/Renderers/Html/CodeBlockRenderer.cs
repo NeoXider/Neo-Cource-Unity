@@ -10,13 +10,13 @@ using Markdig.Syntax;
 namespace Markdig.Renderers.Html
 {
     /// <summary>
-    /// An HTML renderer for a <see cref="CodeBlock"/> and <see cref="FencedCodeBlock"/>.
+    ///     An HTML renderer for a <see cref="CodeBlock" /> and <see cref="FencedCodeBlock" />.
     /// </summary>
     /// <seealso cref="HtmlObjectRenderer{CodeBlock}" />
     public class CodeBlockRenderer : HtmlObjectRenderer<CodeBlock>
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="CodeBlockRenderer"/> class.
+        ///     Initializes a new instance of the <see cref="CodeBlockRenderer" /> class.
         /// </summary>
         public CodeBlockRenderer()
         {
@@ -26,7 +26,7 @@ namespace Markdig.Renderers.Html
         public bool OutputAttributesOnPre { get; set; }
 
         /// <summary>
-        /// Gets a map of fenced code block infos that should be rendered as div blocks instead of pre/code blocks.
+        ///     Gets a map of fenced code block infos that should be rendered as div blocks instead of pre/code blocks.
         /// </summary>
         public HashSet<string> BlocksAsDiv { get; }
 
@@ -34,11 +34,11 @@ namespace Markdig.Renderers.Html
         {
             renderer.EnsureLine();
 
-            var fencedCodeBlock = obj as FencedCodeBlock;
+            FencedCodeBlock? fencedCodeBlock = obj as FencedCodeBlock;
             if (fencedCodeBlock?.Info != null && BlocksAsDiv.Contains(fencedCodeBlock.Info))
             {
-                var infoPrefix = (obj.Parser as FencedCodeBlockParser)?.InfoPrefix ??
-                                 FencedCodeBlockParser.DefaultInfoPrefix;
+                string infoPrefix = (obj.Parser as FencedCodeBlockParser)?.InfoPrefix ??
+                                    FencedCodeBlockParser.DefaultInfoPrefix;
 
                 // We are replacing the HTML attribute `language-mylang` by `mylang` only for a div block
                 // NOTE that we are allocating a closure here
@@ -46,9 +46,11 @@ namespace Markdig.Renderers.Html
                 if (renderer.EnableHtmlForBlock)
                 {
                     renderer.Write("<div")
-                            .WriteAttributes(obj.TryGetAttributes(),
-                                cls => cls.StartsWith(infoPrefix, StringComparison.Ordinal) ? cls.Substring(infoPrefix.Length) : cls)
-                            .Write('>');
+                        .WriteAttributes(obj.TryGetAttributes(),
+                            cls => cls.StartsWith(infoPrefix, StringComparison.Ordinal)
+                                ? cls.Substring(infoPrefix.Length)
+                                : cls)
+                        .Write('>');
                 }
 
                 renderer.WriteLeafRawLines(obj, true, true, true);
@@ -57,7 +59,6 @@ namespace Markdig.Renderers.Html
                 {
                     renderer.WriteLine("</div>");
                 }
-
             }
             else
             {

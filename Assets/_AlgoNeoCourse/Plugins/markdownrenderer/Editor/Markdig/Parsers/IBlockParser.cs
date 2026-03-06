@@ -7,14 +7,14 @@ using Markdig.Syntax;
 namespace Markdig.Parsers
 {
     /// <summary>
-    /// Base interface for a <see cref="BlockParser"/>.
+    ///     Base interface for a <see cref="BlockParser" />.
     /// </summary>
     /// <typeparam name="TProcessor"></typeparam>
     /// <seealso cref="IMarkdownParser{T}" />
     public interface IBlockParser<in TProcessor> : IMarkdownParser<TProcessor>
     {
         /// <summary>
-        /// Determines whether this instance can interrupt the specified block being processed.
+        ///     Determines whether this instance can interrupt the specified block being processed.
         /// </summary>
         /// <param name="processor">The parser processor.</param>
         /// <param name="block">The block being processed.</param>
@@ -22,14 +22,14 @@ namespace Markdig.Parsers
         bool CanInterrupt(TProcessor processor, Block block);
 
         /// <summary>
-        /// Tries to match a block opening.
+        ///     Tries to match a block opening.
         /// </summary>
         /// <param name="processor">The parser processor.</param>
         /// <returns>The result of the match</returns>
         BlockState TryOpen(TProcessor processor);
 
         /// <summary>
-        /// Tries to continue matching a block already opened.
+        ///     Tries to continue matching a block already opened.
         /// </summary>
         /// <param name="processor">The parser processor.</param>
         /// <param name="block">The block already opened.</param>
@@ -37,7 +37,7 @@ namespace Markdig.Parsers
         BlockState TryContinue(TProcessor processor, Block block);
 
         /// <summary>
-        /// Called when a block matched by this parser is being closed (to allow final computation on the block).
+        ///     Called when a block matched by this parser is being closed (to allow final computation on the block).
         /// </summary>
         /// <param name="processor">The parser processor.</param>
         /// <param name="block">The block being closed.</param>

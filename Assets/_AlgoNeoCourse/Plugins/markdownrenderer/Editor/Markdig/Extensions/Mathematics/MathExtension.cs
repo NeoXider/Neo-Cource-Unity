@@ -7,7 +7,7 @@ using Markdig.Renderers;
 namespace Markdig.Extensions.Mathematics
 {
     /// <summary>
-    /// Extension for adding inline mathematics $...$
+    ///     Extension for adding inline mathematics $...$
     /// </summary>
     /// <seealso cref="IMarkdownExtension" />
     public class MathExtension : IMarkdownExtension
@@ -36,6 +36,7 @@ namespace Markdig.Extensions.Mathematics
                 {
                     htmlRenderer.ObjectRenderers.Insert(0, new HtmlMathInlineRenderer());
                 }
+
                 if (!htmlRenderer.ObjectRenderers.Contains<HtmlMathBlockRenderer>())
                 {
                     htmlRenderer.ObjectRenderers.Insert(0, new HtmlMathBlockRenderer());

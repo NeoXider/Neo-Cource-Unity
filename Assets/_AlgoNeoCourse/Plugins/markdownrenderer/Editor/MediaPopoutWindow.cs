@@ -9,6 +9,20 @@ internal class MediaPopoutWindow : EditorWindow
 
     private VisualElement m_PopOutElement;
 
+    private void OnDestroy()
+    {
+        if (m_PopOutElement == null)
+        {
+            return;
+        }
+
+        m_PopOutElement.RemoveFromClassList("popout-media");
+        if (m_OriginalContainer != null)
+        {
+            m_OriginalContainer.Insert(m_OriginalPositionIndex, m_PopOutElement);
+        }
+    }
+
     private void OnFocus()
     {
         //needed to receive key event
@@ -24,20 +38,22 @@ internal class MediaPopoutWindow : EditorWindow
         rootVisualElement.UnregisterCallback<KeyDownEvent>(OnKeyPressed);
     }
 
-    void OnKeyPressed(KeyDownEvent evt)
+    private void OnKeyPressed(KeyDownEvent evt)
     {
-        if(evt.keyCode == KeyCode.Escape)
+        if (evt.keyCode == KeyCode.Escape)
+        {
             Close();
+        }
     }
 
     public static void Popout(VisualElement element)
     {
-        var win = CreateInstance<MediaPopoutWindow>();
+        MediaPopoutWindow win = CreateInstance<MediaPopoutWindow>();
         win.ShowUtility();
 
         //we go back up the parent chain to make sure every stylesheet that could be relevant to that element is also
         //added to the window
-        var currentElement = element;
+        VisualElement currentElement = element;
         while (currentElement != null)
         {
             for (int i = 0; i < currentElement.styleSheets.count; ++i)
@@ -47,6 +63,7 @@ internal class MediaPopoutWindow : EditorWindow
                     win.rootVisualElement.styleSheets.Add(currentElement.styleSheets[i]);
                 }
             }
+
             currentElement = currentElement.parent;
         }
 
@@ -74,19 +91,8 @@ internal class MediaPopoutWindow : EditorWindow
     {
         if (HasOpenInstances<MediaPopoutWindow>())
         {
-            var win = GetWindow<MediaPopoutWindow>();
+            MediaPopoutWindow win = GetWindow<MediaPopoutWindow>();
             win.Close();
-        }
-    }
-    private void OnDestroy()
-    {
-        if(m_PopOutElement == null)
-            return;
-
-        m_PopOutElement.RemoveFromClassList("popout-media");
-        if (m_OriginalContainer != null)
-        {
-            m_OriginalContainer.Insert(m_OriginalPositionIndex, m_PopOutElement);
         }
     }
 }

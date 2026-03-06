@@ -10,7 +10,7 @@ namespace Markdig.Renderers.Normalize
     {
         protected override void Write(NormalizeRenderer renderer, HtmlBlock obj)
         {
-            renderer.WriteLeafRawLines(obj, true, false);
+            renderer.WriteLeafRawLines(obj, true);
         }
     }
 }

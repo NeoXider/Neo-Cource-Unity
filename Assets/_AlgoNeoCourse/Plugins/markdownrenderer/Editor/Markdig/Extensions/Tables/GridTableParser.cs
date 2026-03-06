@@ -24,15 +24,15 @@ namespace Markdig.Extensions.Tables
                 return BlockState.None;
             }
 
-            var line = processor.Line;
+            StringSlice line = processor.Line;
             GridTableState? tableState = null;
 
             // Match the first row that should be of the minimal form: +---------------
-            var c = line.CurrentChar;
-            var lineStart = line.Start;
+            char c = line.CurrentChar;
+            int lineStart = line.Start;
             while (c == '+')
             {
-                var columnStart = line.Start;
+                int columnStart = line.Start;
                 line.SkipChar();
                 line.TrimStart();
 
@@ -49,7 +49,7 @@ namespace Markdig.Extensions.Tables
                     return BlockState.None;
                 }
 
-                tableState ??= new GridTableState(start: processor.Start, expectRow: true);
+                tableState ??= new GridTableState(processor.Start, true);
                 tableState.AddColumn(columnStart - lineStart, line.Start - lineStart, columnAlign);
 
                 c = line.CurrentChar;
@@ -59,25 +59,26 @@ namespace Markdig.Extensions.Tables
             {
                 return BlockState.None;
             }
+
             // Store the line (if we need later to build a ParagraphBlock because the GridTable was in fact invalid)
             tableState.AddLine(ref processor.Line);
-            var table = new Table(this);
+            Table table = new(this);
             table.SetData(typeof(GridTableState), tableState);
 
             // Calculate the total width of all columns
             int totalWidth = 0;
-            foreach (var columnSlice in tableState.ColumnSlices!)
+            foreach (GridTableState.ColumnSlice? columnSlice in tableState.ColumnSlices!)
             {
                 totalWidth += columnSlice.End - columnSlice.Start - 1;
             }
 
             // Store the column width and alignment
-            foreach (var columnSlice in tableState.ColumnSlices)
+            foreach (GridTableState.ColumnSlice? columnSlice in tableState.ColumnSlices)
             {
-                var columnDefinition = new TableColumnDefinition
+                TableColumnDefinition columnDefinition = new()
                 {
                     // Column width proportional to the total width
-                    Width = (float)(columnSlice.End - columnSlice.Start - 1) * 100.0f / totalWidth,
+                    Width = (columnSlice.End - columnSlice.Start - 1) * 100.0f / totalWidth,
                     Alignment = columnSlice.Align
                 };
                 table.ColumnDefinitions.Add(columnDefinition);
@@ -90,17 +91,19 @@ namespace Markdig.Extensions.Tables
 
         public override BlockState TryContinue(BlockProcessor processor, Block block)
         {
-            var gridTable = (Table)block;
-            var tableState = (GridTableState)block.GetData(typeof(GridTableState))!;
+            Table gridTable = (Table)block;
+            GridTableState tableState = (GridTableState)block.GetData(typeof(GridTableState))!;
             tableState.AddLine(ref processor.Line);
             if (processor.CurrentChar == '+')
             {
                 return HandleNewRow(processor, tableState, gridTable);
             }
+
             if (processor.CurrentChar == '|')
             {
                 return HandleContents(processor, tableState, gridTable);
             }
+
             TerminateCurrentRow(processor, tableState, gridTable, true);
             // If the table is not valid we need to remove the grid table, 
             // and create a ParagraphBlock with the slices 
@@ -108,12 +111,13 @@ namespace Markdig.Extensions.Tables
             {
                 Undo(processor, tableState, gridTable);
             }
+
             return BlockState.Break;
         }
 
         private BlockState HandleNewRow(BlockProcessor processor, GridTableState tableState, Table gridTable)
         {
-            var columns = tableState.ColumnSlices!;
+            List<GridTableState.ColumnSlice>? columns = tableState.ColumnSlices!;
             SetRowSpanState(columns, processor.Line, out bool isHeaderRow, out bool hasRowSpan);
             SetColumnSpanState(columns, processor.Line);
             TerminateCurrentRow(processor, tableState, gridTable, false);
@@ -121,24 +125,27 @@ namespace Markdig.Extensions.Tables
             {
                 for (int i = 0; i < gridTable.Count; i++)
                 {
-                    var row = (TableRow)gridTable[i];
+                    TableRow row = (TableRow)gridTable[i];
                     row.IsHeader = true;
                 }
             }
+
             tableState.StartRowGroup = gridTable.Count;
             if (hasRowSpan)
             {
                 HandleContents(processor, tableState, gridTable);
             }
+
             return BlockState.ContinueDiscard;
         }
 
-        private static void SetRowSpanState(List<GridTableState.ColumnSlice> columns, StringSlice line, out bool isHeaderRow, out bool hasRowSpan)
+        private static void SetRowSpanState(List<GridTableState.ColumnSlice> columns, StringSlice line,
+            out bool isHeaderRow, out bool hasRowSpan)
         {
-            var lineStart = line.Start;
+            int lineStart = line.Start;
             isHeaderRow = line.PeekChar() == '=' || line.PeekChar(2) == '=';
             hasRowSpan = false;
-            foreach (var columnSlice in columns)
+            foreach (GridTableState.ColumnSlice? columnSlice in columns)
             {
                 if (columnSlice.CurrentCell != null)
                 {
@@ -168,27 +175,29 @@ namespace Markdig.Extensions.Tables
                 {
                     return c == '\0';
                 }
+
                 c = slice.NextChar();
-            }
-            while (true);
+            } while (true);
         }
 
-        private static void TerminateCurrentRow(BlockProcessor processor, GridTableState tableState, Table gridTable, bool isLastRow)
+        private static void TerminateCurrentRow(BlockProcessor processor, GridTableState tableState, Table gridTable,
+            bool isLastRow)
         {
-            var columns = tableState.ColumnSlices;
+            List<GridTableState.ColumnSlice>? columns = tableState.ColumnSlices;
             TableRow? currentRow = null;
             for (int i = 0; i < columns!.Count; i++)
             {
-                var columnSlice = columns[i];
+                GridTableState.ColumnSlice? columnSlice = columns[i];
                 if (columnSlice.CurrentCell != null)
                 {
                     currentRow ??= new TableRow();
-                    
+
                     // If this cell does not already belong to a row
                     if (columnSlice.CurrentCell.Parent is null)
                     {
                         currentRow.Add(columnSlice.CurrentCell);
                     }
+
                     // If the cell is not going to span through to the next row
                     if (columnSlice.CurrentCell.AllowClose)
                     {
@@ -197,14 +206,16 @@ namespace Markdig.Extensions.Tables
                 }
 
                 // Renew the block parser processor (or reset it for the last row)
-                if (columnSlice.BlockProcessor != null && (columnSlice.CurrentCell is null || columnSlice.CurrentCell.AllowClose))
+                if (columnSlice.BlockProcessor != null &&
+                    (columnSlice.CurrentCell is null || columnSlice.CurrentCell.AllowClose))
                 {
                     columnSlice.BlockProcessor.ReleaseChild();
                     columnSlice.BlockProcessor = isLastRow ? null : processor.CreateChild();
                 }
 
                 // Create or erase the cell
-                if (isLastRow || columnSlice.CurrentColumnSpan == 0 || (columnSlice.CurrentCell != null && columnSlice.CurrentCell.AllowClose))
+                if (isLastRow || columnSlice.CurrentColumnSpan == 0 ||
+                    (columnSlice.CurrentCell != null && columnSlice.CurrentCell.AllowClose))
                 {
                     // We don't need the cell anymore if we have a last row
                     // Or the cell has a columnspan == 0
@@ -221,26 +232,29 @@ namespace Markdig.Extensions.Tables
 
         private BlockState HandleContents(BlockProcessor processor, GridTableState tableState, Table gridTable)
         {
-            var isRowLine = processor.CurrentChar == '+';
-            var columns = tableState.ColumnSlices!;
-            var line = processor.Line;
+            bool isRowLine = processor.CurrentChar == '+';
+            List<GridTableState.ColumnSlice>? columns = tableState.ColumnSlices!;
+            StringSlice line = processor.Line;
             SetColumnSpanState(columns, line);
             if (!isRowLine && !CanContinueRow(columns))
             {
                 TerminateCurrentRow(processor, tableState, gridTable, false);
             }
+
             for (int i = 0; i < columns.Count;)
             {
-                var columnSlice = columns[i];
-                var nextColumnIndex = i + columnSlice.CurrentColumnSpan;
+                GridTableState.ColumnSlice? columnSlice = columns[i];
+                int nextColumnIndex = i + columnSlice.CurrentColumnSpan;
                 // If the span is 0, we exit
                 if (nextColumnIndex == i)
                 {
                     break;
                 }
-                var nextColumn = nextColumnIndex < columns.Count ? columns[nextColumnIndex] : null;
 
-                var sliceForCell = line;
+                GridTableState.ColumnSlice? nextColumn =
+                    nextColumnIndex < columns.Count ? columns[nextColumnIndex] : null;
+
+                StringSlice sliceForCell = line;
                 sliceForCell.Start = line.Start + columnSlice.Start + 1;
                 if (nextColumn != null)
                 {
@@ -248,8 +262,8 @@ namespace Markdig.Extensions.Tables
                 }
                 else
                 {
-                    var columnEnd = columns[columns.Count - 1].End;
-                    var columnEndChar = line.PeekCharExtra(columnEnd);
+                    int columnEnd = columns[columns.Count - 1].End;
+                    char columnEndChar = line.PeekCharExtra(columnEnd);
                     // If there is a `|` (or a `+` in the case that we are dealing with a row line 
                     // with spanned contents) exactly at the expected end of the table row, we cut the line
                     // otherwise we allow to have the last cell of a row to be open for longer cell content
@@ -262,6 +276,7 @@ namespace Markdig.Extensions.Tables
                         sliceForCell.End = line.End - 1;
                     }
                 }
+
                 sliceForCell.TrimEnd();
 
                 if (!isRowLine || !IsRowSeperator(sliceForCell))
@@ -282,6 +297,7 @@ namespace Markdig.Extensions.Tables
                         // Ensure that the BlockParser is aware that the TableCell is the top-level container
                         columnSlice.BlockProcessor.Open(columnSlice.CurrentCell);
                     }
+
                     // Process the content of the cell
                     columnSlice.BlockProcessor!.LineIndex = processor.LineIndex;
                     columnSlice.BlockProcessor.ProcessLine(sliceForCell);
@@ -290,27 +306,30 @@ namespace Markdig.Extensions.Tables
                 // Go to next column
                 i = nextColumnIndex;
             }
+
             return BlockState.ContinueDiscard;
         }
 
         private static void SetColumnSpanState(List<GridTableState.ColumnSlice> columns, StringSlice line)
         {
-            foreach (var columnSlice in columns)
+            foreach (GridTableState.ColumnSlice? columnSlice in columns)
             {
                 columnSlice.PreviousColumnSpan = columnSlice.CurrentColumnSpan;
                 columnSlice.CurrentColumnSpan = 0;
             }
+
             // | ------------- | ------------ | ---------------------------------------- |
             // Calculate the colspan for the new row
             int columnIndex = -1;
             for (int i = 0; i < columns.Count; i++)
             {
-                var columnSlice = columns[i];
-                var peek = line.PeekChar(columnSlice.Start);
+                GridTableState.ColumnSlice? columnSlice = columns[i];
+                char peek = line.PeekChar(columnSlice.Start);
                 if (peek == '|' || peek == '+')
                 {
                     columnIndex = i;
                 }
+
                 if (columnIndex >= 0)
                 {
                     columns[columnIndex].CurrentColumnSpan++;
@@ -320,25 +339,26 @@ namespace Markdig.Extensions.Tables
 
         private static bool CanContinueRow(List<GridTableState.ColumnSlice> columns)
         {
-            foreach (var columnSlice in columns)
+            foreach (GridTableState.ColumnSlice? columnSlice in columns)
             {
                 if (columnSlice.PreviousColumnSpan != columnSlice.CurrentColumnSpan)
                 {
                     return false;
                 }
             }
+
             return true;
         }
 
         private static void Undo(BlockProcessor processor, GridTableState tableState, Table gridTable)
         {
-            var parser = processor.Parsers.FindExact<ParagraphBlockParser>();
+            ParagraphBlockParser? parser = processor.Parsers.FindExact<ParagraphBlockParser>();
             // Discard the grid table
-            var parent = gridTable.Parent!;
+            ContainerBlock parent = gridTable.Parent!;
             processor.Discard(gridTable);
-            var paragraphBlock = new ParagraphBlock(parser)
+            ParagraphBlock paragraphBlock = new(parser)
             {
-                Lines = tableState.Lines,
+                Lines = tableState.Lines
             };
             parent.Add(paragraphBlock);
             processor.Open(paragraphBlock);
@@ -347,16 +367,17 @@ namespace Markdig.Extensions.Tables
         public override bool Close(BlockProcessor processor, Block block)
         {
             // Work only on Table, not on TableCell
-            var gridTable = block as Table;
+            Table? gridTable = block as Table;
             if (gridTable != null)
             {
-                var tableState = (GridTableState)block.GetData(typeof(GridTableState))!;
+                GridTableState tableState = (GridTableState)block.GetData(typeof(GridTableState))!;
                 TerminateCurrentRow(processor, tableState, gridTable, true);
                 if (!gridTable.IsValid())
                 {
                     Undo(processor, tableState, gridTable);
                 }
             }
+
             return true;
         }
     }

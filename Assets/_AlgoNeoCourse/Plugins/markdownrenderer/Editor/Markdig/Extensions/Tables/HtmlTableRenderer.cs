@@ -6,11 +6,12 @@ using System;
 using System.Globalization;
 using Markdig.Renderers;
 using Markdig.Renderers.Html;
+using Markdig.Syntax;
 
 namespace Markdig.Extensions.Tables
 {
     /// <summary>
-    /// A HTML renderer for a <see cref="Table"/>
+    ///     A HTML renderer for a <see cref="Table" />
     /// </summary>
     /// <seealso cref="HtmlObjectRenderer{TableBlock}" />
     public class HtmlTableRenderer : HtmlObjectRenderer<Table>
@@ -26,7 +27,7 @@ namespace Markdig.Extensions.Tables
 
 
             bool hasColumnWidth = false;
-            foreach (var tableColumnDefinition in table.ColumnDefinitions)
+            foreach (TableColumnDefinition? tableColumnDefinition in table.ColumnDefinitions)
             {
                 if (tableColumnDefinition.Width != 0.0f && tableColumnDefinition.Width != 1.0f)
                 {
@@ -37,17 +38,17 @@ namespace Markdig.Extensions.Tables
 
             if (hasColumnWidth)
             {
-                foreach (var tableColumnDefinition in table.ColumnDefinitions)
+                foreach (TableColumnDefinition? tableColumnDefinition in table.ColumnDefinitions)
                 {
-                    var width = Math.Round(tableColumnDefinition.Width*100)/100;
-                    var widthValue = string.Format(CultureInfo.InvariantCulture, "{0:0.##}", width);
+                    double width = Math.Round(tableColumnDefinition.Width * 100) / 100;
+                    string widthValue = string.Format(CultureInfo.InvariantCulture, "{0:0.##}", width);
                     renderer.WriteLine($"<col style=\"width:{widthValue}%\" />");
                 }
             }
 
-            foreach (var rowObj in table)
+            foreach (Block rowObj in table)
             {
-                var row = (TableRow)rowObj;
+                TableRow row = (TableRow)rowObj;
                 if (row.IsHeader)
                 {
                     // Allow a single thead
@@ -56,6 +57,7 @@ namespace Markdig.Extensions.Tables
                         renderer.WriteLine("<thead>");
                         isHeaderOpen = true;
                     }
+
                     hasAlreadyHeader = true;
                 }
                 else if (!hasBody)
@@ -69,11 +71,12 @@ namespace Markdig.Extensions.Tables
                     renderer.WriteLine("<tbody>");
                     hasBody = true;
                 }
+
                 renderer.Write("<tr").WriteAttributes(row).WriteLine('>');
                 for (int i = 0; i < row.Count; i++)
                 {
-                    var cellObj = row[i];
-                    var cell = (TableCell)cellObj;
+                    Block cellObj = row[i];
+                    TableCell cell = (TableCell)cellObj;
 
                     renderer.EnsureLine();
                     renderer.Write(row.IsHeader ? "<th" : "<td");
@@ -81,17 +84,21 @@ namespace Markdig.Extensions.Tables
                     {
                         renderer.Write($" colspan=\"{cell.ColumnSpan}\"");
                     }
+
                     if (cell.RowSpan != 1)
                     {
                         renderer.Write($" rowspan=\"{cell.RowSpan}\"");
                     }
+
                     if (table.ColumnDefinitions.Count > 0)
                     {
-                        var columnIndex = cell.ColumnIndex < 0 || cell.ColumnIndex >= table.ColumnDefinitions.Count
+                        int columnIndex = cell.ColumnIndex < 0 || cell.ColumnIndex >= table.ColumnDefinitions.Count
                             ? i
                             : cell.ColumnIndex;
-                        columnIndex = columnIndex >= table.ColumnDefinitions.Count ? table.ColumnDefinitions.Count - 1 : columnIndex;
-                        var alignment = table.ColumnDefinitions[columnIndex].Alignment;
+                        columnIndex = columnIndex >= table.ColumnDefinitions.Count
+                            ? table.ColumnDefinitions.Count - 1
+                            : columnIndex;
+                        TableColumnAlign? alignment = table.ColumnDefinitions[columnIndex].Alignment;
                         if (alignment.HasValue)
                         {
                             switch (alignment)
@@ -108,19 +115,22 @@ namespace Markdig.Extensions.Tables
                             }
                         }
                     }
+
                     renderer.WriteAttributes(cell);
                     renderer.Write('>');
 
-                    var previousImplicitParagraph = renderer.ImplicitParagraph;
+                    bool previousImplicitParagraph = renderer.ImplicitParagraph;
                     if (cell.Count == 1)
                     {
                         renderer.ImplicitParagraph = true;
                     }
+
                     renderer.Write(cell);
                     renderer.ImplicitParagraph = previousImplicitParagraph;
 
                     renderer.WriteLine(row.IsHeader ? "</th>" : "</td>");
                 }
+
                 renderer.WriteLine("</tr>");
             }
 
@@ -132,6 +142,7 @@ namespace Markdig.Extensions.Tables
             {
                 renderer.WriteLine("</thead>");
             }
+
             renderer.WriteLine("</table>");
         }
     }

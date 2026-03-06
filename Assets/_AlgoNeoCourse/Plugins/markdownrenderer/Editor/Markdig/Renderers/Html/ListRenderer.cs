@@ -7,7 +7,7 @@ using Markdig.Syntax;
 namespace Markdig.Renderers.Html
 {
     /// <summary>
-    /// A HTML renderer for a <see cref="ListBlock"/>.
+    ///     A HTML renderer for a <see cref="ListBlock" />.
     /// </summary>
     /// <seealso cref="HtmlObjectRenderer{ListBlock}" />
     public class ListRenderer : HtmlObjectRenderer<ListBlock>
@@ -25,10 +25,11 @@ namespace Markdig.Renderers.Html
                         renderer.Write(" type=\"").Write(listBlock.BulletType).Write('"');
                     }
 
-                    if (listBlock.OrderedStart != null && (listBlock.OrderedStart is not "1"))
+                    if (listBlock.OrderedStart != null && listBlock.OrderedStart is not "1")
                     {
                         renderer.Write(" start=\"").Write(listBlock.OrderedStart).Write('"');
                     }
+
                     renderer.WriteAttributes(listBlock);
                     renderer.WriteLine('>');
                 }
@@ -40,10 +41,10 @@ namespace Markdig.Renderers.Html
                 }
             }
 
-            foreach (var item in listBlock)
+            foreach (Block item in listBlock)
             {
-                var listItem = (ListItemBlock)item;
-                var previousImplicit = renderer.ImplicitParagraph;
+                ListItemBlock listItem = (ListItemBlock)item;
+                bool previousImplicit = renderer.ImplicitParagraph;
                 renderer.ImplicitParagraph = !listBlock.IsLoose;
 
                 renderer.EnsureLine();

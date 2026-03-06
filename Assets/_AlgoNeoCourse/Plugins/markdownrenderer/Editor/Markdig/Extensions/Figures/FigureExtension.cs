@@ -8,7 +8,7 @@ using Markdig.Renderers;
 namespace Markdig.Extensions.Figures
 {
     /// <summary>
-    /// Extension to allow usage of figures and figure captions.
+    ///     Extension to allow usage of figures and figure captions.
     /// </summary>
     /// <seealso cref="IMarkdownExtension" />
     public class FigureExtension : IMarkdownExtension

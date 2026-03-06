@@ -10,13 +10,13 @@ using Markdig.Parsers.Inlines;
 namespace Markdig.Syntax.Inlines
 {
     /// <summary>
-    /// A delimiter used for parsing emphasis.
+    ///     A delimiter used for parsing emphasis.
     /// </summary>
     /// <seealso cref="DelimiterInline" />
     public class EmphasisDelimiterInline : DelimiterInline
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="EmphasisDelimiterInline" /> class.
+        ///     Initializes a new instance of the <see cref="EmphasisDelimiterInline" /> class.
         /// </summary>
         /// <param name="parser">The parser.</param>
         /// <param name="descriptor">The descriptor.</param>
@@ -24,24 +24,26 @@ namespace Markdig.Syntax.Inlines
         public EmphasisDelimiterInline(InlineParser parser, EmphasisDescriptor descriptor) : base(parser)
         {
             if (descriptor is null)
+            {
                 ThrowHelper.ArgumentNullException(nameof(descriptor));
+            }
 
             Descriptor = descriptor;
             DelimiterChar = descriptor.Character;
         }
 
         /// <summary>
-        /// Gets the descriptor for this emphasis.
+        ///     Gets the descriptor for this emphasis.
         /// </summary>
         public EmphasisDescriptor Descriptor { get; }
 
         /// <summary>
-        /// The delimiter character found.
+        ///     The delimiter character found.
         /// </summary>
         public char DelimiterChar { get; }
 
         /// <summary>
-        /// The number of delimiter characters found for this delimiter.
+        ///     The number of delimiter characters found for this delimiter.
         /// </summary>
         public int DelimiterCount { get; set; }
 
@@ -52,7 +54,7 @@ namespace Markdig.Syntax.Inlines
 
         public LiteralInline AsLiteralInline()
         {
-            return new LiteralInline()
+            return new LiteralInline
             {
                 Content = new StringSlice(ToLiteral()),
                 IsClosed = true,

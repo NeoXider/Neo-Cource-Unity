@@ -3,20 +3,20 @@
 // See the license.txt file in the project root for more information.
 
 using System.IO;
-using Markdig.Syntax;
-using Markdig.Renderers.Normalize.Inlines;
 using Markdig.Helpers;
+using Markdig.Renderers.Normalize.Inlines;
+using Markdig.Syntax;
 
 namespace Markdig.Renderers.Normalize
 {
     /// <summary>
-    /// Default HTML renderer for a Markdown <see cref="MarkdownDocument"/> object.
+    ///     Default HTML renderer for a Markdown <see cref="MarkdownDocument" /> object.
     /// </summary>
     /// <seealso cref="TextRendererBase{NormalizeRenderer}" />
     public class NormalizeRenderer : TextRendererBase<NormalizeRenderer>
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="NormalizeRenderer"/> class.
+        ///     Initializes a new instance of the <see cref="NormalizeRenderer" /> class.
         /// </summary>
         /// <param name="writer">The writer.</param>
         /// <param name="options">The normalize options</param>
@@ -41,7 +41,7 @@ namespace Markdig.Renderers.Normalize
             ObjectRenderers.Add(new EmphasisInlineRenderer());
             ObjectRenderers.Add(new LineBreakInlineRenderer());
             ObjectRenderers.Add(new NormalizeHtmlInlineRenderer());
-            ObjectRenderers.Add(new NormalizeHtmlEntityInlineRenderer());            
+            ObjectRenderers.Add(new NormalizeHtmlEntityInlineRenderer());
             ObjectRenderers.Add(new LinkInlineRenderer());
             ObjectRenderers.Add(new LiteralInlineRenderer());
         }
@@ -123,7 +123,7 @@ namespace Markdig.Renderers.Normalize
         //}
 
         /// <summary>
-        /// Writes the lines of a <see cref="LeafBlock"/>
+        ///     Writes the lines of a <see cref="LeafBlock" />
         /// </summary>
         /// <param name="leafBlock">The leaf block.</param>
         /// <param name="writeEndOfLines">if set to <c>true</c> write end of lines.</param>
@@ -131,11 +131,15 @@ namespace Markdig.Renderers.Normalize
         /// <returns>This instance</returns>
         public NormalizeRenderer WriteLeafRawLines(LeafBlock leafBlock, bool writeEndOfLines, bool indent = false)
         {
-            if (leafBlock is null) ThrowHelper.ArgumentNullException_leafBlock();
+            if (leafBlock is null)
+            {
+                ThrowHelper.ArgumentNullException_leafBlock();
+            }
+
             if (leafBlock.Lines.Lines != null)
             {
-                var lines = leafBlock.Lines;
-                var slices = lines.Lines;
+                StringLineGroup lines = leafBlock.Lines;
+                StringLine[] slices = lines.Lines;
                 for (int i = 0; i < lines.Count; i++)
                 {
                     if (!writeEndOfLines && i > 0)
@@ -156,7 +160,8 @@ namespace Markdig.Renderers.Normalize
                     }
                 }
             }
+
             return this;
         }
-   }
+    }
 }

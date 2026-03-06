@@ -7,7 +7,7 @@ using Markdig.Syntax.Inlines;
 namespace Markdig.Renderers.Roundtrip.Inlines
 {
     /// <summary>
-    /// A Normalize renderer for a <see cref="LineBreakInline"/>.
+    ///     A Normalize renderer for a <see cref="LineBreakInline" />.
     /// </summary>
     /// <seealso cref="RoundtripObjectRenderer{LineBreakInline}" />
     public class LineBreakInlineRenderer : RoundtripObjectRenderer<LineBreakInline>
@@ -18,6 +18,7 @@ namespace Markdig.Renderers.Roundtrip.Inlines
             {
                 renderer.Write("\\");
             }
+
             renderer.WriteLine(obj.NewLine);
         }
     }

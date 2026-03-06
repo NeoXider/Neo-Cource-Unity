@@ -7,7 +7,7 @@ namespace NeoCource.Editor.Quizzes
     {
         public static void Shuffle<T>(IList<T> list, int seed)
         {
-            var rng = new Random(seed);
+            Random rng = new(seed);
             for (int i = list.Count - 1; i > 0; i--)
             {
                 int j = rng.Next(i + 1);
@@ -16,5 +16,3 @@ namespace NeoCource.Editor.Quizzes
         }
     }
 }
-
-

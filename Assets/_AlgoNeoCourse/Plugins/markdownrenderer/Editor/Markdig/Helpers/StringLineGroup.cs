@@ -7,62 +7,74 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Text;
 
 namespace Markdig.Helpers
 {
     /// <summary>
-    /// A group of <see cref="StringLine"/>.
+    ///     A group of <see cref="StringLine" />.
     /// </summary>
     /// <seealso cref="IEnumerable" />
     public struct StringLineGroup : IEnumerable
     {
         // Feel free to change these numbers if you see a positive change
-        private static readonly CustomArrayPool<StringLine> _pool
-            = new CustomArrayPool<StringLine>(512, 386, 128, 64);
+        private static readonly CustomArrayPool<StringLine> _pool = new(512, 386, 128, 64);
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="StringLineGroup"/> class.
+        ///     Initializes a new instance of the <see cref="StringLineGroup" /> class.
         /// </summary>
         /// <param name="capacity"></param>
         public StringLineGroup(int capacity)
         {
-            if (capacity <= 0) ThrowHelper.ArgumentOutOfRangeException(nameof(capacity));
+            if (capacity <= 0)
+            {
+                ThrowHelper.ArgumentOutOfRangeException(nameof(capacity));
+            }
+
             Lines = _pool.Rent(capacity);
             Count = 0;
         }
 
         internal StringLineGroup(int capacity, bool willRelease)
         {
-            if (capacity <= 0) ThrowHelper.ArgumentOutOfRangeException(nameof(capacity));
+            if (capacity <= 0)
+            {
+                ThrowHelper.ArgumentOutOfRangeException(nameof(capacity));
+            }
+
             Lines = _pool.Rent(willRelease ? Math.Max(8, capacity) : capacity);
             Count = 0;
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="StringLineGroup"/> class.
+        ///     Initializes a new instance of the <see cref="StringLineGroup" /> class.
         /// </summary>
         /// <param name="text">The text.</param>
         /// <exception cref="ArgumentNullException"></exception>
         public StringLineGroup(string text)
         {
-            if (text is null) ThrowHelper.ArgumentNullException_text();
+            if (text is null)
+            {
+                ThrowHelper.ArgumentNullException_text();
+            }
+
             Lines = new StringLine[1];
             Count = 0;
             Add(new StringSlice(text));
         }
 
         /// <summary>
-        /// Gets the lines.
+        ///     Gets the lines.
         /// </summary>
         public StringLine[] Lines { get; private set; }
 
         /// <summary>
-        /// Gets the number of lines.
+        ///     Gets the number of lines.
         /// </summary>
         public int Count { get; private set; }
 
         /// <summary>
-        /// Clears this instance.
+        ///     Clears this instance.
         /// </summary>
         public void Clear()
         {
@@ -71,7 +83,7 @@ namespace Markdig.Helpers
         }
 
         /// <summary>
-        /// Removes the line at the specified index.
+        ///     Removes the line at the specified index.
         /// </summary>
         /// <param name="index">The index.</param>
         public void RemoveAt(int index)
@@ -86,24 +98,32 @@ namespace Markdig.Helpers
         }
 
         /// <summary>
-        /// Adds the specified line to this instance.
+        ///     Adds the specified line to this instance.
         /// </summary>
         /// <param name="line">The line.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Add(ref StringLine line)
         {
-            if (Count == Lines.Length) IncreaseCapacity();
+            if (Count == Lines.Length)
+            {
+                IncreaseCapacity();
+            }
+
             Lines[Count++] = line;
         }
 
         /// <summary>
-        /// Adds the specified slice to this instance.
+        ///     Adds the specified slice to this instance.
         /// </summary>
         /// <param name="slice">The slice.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Add(StringSlice slice)
         {
-            if (Count == Lines.Length) IncreaseCapacity();
+            if (Count == Lines.Length)
+            {
+                IncreaseCapacity();
+            }
+
             Lines[Count++] = new StringLine(ref slice);
         }
 
@@ -113,7 +133,7 @@ namespace Markdig.Helpers
         }
 
         /// <summary>
-        /// Converts the lines to a single <see cref="StringSlice"/> by concatenating the lines.
+        ///     Converts the lines to a single <see cref="StringSlice" /> by concatenating the lines.
         /// </summary>
         /// <param name="lineOffsets">The position of the `\n` line offsets from the beginning of the returned slice.</param>
         /// <returns>A single slice concatenating the lines of this instance</returns>
@@ -123,7 +143,8 @@ namespace Markdig.Helpers
             if (Count == 1)
             {
                 ref StringLine line = ref Lines[0];
-                lineOffsets?.Add(new LineOffset(line.Position, line.Column, line.Slice.Start - line.Position, line.Slice.Start, line.Slice.End + 1));
+                lineOffsets?.Add(new LineOffset(line.Position, line.Column, line.Slice.Start - line.Position,
+                    line.Slice.Start, line.Slice.End + 1));
                 return Lines[0];
             }
 
@@ -139,9 +160,9 @@ namespace Markdig.Helpers
             }
 
             // Else use a builder
-            var builder = StringBuilderCache.Local();
+            StringBuilder builder = StringBuilderCache.Local();
             int previousStartOfLine = 0;
-            var newLine = NewLine.None;
+            NewLine newLine = NewLine.None;
             for (int i = 0; i < Count; i++)
             {
                 if (i > 0)
@@ -149,20 +170,24 @@ namespace Markdig.Helpers
                     builder.Append(newLine.AsString());
                     previousStartOfLine = builder.Length;
                 }
+
                 ref StringLine line = ref Lines[i];
                 if (!line.Slice.IsEmpty)
                 {
                     builder.Append(line.Slice.Text, line.Slice.Start, line.Slice.Length);
                 }
+
                 newLine = line.NewLine;
 
-                lineOffsets?.Add(new LineOffset(line.Position, line.Column, line.Slice.Start - line.Position, previousStartOfLine, builder.Length));
+                lineOffsets?.Add(new LineOffset(line.Position, line.Column, line.Slice.Start - line.Position,
+                    previousStartOfLine, builder.Length));
             }
+
             return new StringSlice(builder.GetStringAndReset());
         }
 
         /// <summary>
-        /// Converts this instance into a <see cref="ICharIterator"/>.
+        ///     Converts this instance into a <see cref="ICharIterator" />.
         /// </summary>
         /// <returns></returns>
         public readonly Iterator ToCharIterator()
@@ -171,7 +196,7 @@ namespace Markdig.Helpers
         }
 
         /// <summary>
-        /// Trims each lines of the specified <see cref="StringLineGroup"/>.
+        ///     Trims each lines of the specified <see cref="StringLineGroup" />.
         /// </summary>
         public void Trim()
         {
@@ -188,12 +213,13 @@ namespace Markdig.Helpers
 
         private void IncreaseCapacity()
         {
-            var newItems = _pool.Rent(Lines.Length * 2);
+            StringLine[] newItems = _pool.Rent(Lines.Length * 2);
             if (Count > 0)
             {
                 Array.Copy(Lines, 0, newItems, 0, Count);
                 Array.Clear(Lines, 0, Count);
             }
+
             _pool.Return(Lines);
             Lines = newItems;
         }
@@ -207,7 +233,7 @@ namespace Markdig.Helpers
         }
 
         /// <summary>
-        /// The iterator used to iterate other the lines.
+        ///     The iterator used to iterate other the lines.
         /// </summary>
         /// <seealso cref="ICharIterator" />
         public struct Iterator : ICharIterator
@@ -217,7 +243,7 @@ namespace Markdig.Helpers
 
             public Iterator(StringLineGroup lines)
             {
-                this._lines = lines;
+                _lines = lines;
                 Start = -1;
                 _offset = -1;
                 SliceIndex = 0;
@@ -228,6 +254,7 @@ namespace Markdig.Helpers
                     ref StringLine line = ref lines.Lines[i];
                     End += line.Slice.Length + line.NewLine.Length(); // Add chars
                 }
+
                 SkipChar();
             }
 
@@ -235,7 +262,7 @@ namespace Markdig.Helpers
 
             public char CurrentChar { get; private set; }
 
-            public int End { get; private set; }
+            public int End { get; }
 
             public readonly bool IsEmpty => Start > End;
 
@@ -243,7 +270,7 @@ namespace Markdig.Helpers
 
             public StringLineGroup Remaining()
             {
-                var lines = _lines;
+                StringLineGroup lines = _lines;
                 if (IsEmpty)
                 {
                     lines.Clear();
@@ -271,7 +298,7 @@ namespace Markdig.Helpers
                 Start++;
                 if (Start <= End)
                 {
-                    var slice = _lines.Lines[SliceIndex].Slice;
+                    StringSlice slice = _lines.Lines[SliceIndex].Slice;
                     _offset++;
                     if (_offset < slice.Length)
                     {
@@ -279,7 +306,7 @@ namespace Markdig.Helpers
                     }
                     else
                     {
-                        var newLine = slice.NewLine;
+                        NewLine newLine = slice.NewLine;
                         if (_offset == slice.Length)
                         {
                             if (newLine == NewLine.LineFeed)
@@ -316,16 +343,27 @@ namespace Markdig.Helpers
                     Start = End + 1;
                     SliceIndex = _lines.Count;
                 }
+
                 return CurrentChar;
             }
 
-            public void SkipChar() => NextChar();
+            public void SkipChar()
+            {
+                NextChar();
+            }
 
-            public readonly char PeekChar() => PeekChar(1);
+            public readonly char PeekChar()
+            {
+                return PeekChar(1);
+            }
 
             public readonly char PeekChar(int offset)
             {
-                if (offset < 0) ThrowHelper.ArgumentOutOfRangeException("Negative offset are not supported for StringLineGroup", nameof(offset));
+                if (offset < 0)
+                {
+                    ThrowHelper.ArgumentOutOfRangeException("Negative offset are not supported for StringLineGroup",
+                        nameof(offset));
+                }
 
                 if (Start + offset > End)
                 {
@@ -344,7 +382,8 @@ namespace Markdig.Helpers
                         // We are not peeking at the same line
                         offset -= slice.Length + 1; // + 1 for new line
 
-                        Debug.Assert(sliceIndex + 1 < _lines.Lines.Length, "'Start + offset > End' check above should prevent us from indexing out of range");
+                        Debug.Assert(sliceIndex + 1 < _lines.Lines.Length,
+                            "'Start + offset > End' check above should prevent us from indexing out of range");
                         slice = ref _lines.Lines[++sliceIndex].Slice;
                     }
                 }
@@ -362,10 +401,12 @@ namespace Markdig.Helpers
                     {
                         return '\n';
                     }
+
                     if (line.NewLine == NewLine.CarriageReturn)
                     {
                         return '\r';
                     }
+
                     if (line.NewLine == NewLine.CarriageReturnLineFeed)
                     {
                         return '\r'; // /r of /r/n (first character)
@@ -378,11 +419,12 @@ namespace Markdig.Helpers
 
             public bool TrimStart()
             {
-                var c = CurrentChar;
+                char c = CurrentChar;
                 while (c.IsWhitespace())
                 {
                     c = NextChar();
                 }
+
                 return IsEmpty;
             }
         }

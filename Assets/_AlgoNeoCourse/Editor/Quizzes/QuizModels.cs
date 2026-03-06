@@ -13,7 +13,7 @@ namespace NeoCource.Editor.Quizzes
     [Serializable]
     public class QuizAnswer
     {
-        public string id;        // локальный id внутри вопроса
+        public string id; // локальный id внутри вопроса
         public string text;
         public bool isCorrect;
     }
@@ -21,10 +21,10 @@ namespace NeoCource.Editor.Quizzes
     [Serializable]
     public class QuizQuestion
     {
-        public string id;        // уникально в рамках урока
+        public string id; // уникально в рамках урока
         public QuizKind kind;
         public string text;
-        public List<QuizAnswer> answers = new List<QuizAnswer>();
+        public List<QuizAnswer> answers = new();
     }
 
     [Serializable]
@@ -34,16 +34,14 @@ namespace NeoCource.Editor.Quizzes
         public int attemptsUsed;
         public bool isCompleted;
         public bool isCorrect;
-        public List<int> shuffledOrder = new List<int>();
-        public HashSet<string> selectedAnswerIds = new HashSet<string>();
+        public List<int> shuffledOrder = new();
+        public HashSet<string> selectedAnswerIds = new();
     }
 
     [Serializable]
     public class LessonQuizState
     {
         public string lessonPath;
-        public Dictionary<string, QuizQuestionState> questionIdToState = new Dictionary<string, QuizQuestionState>();
+        public Dictionary<string, QuizQuestionState> questionIdToState = new();
     }
 }
-
-

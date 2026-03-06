@@ -9,6 +9,6 @@ namespace NeoCource.Editor.Progress
     {
         public string lastLessonPath;
         public int lastSlideIndex;
-        public Dictionary<string, LessonQuizState> lessonStates = new Dictionary<string, LessonQuizState>();
+        public Dictionary<string, LessonQuizState> lessonStates = new();
     }
 }

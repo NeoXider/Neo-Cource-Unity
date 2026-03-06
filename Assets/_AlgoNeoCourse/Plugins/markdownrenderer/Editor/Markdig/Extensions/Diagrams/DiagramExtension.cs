@@ -8,7 +8,7 @@ using Markdig.Renderers.Html;
 namespace Markdig.Extensions.Diagrams
 {
     /// <summary>
-    /// Extension to allow diagrams.
+    ///     Extension to allow diagrams.
     /// </summary>
     /// <seealso cref="IMarkdownExtension" />
     public class DiagramExtension : IMarkdownExtension
@@ -21,7 +21,7 @@ namespace Markdig.Extensions.Diagrams
         {
             if (renderer is HtmlRenderer htmlRenderer)
             {
-                var codeRenderer = htmlRenderer.ObjectRenderers.FindExact<CodeBlockRenderer>()!;
+                CodeBlockRenderer codeRenderer = htmlRenderer.ObjectRenderers.FindExact<CodeBlockRenderer>()!;
                 // TODO: Add other well known diagram languages
                 codeRenderer.BlocksAsDiv.Add("mermaid");
                 codeRenderer.BlocksAsDiv.Add("nomnoml");

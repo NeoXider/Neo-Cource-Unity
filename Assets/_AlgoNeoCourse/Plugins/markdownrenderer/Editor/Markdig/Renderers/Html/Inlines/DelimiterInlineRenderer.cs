@@ -7,7 +7,7 @@ using Markdig.Syntax.Inlines;
 namespace Markdig.Renderers.Html.Inlines
 {
     /// <summary>
-    /// A HTML renderer for a <see cref="DelimiterInline"/>.
+    ///     A HTML renderer for a <see cref="DelimiterInline" />.
     /// </summary>
     /// <seealso cref="HtmlObjectRenderer{DelimiterInline}" />
     public class DelimiterInlineRenderer : HtmlObjectRenderer<DelimiterInline>

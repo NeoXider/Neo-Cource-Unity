@@ -7,7 +7,7 @@ using Markdig.Syntax.Inlines;
 namespace Markdig.Renderers.Normalize.Inlines
 {
     /// <summary>
-    /// A Normalize renderer for a <see cref="HtmlEntityInline"/>.
+    ///     A Normalize renderer for a <see cref="HtmlEntityInline" />.
     /// </summary>
     public class NormalizeHtmlEntityInlineRenderer : NormalizeObjectRenderer<HtmlEntityInline>
     {

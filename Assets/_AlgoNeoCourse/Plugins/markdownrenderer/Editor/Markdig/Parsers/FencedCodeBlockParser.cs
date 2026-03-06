@@ -8,7 +8,7 @@ using Markdig.Syntax;
 namespace Markdig.Parsers
 {
     /// <summary>
-    /// Parser for a <see cref="FencedCodeBlock"/>.
+    ///     Parser for a <see cref="FencedCodeBlock" />.
     /// </summary>
     /// <seealso cref="BlockParser" />
     public class FencedCodeBlockParser : FencedBlockParserBase<FencedCodeBlock>
@@ -16,11 +16,11 @@ namespace Markdig.Parsers
         public const string DefaultInfoPrefix = "language-";
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FencedCodeBlockParser"/> class.
+        ///     Initializes a new instance of the <see cref="FencedCodeBlockParser" /> class.
         /// </summary>
         public FencedCodeBlockParser()
         {
-            OpeningCharacters = new[] {'`', '~'};
+            OpeningCharacters = new[] { '`', '~' };
             InfoPrefix = DefaultInfoPrefix;
         }
 
@@ -31,19 +31,19 @@ namespace Markdig.Parsers
                 IndentCount = processor.Indent,
                 LinesBefore = processor.UseLinesBefore(),
                 TriviaBefore = processor.UseTrivia(processor.Start - 1),
-                NewLine = processor.Line.NewLine,
+                NewLine = processor.Line.NewLine
             };
         }
 
         public override BlockState TryContinue(BlockProcessor processor, Block block)
         {
-            var result = base.TryContinue(processor, block);
+            BlockState result = base.TryContinue(processor, block);
             if (result == BlockState.Continue && !processor.TrackTrivia)
             {
-                var fence = (FencedCodeBlock)block;
+                FencedCodeBlock fence = (FencedCodeBlock)block;
                 // Remove any indent spaces
-                var c = processor.CurrentChar;
-                var indentCount = fence.IndentCount;
+                char c = processor.CurrentChar;
+                int indentCount = fence.IndentCount;
                 while (indentCount > 0 && c.IsSpace())
                 {
                     indentCount--;

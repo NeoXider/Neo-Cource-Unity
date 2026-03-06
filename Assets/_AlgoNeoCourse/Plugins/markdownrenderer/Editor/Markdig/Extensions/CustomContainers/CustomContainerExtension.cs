@@ -8,7 +8,7 @@ using Markdig.Renderers;
 namespace Markdig.Extensions.CustomContainers
 {
     /// <summary>
-    /// Extension to allow custom containers.
+    ///     Extension to allow custom containers.
     /// </summary>
     /// <seealso cref="IMarkdownExtension" />
     public class CustomContainerExtension : IMarkdownExtension
@@ -22,7 +22,7 @@ namespace Markdig.Extensions.CustomContainers
             }
 
             // Plug the inline parser for CustomContainerInline
-            var inlineParser = pipeline.InlineParsers.Find<EmphasisInlineParser>();
+            EmphasisInlineParser? inlineParser = pipeline.InlineParsers.Find<EmphasisInlineParser>();
             if (inlineParser != null && !inlineParser.HasEmphasisChar(':'))
             {
                 inlineParser.EmphasisDescriptors.Add(new EmphasisDescriptor(':', 2, 2, true));
@@ -32,6 +32,7 @@ namespace Markdig.Extensions.CustomContainers
                     {
                         return new CustomContainerInline();
                     }
+
                     return null;
                 });
             }
@@ -46,13 +47,13 @@ namespace Markdig.Extensions.CustomContainers
                     // Must be inserted before CodeBlockRenderer
                     htmlRenderer.ObjectRenderers.Insert(0, new HtmlCustomContainerRenderer());
                 }
+
                 if (!htmlRenderer.ObjectRenderers.Contains<HtmlCustomContainerInlineRenderer>())
                 {
                     // Must be inserted before EmphasisRenderer
                     htmlRenderer.ObjectRenderers.Insert(0, new HtmlCustomContainerInlineRenderer());
                 }
             }
-
         }
     }
 }

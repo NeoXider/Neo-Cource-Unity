@@ -10,33 +10,37 @@ using Markdig.Syntax;
 namespace Markdig.Parsers
 {
     /// <summary>
-    /// Delegates called when processing a document
+    ///     Delegates called when processing a document
     /// </summary>
     /// <param name="document">The markdown document.</param>
     public delegate void ProcessDocumentDelegate(MarkdownDocument document);
 
     /// <summary>
-    /// The Markdown parser.
+    ///     The Markdown parser.
     /// </summary>
     public static class MarkdownParser
     {
         /// <summary>
-        /// Parses the specified markdown into an AST <see cref="MarkdownDocument"/>
+        ///     Parses the specified markdown into an AST <see cref="MarkdownDocument" />
         /// </summary>
         /// <param name="text">A Markdown text</param>
         /// <param name="pipeline">The pipeline used for the parsing.</param>
         /// <param name="context">A parser context used for the parsing.</param>
         /// <returns>An AST Markdown document</returns>
         /// <exception cref="ArgumentNullException">if reader variable is null</exception>
-        public static MarkdownDocument Parse(string text, MarkdownPipeline? pipeline = null, MarkdownParserContext? context = null)
+        public static MarkdownDocument Parse(string text, MarkdownPipeline? pipeline = null,
+            MarkdownParserContext? context = null)
         {
-            if (text is null) ThrowHelper.ArgumentNullException_text();
+            if (text is null)
+            {
+                ThrowHelper.ArgumentNullException_text();
+            }
 
             pipeline ??= Markdown.DefaultPipeline;
 
             text = FixupZero(text);
 
-            var document = new MarkdownDocument
+            MarkdownDocument document = new()
             {
                 IsOpen = true
             };
@@ -48,7 +52,8 @@ namespace Markdig.Parsers
                 document.LineStartIndexes = new List<int>(roughLineCountEstimate);
             }
 
-            var blockProcessor = BlockProcessor.Rent(document, pipeline.BlockParsers, context, pipeline.TrackTrivia);
+            BlockProcessor blockProcessor =
+                BlockProcessor.Rent(document, pipeline.BlockParsers, context, pipeline.TrackTrivia);
             try
             {
                 blockProcessor.Open(document);
@@ -61,7 +66,7 @@ namespace Markdig.Parsers
                     if (lastBlock is null && document.Count == 0)
                     {
                         // this means we have unassigned characters
-                        var noBlocksFoundBlock = new EmptyBlock(null);
+                        EmptyBlock noBlocksFoundBlock = new(null);
                         List<StringSlice> linesBefore = blockProcessor.UseLinesBefore();
                         noBlocksFoundBlock.LinesAfter = new List<StringSlice>();
                         noBlocksFoundBlock.LinesAfter.AddRange(linesBefore);
@@ -72,9 +77,9 @@ namespace Markdig.Parsers
                         // this means we're out of lines, but still have unassigned empty lines.
                         // thus, we'll assign the empty unsassigned lines to the last block
                         // of the document.
-                        var rootMostContainerBlock = Block.FindRootMostContainerParent(lastBlock);
+                        Block rootMostContainerBlock = Block.FindRootMostContainerParent(lastBlock);
                         rootMostContainerBlock.LinesAfter ??= new List<StringSlice>();
-                        var linesBefore = blockProcessor.UseLinesBefore();
+                        List<StringSlice> linesBefore = blockProcessor.UseLinesBefore();
                         rootMostContainerBlock.LinesAfter.AddRange(linesBefore);
                     }
                 }
@@ -87,7 +92,8 @@ namespace Markdig.Parsers
                 BlockProcessor.Release(blockProcessor);
             }
 
-            var inlineProcessor = InlineProcessor.Rent(document, pipeline.InlineParsers, pipeline.PreciseSourceLocation, context, pipeline.TrackTrivia);
+            InlineProcessor inlineProcessor = InlineProcessor.Rent(document, pipeline.InlineParsers,
+                pipeline.PreciseSourceLocation, context, pipeline.TrackTrivia);
             inlineProcessor.DebugLog = pipeline.DebugLog;
             try
             {
@@ -105,7 +111,7 @@ namespace Markdig.Parsers
         }
 
         /// <summary>
-        /// Fixups the zero character by replacing it to a secure character (Section 2.3 Insecure characters, CommonMark specs)
+        ///     Fixups the zero character by replacing it to a secure character (Section 2.3 Insecure characters, CommonMark specs)
         /// </summary>
         /// <param name="text">The text to secure.</param>
         private static string FixupZero(string text)
@@ -118,7 +124,7 @@ namespace Markdig.Parsers
             while (true)
             {
                 // Get the precise position of the begining of the line
-                var lineText = lineReader.ReadLine();
+                StringSlice lineText = lineReader.ReadLine();
 
                 // If this is the end of file and the last line is empty
                 if (lineText.Text is null)
@@ -128,6 +134,7 @@ namespace Markdig.Parsers
 
                 blockProcessor.ProcessLine(lineText);
             }
+
             blockProcessor.CloseAll(true);
         }
 
@@ -135,7 +142,7 @@ namespace Markdig.Parsers
         {
             // "stackless" processor
             int blockCount = 1;
-            var blocks = new ContainerItem[4];
+            ContainerItem[]? blocks = new ContainerItem[4];
 
             blocks[0] = new ContainerItem(document);
             document.OnProcessInlinesBegin(inlineProcessor);
@@ -144,11 +151,11 @@ namespace Markdig.Parsers
             {
                 process_new_block:
                 ref ContainerItem item = ref blocks[blockCount - 1];
-                var container = item.Container;
+                ContainerBlock container = item.Container;
 
                 for (; item.Index < container.Count; item.Index++)
                 {
-                    var block = container[item.Index];
+                    Block block = container[item.Index];
                     if (block is LeafBlock leafBlock)
                     {
                         leafBlock.OnProcessInlinesBegin(inlineProcessor);
@@ -165,6 +172,7 @@ namespace Markdig.Parsers
                                 container[item.Index] = inlineProcessor.BlockNew;
                             }
                         }
+
                         leafBlock.OnProcessInlinesEnd(inlineProcessor);
                     }
                     else if (block is ContainerBlock newContainer)
@@ -185,11 +193,13 @@ namespace Markdig.Parsers
                             Array.Resize(ref blocks, blockCount * 2);
                             ThrowHelper.CheckDepthLimit(blocks.Length);
                         }
+
                         blocks[blockCount++] = new ContainerItem(newContainer);
                         newContainer.OnProcessInlinesBegin(inlineProcessor);
                         goto process_new_block;
                     }
                 }
+
                 container.OnProcessInlinesEnd(inlineProcessor);
                 blocks[--blockCount] = default;
             }

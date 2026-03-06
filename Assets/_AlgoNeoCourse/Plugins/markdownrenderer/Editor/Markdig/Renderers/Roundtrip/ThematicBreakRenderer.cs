@@ -7,7 +7,7 @@ using Markdig.Syntax;
 namespace Markdig.Renderers.Roundtrip
 {
     /// <summary>
-    /// A Roundtrip renderer for a <see cref="ThematicBreakBlock"/>.
+    ///     A Roundtrip renderer for a <see cref="ThematicBreakBlock" />.
     /// </summary>
     /// <seealso cref="RoundtripObjectRenderer{ThematicBreakBlock}" />
     public class ThematicBreakRenderer : RoundtripObjectRenderer<ThematicBreakBlock>

@@ -7,7 +7,7 @@ using Markdig.Syntax;
 namespace Markdig.Renderers.Html
 {
     /// <summary>
-    /// A HTML renderer for a <see cref="QuoteBlock"/>.
+    ///     A HTML renderer for a <see cref="QuoteBlock" />.
     /// </summary>
     /// <seealso cref="HtmlObjectRenderer{QuoteBlock}" />
     public class QuoteBlockRenderer : HtmlObjectRenderer<QuoteBlock>
@@ -19,7 +19,8 @@ namespace Markdig.Renderers.Html
             {
                 renderer.Write("<blockquote").WriteAttributes(obj).WriteLine(">");
             }
-            var savedImplicitParagraph = renderer.ImplicitParagraph;
+
+            bool savedImplicitParagraph = renderer.ImplicitParagraph;
             renderer.ImplicitParagraph = false;
             renderer.WriteChildren(obj);
             renderer.ImplicitParagraph = savedImplicitParagraph;
@@ -27,6 +28,7 @@ namespace Markdig.Renderers.Html
             {
                 renderer.WriteLine("</blockquote>");
             }
+
             renderer.EnsureLine();
         }
     }

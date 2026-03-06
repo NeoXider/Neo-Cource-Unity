@@ -9,14 +9,19 @@ using Markdig.Helpers;
 namespace Markdig.Syntax.Inlines
 {
     /// <summary>
-    /// A literal inline.
+    ///     A literal inline.
     /// </summary>
     /// <seealso cref="LeafInline" />
     [DebuggerDisplay("{Content}")]
     public class LiteralInline : LeafInline
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="LiteralInline"/> class.
+        ///     The content as a <see cref="StringSlice" />.
+        /// </summary>
+        public StringSlice Content;
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="LiteralInline" /> class.
         /// </summary>
         public LiteralInline()
         {
@@ -24,7 +29,7 @@ namespace Markdig.Syntax.Inlines
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="LiteralInline"/> class.
+        ///     Initializes a new instance of the <see cref="LiteralInline" /> class.
         /// </summary>
         /// <param name="content">The content.</param>
         public LiteralInline(StringSlice content)
@@ -33,23 +38,22 @@ namespace Markdig.Syntax.Inlines
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="LiteralInline"/> class.
+        ///     Initializes a new instance of the <see cref="LiteralInline" /> class.
         /// </summary>
         /// <param name="text">The text.</param>
         /// <exception cref="ArgumentNullException"></exception>
         public LiteralInline(string text)
         {
-            if (text is null) ThrowHelper.ArgumentNullException_text();
+            if (text is null)
+            {
+                ThrowHelper.ArgumentNullException_text();
+            }
+
             Content = new StringSlice(text);
         }
 
         /// <summary>
-        /// The content as a <see cref="StringSlice"/>.
-        /// </summary>
-        public StringSlice Content;
-
-        /// <summary>
-        /// A boolean indicating whether the first character of this literal is escaped by `\`.
+        ///     A boolean indicating whether the first character of this literal is escaped by `\`.
         /// </summary>
         public bool IsFirstCharacterEscaped { get; set; }
 

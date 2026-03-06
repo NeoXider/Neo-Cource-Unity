@@ -7,28 +7,28 @@ using Markdig.Helpers;
 namespace Markdig.Parsers
 {
     /// <summary>
-    /// The default parser for parsing numbered list item (e.g: 1) or 1.)
+    ///     The default parser for parsing numbered list item (e.g: 1) or 1.)
     /// </summary>
     /// <seealso cref="OrderedListItemParser" />
     public class NumberedListItemParser : OrderedListItemParser
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="NumberedListItemParser"/> class.
+        ///     Initializes a new instance of the <see cref="NumberedListItemParser" /> class.
         /// </summary>
         public NumberedListItemParser()
         {
             OpeningCharacters = new char[10];
             for (int i = 0; i < 10; i++)
             {
-                OpeningCharacters[i] = (char) ('0' + i);
+                OpeningCharacters[i] = (char)('0' + i);
             }
         }
 
         public override bool TryParse(BlockProcessor state, char pendingBulletType, out ListInfo result)
         {
             result = new ListInfo();
-            var c = state.CurrentChar;
-            var sourcePosition = state.Start;
+            char c = state.CurrentChar;
+            int sourcePosition = state.Start;
 
             int countDigit = 0;
             int startChar = -1;
@@ -41,10 +41,12 @@ namespace Markdig.Parsers
                 {
                     startChar = endChar;
                 }
+
                 c = state.NextChar();
                 countDigit++;
             }
-            var sourceBullet = new StringSlice(state.Line.Text, sourcePosition, state.Start - 1);
+
+            StringSlice sourceBullet = new(state.Line.Text, sourcePosition, state.Start - 1);
             if (startChar < 0)
             {
                 startChar = endChar;

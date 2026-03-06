@@ -8,7 +8,7 @@ using Markdig.Renderers.Html;
 namespace Markdig.Extensions.Footnotes
 {
     /// <summary>
-    /// A HTML renderer for a <see cref="FootnoteLink"/>.
+    ///     A HTML renderer for a <see cref="FootnoteLink" />.
     /// </summary>
     /// <seealso cref="HtmlObjectRenderer{FootnoteLink}" />
     public class HtmlFootnoteLinkRenderer : HtmlObjectRenderer<FootnoteLink>
@@ -19,6 +19,7 @@ namespace Markdig.Extensions.Footnotes
             FootnoteLinkClass = "footnote-ref";
             FootnoteBackLinkClass = "footnote-back-ref";
         }
+
         public string BackLinkString { get; set; }
 
         public string FootnoteLinkClass { get; set; }
@@ -27,7 +28,7 @@ namespace Markdig.Extensions.Footnotes
 
         protected override void Write(HtmlRenderer renderer, FootnoteLink link)
         {
-            var order = link.Footnote.Order;
+            int order = link.Footnote.Order;
             renderer.Write(link.IsBackLink
                 ? $"<a href=\"#fnref:{link.Index}\" class=\"{FootnoteBackLinkClass}\">{BackLinkString}</a>"
                 : $"<a id=\"fnref:{link.Index}\" href=\"#fn:{order}\" class=\"{FootnoteLinkClass}\"><sup>{order}</sup></a>");

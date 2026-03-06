@@ -2,21 +2,22 @@
 // This file is licensed under the BSD-Clause 2 license.
 // See the license.txt file in the project root for more information.
 
+using System;
+using System.Text;
 using Markdig.Helpers;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
-using System;
 
 namespace Markdig.Parsers.Inlines
 {
     /// <summary>
-    /// An inline parser for a <see cref="CodeInline"/>.
+    ///     An inline parser for a <see cref="CodeInline" />.
     /// </summary>
     /// <seealso cref="InlineParser" />
     public class CodeInlineParser : InlineParser
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="CodeInlineParser"/> class.
+        ///     Initializes a new instance of the <see cref="CodeInlineParser" /> class.
         /// </summary>
         public CodeInlineParser()
         {
@@ -25,13 +26,13 @@ namespace Markdig.Parsers.Inlines
 
         public override bool Match(InlineProcessor processor, ref StringSlice slice)
         {
-            var match = slice.CurrentChar;
+            char match = slice.CurrentChar;
             if (slice.PeekCharExtra(-1) == match)
             {
                 return false;
             }
 
-            var startPosition = slice.Start;
+            int startPosition = slice.Start;
 
             // Match the opened sticks
             int openSticks = slice.CountAndSkipChar(match);
@@ -40,7 +41,7 @@ namespace Markdig.Parsers.Inlines
 
             char c = slice.CurrentChar;
 
-            var builder = StringBuilderCache.Local();
+            StringBuilder builder = StringBuilderCache.Local();
 
             // A backtick string is a string of one or more backtick characters (`) that is neither preceded nor followed by a backtick.
             // A code span begins with a backtick string and ends with a backtick string of equal length.
@@ -54,7 +55,7 @@ namespace Markdig.Parsers.Inlines
             // whitespace from the opening or closing backtick strings.
 
             bool allSpace = true;
-            var contentEnd = -1;
+            int contentEnd = -1;
 
             while (c != '\0')
             {
@@ -91,6 +92,7 @@ namespace Markdig.Parsers.Inlines
                     {
                         allSpace = false;
                     }
+
                     c = slice.NextChar();
                 }
             }
@@ -111,8 +113,8 @@ namespace Markdig.Parsers.Inlines
                 }
 
                 int delimiterCount = Math.Min(openSticks, closeSticks);
-                var spanStart = processor.GetSourcePosition(startPosition, out int line, out int column);
-                var spanEnd = processor.GetSourcePosition(slice.Start - 1);
+                int spanStart = processor.GetSourcePosition(startPosition, out int line, out int column);
+                int spanEnd = processor.GetSourcePosition(slice.Start - 1);
                 processor.Inline = new CodeInline(content)
                 {
                     Delimiter = match,
@@ -120,7 +122,7 @@ namespace Markdig.Parsers.Inlines
                     Span = new SourceSpan(spanStart, spanEnd),
                     Line = line,
                     Column = column,
-                    DelimiterCount = delimiterCount,
+                    DelimiterCount = delimiterCount
                 };
                 isMatching = true;
             }

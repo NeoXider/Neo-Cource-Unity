@@ -7,7 +7,7 @@ using Markdig.Syntax;
 namespace Markdig.Renderers.Html
 {
     /// <summary>
-    /// A HTML renderer for a <see cref="ThematicBreakBlock"/>.
+    ///     A HTML renderer for a <see cref="ThematicBreakBlock" />.
     /// </summary>
     /// <seealso cref="HtmlObjectRenderer{ThematicBreakBlock}" />
     public class ThematicBreakRenderer : HtmlObjectRenderer<ThematicBreakBlock>

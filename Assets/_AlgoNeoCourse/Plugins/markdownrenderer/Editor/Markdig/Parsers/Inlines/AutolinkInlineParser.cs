@@ -9,28 +9,28 @@ using Markdig.Syntax.Inlines;
 namespace Markdig.Parsers.Inlines
 {
     /// <summary>
-    /// An inline parser for parsing <see cref="AutolinkInline"/>.
+    ///     An inline parser for parsing <see cref="AutolinkInline" />.
     /// </summary>
     /// <seealso cref="InlineParser" />
     public class AutolinkInlineParser : InlineParser
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="AutolinkInlineParser"/> class.
+        ///     Initializes a new instance of the <see cref="AutolinkInlineParser" /> class.
         /// </summary>
         public AutolinkInlineParser()
         {
-            OpeningCharacters = new[] {'<'};
+            OpeningCharacters = new[] { '<' };
             EnableHtmlParsing = true;
         }
 
         /// <summary>
-        /// Gets or sets a value indicating whether to enable HTML parsing. Default is <c>true</c>
+        ///     Gets or sets a value indicating whether to enable HTML parsing. Default is <c>true</c>
         /// </summary>
         public bool EnableHtmlParsing { get; set; }
 
         public override bool Match(InlineProcessor processor, ref StringSlice slice)
         {
-            var saved = slice;
+            StringSlice saved = slice;
             int line;
             int column;
             if (LinkHelper.TryParseAutolink(ref slice, out string? link, out bool isEmail))
@@ -38,7 +38,8 @@ namespace Markdig.Parsers.Inlines
                 processor.Inline = new AutolinkInline(link)
                 {
                     IsEmail = isEmail,
-                    Span = new SourceSpan(processor.GetSourcePosition(saved.Start, out line, out column), processor.GetSourcePosition(slice.Start - 1)),
+                    Span = new SourceSpan(processor.GetSourcePosition(saved.Start, out line, out column),
+                        processor.GetSourcePosition(slice.Start - 1)),
                     Line = line,
                     Column = column
                 };
@@ -53,7 +54,8 @@ namespace Markdig.Parsers.Inlines
 
                 processor.Inline = new HtmlInline(htmlTag)
                 {
-                    Span = new SourceSpan(processor.GetSourcePosition(saved.Start, out line, out column), processor.GetSourcePosition(slice.Start - 1)),
+                    Span = new SourceSpan(processor.GetSourcePosition(saved.Start, out line, out column),
+                        processor.GetSourcePosition(slice.Start - 1)),
                     Line = line,
                     Column = column
                 };

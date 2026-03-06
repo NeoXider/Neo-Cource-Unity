@@ -1,9 +1,5 @@
-using System.Collections;
-using System.Collections.Generic;
 using Markdig.Extensions.Yaml;
 using Markdig.Renderers;
-using UIMarkdownRenderer;
-using UnityEngine;
 
 namespace UIMarkdownRenderer
 {
@@ -13,10 +9,13 @@ namespace UIMarkdownRenderer
         protected override void Write(UIMarkdownRenderer renderer, YamlFrontMatterBlock obj)
         {
             //we do not handle real YAML as for now we only support specific uss, so manually parse
-            foreach (var line in obj.Lines)
+            foreach (object line in obj.Lines)
             {
-                var data = line.ToString();
-                if(string.IsNullOrEmpty(data)) continue;
+                string data = line.ToString();
+                if (string.IsNullOrEmpty(data))
+                {
+                    continue;
+                }
 
                 string[] content = data.Split(':');
                 if (content[0].Trim() == "uss")

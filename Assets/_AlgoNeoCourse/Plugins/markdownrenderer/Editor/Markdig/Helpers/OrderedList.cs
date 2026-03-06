@@ -8,12 +8,15 @@ using System.Diagnostics.CodeAnalysis;
 namespace Markdig.Helpers
 {
     /// <summary>
-    /// A List that provides methods for inserting/finding before/after. See remarks.
+    ///     A List that provides methods for inserting/finding before/after. See remarks.
     /// </summary>
     /// <typeparam name="T">Type of the list item</typeparam>
     /// <seealso cref="List{T}" />
-    /// <remarks>We use a typed list and don't use extension methods because it would pollute all list implements and the top level namespace.</remarks>
-    public class OrderedList<T> : List<T> where T: notnull
+    /// <remarks>
+    ///     We use a typed list and don't use extension methods because it would pollute all list implements and the top
+    ///     level namespace.
+    /// </remarks>
+    public class OrderedList<T> : List<T> where T : notnull
     {
         public OrderedList()
         {
@@ -25,7 +28,11 @@ namespace Markdig.Helpers
 
         public bool InsertBefore<TItem>(T item) where TItem : T
         {
-            if (item is null) ThrowHelper.ArgumentNullException_item();
+            if (item is null)
+            {
+                ThrowHelper.ArgumentNullException_item();
+            }
+
             for (int i = 0; i < Count; i++)
             {
                 if (this[i] is TItem)
@@ -34,6 +41,7 @@ namespace Markdig.Helpers
                     return true;
                 }
             }
+
             return false;
         }
 
@@ -46,6 +54,7 @@ namespace Markdig.Helpers
                     return (TItem)this[i];
                 }
             }
+
             return default;
         }
 
@@ -64,6 +73,7 @@ namespace Markdig.Helpers
                     return (TItem)this[i];
                 }
             }
+
             return default;
         }
 
@@ -85,7 +95,11 @@ namespace Markdig.Helpers
 
         public bool InsertAfter<TItem>(T item) where TItem : T
         {
-            if (item is null) ThrowHelper.ArgumentNullException_item();
+            if (item is null)
+            {
+                ThrowHelper.ArgumentNullException_item();
+            }
+
             for (int i = 0; i < Count; i++)
             {
                 if (this[i] is TItem)
@@ -94,6 +108,7 @@ namespace Markdig.Helpers
                     return true;
                 }
             }
+
             return false;
         }
 
@@ -106,18 +121,19 @@ namespace Markdig.Helpers
                     return true;
                 }
             }
+
             return false;
         }
 
         /// <summary>
-        /// Replaces <typeparamref name="TItem"/> with <paramref name="replacement"/>.
+        ///     Replaces <typeparamref name="TItem" /> with <paramref name="replacement" />.
         /// </summary>
         /// <typeparam name="TItem">Item type to find in the list</typeparam>
         /// <param name="replacement">Object to replace this item with</param>
         /// <returns><c>true</c> if a replacement was made; otherwise <c>false</c>.</returns>
         public bool Replace<TItem>(T replacement) where TItem : T
         {
-            for (var i = 0; i < Count; i++)
+            for (int i = 0; i < Count; i++)
             {
                 if (this[i] is TItem)
                 {
@@ -126,11 +142,12 @@ namespace Markdig.Helpers
                     return true;
                 }
             }
+
             return false;
         }
 
         /// <summary>
-        /// Replaces <typeparamref name="TItem"/> with <paramref name="newItem"/> or adds <paramref name="newItem"/>.
+        ///     Replaces <typeparamref name="TItem" /> with <paramref name="newItem" /> or adds <paramref name="newItem" />.
         /// </summary>
         /// <typeparam name="TItem">Item type to find in the list</typeparam>
         /// <param name="newItem">Object to add/replace the found item with</param>
@@ -138,14 +155,16 @@ namespace Markdig.Helpers
         public bool ReplaceOrAdd<TItem>(T newItem) where TItem : T
         {
             if (Replace<TItem>(newItem))
+            {
                 return true;
+            }
 
             Add(newItem);
             return false;
         }
 
         /// <summary>
-        /// Removes the first occurrence of <typeparamref name="TItem"/>
+        ///     Removes the first occurrence of <typeparamref name="TItem" />
         /// </summary>
         public bool TryRemove<TItem>() where TItem : T
         {
@@ -157,6 +176,7 @@ namespace Markdig.Helpers
                     return true;
                 }
             }
+
             return false;
         }
     }

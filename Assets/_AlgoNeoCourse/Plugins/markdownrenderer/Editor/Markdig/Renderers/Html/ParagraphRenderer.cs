@@ -7,7 +7,7 @@ using Markdig.Syntax;
 namespace Markdig.Renderers.Html
 {
     /// <summary>
-    /// A HTML renderer for a <see cref="ParagraphBlock"/>.
+    ///     A HTML renderer for a <see cref="ParagraphBlock" />.
     /// </summary>
     /// <seealso cref="HtmlObjectRenderer{ParagraphBlock}" />
     public class ParagraphRenderer : HtmlObjectRenderer<ParagraphBlock>
@@ -23,10 +23,11 @@ namespace Markdig.Renderers.Html
 
                 renderer.Write("<p").WriteAttributes(obj).Write(">");
             }
+
             renderer.WriteLeafInline(obj);
             if (!renderer.ImplicitParagraph)
             {
-                if(renderer.EnableHtmlForBlock)
+                if (renderer.EnableHtmlForBlock)
                 {
                     renderer.WriteLine("</p>");
                 }

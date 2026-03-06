@@ -7,25 +7,10 @@ using System.Text;
 namespace Markdig.Extensions.JiraLinks
 {
     /// <summary>
-    /// Available options for replacing JIRA links
+    ///     Available options for replacing JIRA links
     /// </summary>
     public class JiraLinkOptions
     {
-        /// <summary>
-        /// The base Url (e.g. `https://mycompany.atlassian.net`)
-        /// </summary>
-        public string BaseUrl { get; set; }
-
-        /// <summary>
-        /// The base path after the base url (default is `/browse`)
-        /// </summary>
-        public string BasePath { get; set; }
-
-        /// <summary>
-        /// Should the link open in a new window when clicked
-        /// </summary>
-        public bool OpenInNewWindow { get; set; }
-
         public JiraLinkOptions(string baseUrl)
         {
             OpenInNewWindow = true; //default
@@ -34,12 +19,27 @@ namespace Markdig.Extensions.JiraLinks
         }
 
         /// <summary>
-        /// Gets the full url composed of the <see cref="BaseUrl"/> and <see cref="BasePath"/> with no trailing `/`
+        ///     The base Url (e.g. `https://mycompany.atlassian.net`)
+        /// </summary>
+        public string BaseUrl { get; set; }
+
+        /// <summary>
+        ///     The base path after the base url (default is `/browse`)
+        /// </summary>
+        public string BasePath { get; set; }
+
+        /// <summary>
+        ///     Should the link open in a new window when clicked
+        /// </summary>
+        public bool OpenInNewWindow { get; set; }
+
+        /// <summary>
+        ///     Gets the full url composed of the <see cref="BaseUrl" /> and <see cref="BasePath" /> with no trailing `/`
         /// </summary>
         public virtual string GetUrl()
         {
-            var url = new StringBuilder();
-            var baseUrl = BaseUrl;
+            StringBuilder url = new();
+            string? baseUrl = BaseUrl;
             if (baseUrl != null)
             {
                 url.Append(baseUrl.TrimEnd('/'));

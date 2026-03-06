@@ -9,7 +9,7 @@ Version: `1.4.0`
 Add the package through Unity Package Manager using:
 
 ```text
-https://github.com/NeoXider/AlgoNeoCource.git?path=Assets/_AlgoNeoCourse
+https://github.com/NeoXider/Neo-Cource-Unity.git?path=Assets/_AlgoNeoCourse
 ```
 
 Package name:

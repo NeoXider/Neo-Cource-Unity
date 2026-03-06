@@ -8,12 +8,12 @@ using Markdig.Renderers;
 namespace Markdig.Extensions.SmartyPants
 {
     /// <summary>
-    /// Extension to enable SmartyPants.
+    ///     Extension to enable SmartyPants.
     /// </summary>
     public class SmartyPantsExtension : IMarkdownExtension
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="SmartyPantsExtension"/> class.
+        ///     Initializes a new instance of the <see cref="SmartyPantsExtension" /> class.
         /// </summary>
         /// <param name="options">The options.</param>
         public SmartyPantsExtension(SmartyPantOptions? options)
@@ -22,7 +22,7 @@ namespace Markdig.Extensions.SmartyPants
         }
 
         /// <summary>
-        /// Gets the options.
+        ///     Gets the options.
         /// </summary>
         public SmartyPantOptions Options { get; }
 

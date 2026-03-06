@@ -9,7 +9,7 @@ using Markdig.Syntax;
 namespace Markdig.Extensions.DefinitionLists
 {
     /// <summary>
-    /// A HTML renderer for <see cref="DefinitionList"/>, <see cref="DefinitionItem"/> and <see cref="DefinitionTerm"/>.
+    ///     A HTML renderer for <see cref="DefinitionList" />, <see cref="DefinitionItem" /> and <see cref="DefinitionTerm" />.
     /// </summary>
     /// <seealso cref="HtmlObjectRenderer{DefinitionList}" />
     public class HtmlDefinitionListRenderer : HtmlObjectRenderer<DefinitionList>
@@ -18,16 +18,16 @@ namespace Markdig.Extensions.DefinitionLists
         {
             renderer.EnsureLine();
             renderer.Write("<dl").WriteAttributes(list).WriteLine('>');
-            foreach (var item in list)
+            foreach (Block item in list)
             {
                 bool hasOpendd = false;
-                var definitionItem = (DefinitionItem) item;
+                DefinitionItem definitionItem = (DefinitionItem)item;
                 int countdd = 0;
                 bool lastWasSimpleParagraph = false;
                 for (int i = 0; i < definitionItem.Count; i++)
                 {
-                    var definitionTermOrContent = definitionItem[i];
-                    var definitionTerm = definitionTermOrContent as DefinitionTerm;
+                    Block definitionTermOrContent = definitionItem[i];
+                    DefinitionTerm? definitionTerm = definitionTermOrContent as DefinitionTerm;
                     if (definitionTerm != null)
                     {
                         if (hasOpendd)
@@ -36,11 +36,13 @@ namespace Markdig.Extensions.DefinitionLists
                             {
                                 renderer.EnsureLine();
                             }
+
                             renderer.WriteLine("</dd>");
                             lastWasSimpleParagraph = false;
                             hasOpendd = false;
                             countdd = 0;
                         }
+
                         renderer.Write("<dt").WriteAttributes(definitionTerm).Write('>');
                         renderer.WriteLeafInline(definitionTerm);
                         renderer.WriteLine("</dt>");
@@ -54,30 +56,34 @@ namespace Markdig.Extensions.DefinitionLists
                             hasOpendd = true;
                         }
 
-                        var nextTerm = i + 1 < definitionItem.Count ? definitionItem[i + 1] : null;
+                        Block? nextTerm = i + 1 < definitionItem.Count ? definitionItem[i + 1] : null;
                         bool isSimpleParagraph = (nextTerm is null || nextTerm is DefinitionItem) && countdd == 0 &&
                                                  definitionTermOrContent is ParagraphBlock;
 
-                        var saveImplicitParagraph = renderer.ImplicitParagraph;
+                        bool saveImplicitParagraph = renderer.ImplicitParagraph;
                         if (isSimpleParagraph)
                         {
                             renderer.ImplicitParagraph = true;
                             lastWasSimpleParagraph = true;
                         }
+
                         renderer.Write(definitionTermOrContent);
                         renderer.ImplicitParagraph = saveImplicitParagraph;
                         countdd++;
                     }
                 }
+
                 if (hasOpendd)
                 {
                     if (!lastWasSimpleParagraph)
                     {
                         renderer.EnsureLine();
                     }
+
                     renderer.WriteLine("</dd>");
                 }
             }
+
             renderer.EnsureLine();
             renderer.WriteLine("</dl>");
         }

@@ -11,14 +11,16 @@ namespace UIMarkdownRenderer.ObjectRenderers
         {
             renderer.StartBlock();
 
-            var attribute = obj.GetAttributes();
-            List<string> classes = new () { "paragraph" };
-            if(attribute.Classes != null)
+            HtmlAttributes attribute = obj.GetAttributes();
+            List<string> classes = new() { "paragraph" };
+            if (attribute.Classes != null)
+            {
                 classes.AddRange(attribute.Classes);
+            }
 
             renderer.StartNewText(classes);
-            renderer.WriteLeafBlockInline( obj );
-        
+            renderer.WriteLeafBlockInline(obj);
+
             renderer.FinishBlock();
         }
     }

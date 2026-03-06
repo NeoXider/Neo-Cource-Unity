@@ -9,11 +9,11 @@ using Markdig.Syntax;
 namespace Markdig.Extensions.Abbreviations
 {
     /// <summary>
-    /// Extension methods for <see cref="Abbreviation"/>.
+    ///     Extension methods for <see cref="Abbreviation" />.
     /// </summary>
     public static class AbbreviationHelper
     {
-        private static readonly object DocumentKey = typeof (Abbreviation);
+        private static readonly object DocumentKey = typeof(Abbreviation);
 
         public static bool HasAbbreviations(this MarkdownDocument document)
         {
@@ -22,16 +22,28 @@ namespace Markdig.Extensions.Abbreviations
 
         public static void AddAbbreviation(this MarkdownDocument document, string label, Abbreviation abbr)
         {
-            if (document is null) ThrowHelper.ArgumentNullException(nameof(document));
-            if (label is null) ThrowHelper.ArgumentNullException_label();
-            if (abbr is null) ThrowHelper.ArgumentNullException(nameof(abbr));
+            if (document is null)
+            {
+                ThrowHelper.ArgumentNullException(nameof(document));
+            }
 
-            var map = document.GetAbbreviations();
+            if (label is null)
+            {
+                ThrowHelper.ArgumentNullException_label();
+            }
+
+            if (abbr is null)
+            {
+                ThrowHelper.ArgumentNullException(nameof(abbr));
+            }
+
+            Dictionary<string, Abbreviation>? map = document.GetAbbreviations();
             if (map is null)
             {
                 map = new Dictionary<string, Abbreviation>();
                 document.SetData(DocumentKey, map);
             }
+
             map[label] = abbr;
         }
 

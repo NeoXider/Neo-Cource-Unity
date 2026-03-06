@@ -8,7 +8,7 @@ using Markdig.Renderers.Html;
 namespace Markdig.Extensions.Figures
 {
     /// <summary>
-    /// A HTML renderer for a <see cref="FigureCaption"/>.
+    ///     A HTML renderer for a <see cref="FigureCaption" />.
     /// </summary>
     /// <seealso cref="HtmlObjectRenderer{FigureCaption}" />
     public class HtmlFigureCaptionRenderer : HtmlObjectRenderer<FigureCaption>

@@ -8,22 +8,22 @@ using Markdig.Syntax;
 namespace Markdig.Parsers
 {
     /// <summary>
-    /// A block parser for a <see cref="ThematicBreakBlock"/>.
+    ///     A block parser for a <see cref="ThematicBreakBlock" />.
     /// </summary>
     /// <seealso cref="BlockParser" />
     public class ThematicBreakParser : BlockParser
     {
         /// <summary>
-        /// A singleton instance used by other parsers.
+        ///     A singleton instance used by other parsers.
         /// </summary>
-        public static readonly ThematicBreakParser Default = new ThematicBreakParser();
+        public static readonly ThematicBreakParser Default = new();
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ThematicBreakParser"/> class.
+        ///     Initializes a new instance of the <see cref="ThematicBreakParser" /> class.
         /// </summary>
         public ThematicBreakParser()
         {
-            OpeningCharacters = new[] {'-', '_', '*'};
+            OpeningCharacters = new[] { '-', '_', '*' };
         }
 
         public override BlockState TryOpen(BlockProcessor processor)
@@ -33,16 +33,16 @@ namespace Markdig.Parsers
                 return BlockState.None;
             }
 
-            var startPosition = processor.Start;
-            var line = processor.Line;
+            int startPosition = processor.Start;
+            StringSlice line = processor.Line;
 
             // 4.1 Thematic breaks 
             // A line consisting of 0-3 spaces of indentation, followed by a sequence of three or more matching -, _, or * characters, each followed optionally by any number of spaces
             int breakCharCount = 0;
-            var breakChar = line.CurrentChar;
+            char breakChar = line.CurrentChar;
             bool hasSpacesSinceLastMatch = false;
             bool hasInnerSpaces = false;
-            var c = breakChar;
+            char c = breakChar;
             while (c != '\0')
             {
                 if (c == breakChar)
@@ -67,13 +67,13 @@ namespace Markdig.Parsers
             }
 
             // If it as less than 3 chars or it is a setex heading and we are already in a paragraph, let the paragraph handle it
-            var previousParagraph = processor.CurrentBlock as ParagraphBlock;
+            ParagraphBlock? previousParagraph = processor.CurrentBlock as ParagraphBlock;
 
-            var isSetexHeading = previousParagraph != null && breakChar == '-' && !hasInnerSpaces;
+            bool isSetexHeading = previousParagraph != null && breakChar == '-' && !hasInnerSpaces;
             if (isSetexHeading)
             {
-                var parent = previousParagraph!.Parent!;
-                if (previousParagraph.Column != processor.Column && (parent is QuoteBlock or ListItemBlock))
+                ContainerBlock parent = previousParagraph!.Parent!;
+                if (previousParagraph.Column != processor.Column && parent is QuoteBlock or ListItemBlock)
                 {
                     isSetexHeading = false;
                 }
@@ -95,8 +95,9 @@ namespace Markdig.Parsers
                 //BeforeWhitespace = beforeWhitespace,
                 //AfterWhitespace = processor.PopBeforeWhitespace(processor.CurrentLineStartPosition),
                 LinesBefore = processor.UseLinesBefore(),
-                Content = new StringSlice(line.Text, processor.TriviaStart, line.End, line.NewLine), //include whitespace for now
-                NewLine = processor.Line.NewLine,
+                Content = new StringSlice(line.Text, processor.TriviaStart, line.End,
+                    line.NewLine), //include whitespace for now
+                NewLine = processor.Line.NewLine
             });
             return BlockState.BreakDiscard;
         }

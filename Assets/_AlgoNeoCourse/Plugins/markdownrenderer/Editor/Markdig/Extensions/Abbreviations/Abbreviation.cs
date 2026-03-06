@@ -10,14 +10,24 @@ using Markdig.Syntax;
 namespace Markdig.Extensions.Abbreviations
 {
     /// <summary>
-    /// An abbreviation object stored at the document level. See extension methods in <see cref="AbbreviationHelper"/>.
+    ///     An abbreviation object stored at the document level. See extension methods in <see cref="AbbreviationHelper" />.
     /// </summary>
     /// <seealso cref="LeafBlock" />
     [DebuggerDisplay("Abbr {Label} => {Text}")]
     public class Abbreviation : LeafBlock
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="Abbreviation"/> class.
+        ///     The label span
+        /// </summary>
+        public SourceSpan LabelSpan;
+
+        /// <summary>
+        ///     The text associated to this label.
+        /// </summary>
+        public StringSlice Text;
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="Abbreviation" /> class.
         /// </summary>
         /// <param name="parser">The parser used to create this block.</param>
         public Abbreviation(BlockParser parser) : base(parser)
@@ -25,18 +35,8 @@ namespace Markdig.Extensions.Abbreviations
         }
 
         /// <summary>
-        /// Gets or sets the label.
+        ///     Gets or sets the label.
         /// </summary>
         public string? Label { get; set; }
-
-        /// <summary>
-        /// The text associated to this label.
-        /// </summary>
-        public StringSlice Text;
-
-        /// <summary>
-        /// The label span
-        /// </summary>
-        public SourceSpan LabelSpan;
     }
 }

@@ -5,24 +5,24 @@
 namespace Markdig.Parsers
 {
     /// <summary>
-    /// Base interface for a block or inline parser.
+    ///     Base interface for a block or inline parser.
     /// </summary>
     /// <typeparam name="TProcessor">The type of processor.</typeparam>
     public interface IMarkdownParser<in TProcessor>
     {
         /// <summary>
-        /// Gets the opening characters this parser will be triggered if the character is found.
+        ///     Gets the opening characters this parser will be triggered if the character is found.
         /// </summary>
         char[]? OpeningCharacters { get; }
 
         /// <summary>
-        /// Initializes this parser with the specified parser processor.
-        /// </summary>
-        void Initialize();
-
-        /// <summary>
-        /// Gets the index of this parser in <see cref="BlockParserList"/> or <see cref="InlineParserList"/>.
+        ///     Gets the index of this parser in <see cref="BlockParserList" /> or <see cref="InlineParserList" />.
         /// </summary>
         int Index { get; }
+
+        /// <summary>
+        ///     Initializes this parser with the specified parser processor.
+        /// </summary>
+        void Initialize();
     }
 }

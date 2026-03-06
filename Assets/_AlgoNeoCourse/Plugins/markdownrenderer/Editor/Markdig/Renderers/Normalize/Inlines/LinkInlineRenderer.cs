@@ -7,7 +7,7 @@ using Markdig.Syntax.Inlines;
 namespace Markdig.Renderers.Normalize.Inlines
 {
     /// <summary>
-    /// A Normalize renderer for a <see cref="LinkInline"/>.
+    ///     A Normalize renderer for a <see cref="LinkInline" />.
     /// </summary>
     /// <seealso cref="NormalizeObjectRenderer{LinkInline}" />
     public class LinkInlineRenderer : NormalizeObjectRenderer<LinkInline>
@@ -18,13 +18,15 @@ namespace Markdig.Renderers.Normalize.Inlines
             {
                 renderer.Write('!');
             }
+
             renderer.Write('[');
             renderer.WriteChildren(link);
             renderer.Write(']');
 
             if (link.Label != null)
             {
-                if (link.FirstChild is LiteralInline literal && literal.Content.Length == link.Label.Length && literal.Content.Match(link.Label))
+                if (link.FirstChild is LiteralInline literal && literal.Content.Length == link.Label.Length &&
+                    literal.Content.Match(link.Label))
                 {
                     // collapsed reference and shortcut links
                     if (!link.IsShortcut)

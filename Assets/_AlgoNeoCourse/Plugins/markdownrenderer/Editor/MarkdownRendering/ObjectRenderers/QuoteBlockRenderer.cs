@@ -9,10 +9,12 @@ namespace UIMarkdownRenderer.ObjectRenderers
     {
         protected override void Write(UIMarkdownRenderer renderer, QuoteBlock obj)
         {
-            var attribute = obj.GetAttributes();
-            List<string> classes = new () { "quote" };
+            HtmlAttributes attribute = obj.GetAttributes();
+            List<string> classes = new() { "quote" };
             if (attribute.Classes != null)
+            {
                 classes.AddRange(attribute.Classes);
+            }
 
             renderer.StartBlock(classes);
             renderer.WriteChildren(obj);

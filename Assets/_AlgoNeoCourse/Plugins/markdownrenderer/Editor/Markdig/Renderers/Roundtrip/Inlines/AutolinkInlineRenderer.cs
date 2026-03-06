@@ -7,7 +7,7 @@ using Markdig.Syntax.Inlines;
 namespace Markdig.Renderers.Roundtrip.Inlines
 {
     /// <summary>
-    /// A Normalize renderer for an <see cref="AutolinkInline"/>.
+    ///     A Normalize renderer for an <see cref="AutolinkInline" />.
     /// </summary>
     /// <seealso cref="RoundtripObjectRenderer{AutolinkInline}" />
     public class AutolinkInlineRenderer : RoundtripObjectRenderer<AutolinkInline>

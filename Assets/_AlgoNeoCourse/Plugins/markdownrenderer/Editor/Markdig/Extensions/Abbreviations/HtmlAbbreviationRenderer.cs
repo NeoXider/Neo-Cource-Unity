@@ -8,7 +8,7 @@ using Markdig.Renderers.Html;
 namespace Markdig.Extensions.Abbreviations
 {
     /// <summary>
-    /// A HTML renderer for a <see cref="AbbreviationInline"/>.
+    ///     A HTML renderer for a <see cref="AbbreviationInline" />.
     /// </summary>
     /// <seealso cref="HtmlObjectRenderer{CustomContainer}" />
     public class HtmlAbbreviationRenderer : HtmlObjectRenderer<AbbreviationInline>
@@ -16,11 +16,12 @@ namespace Markdig.Extensions.Abbreviations
         protected override void Write(HtmlRenderer renderer, AbbreviationInline obj)
         {
             // <abbr title="Hyper Text Markup Language">HTML</abbr>
-            var abbr = obj.Abbreviation;
+            Abbreviation abbr = obj.Abbreviation;
             if (renderer.EnableHtmlForInline)
             {
                 renderer.Write("<abbr").WriteAttributes(obj).Write(" title=\"").WriteEscape(ref abbr.Text).Write("\">");
             }
+
             renderer.Write(abbr.Label);
             if (renderer.EnableHtmlForInline)
             {

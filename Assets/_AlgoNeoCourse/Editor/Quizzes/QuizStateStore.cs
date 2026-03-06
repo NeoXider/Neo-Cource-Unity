@@ -1,4 +1,3 @@
-using System;
 using NeoCource.Editor.Progress;
 
 namespace NeoCource.Editor.Quizzes
@@ -17,11 +16,13 @@ namespace NeoCource.Editor.Quizzes
 
         public static void SaveLessonState(string lessonPath)
         {
-            var state = GetLessonState(lessonPath, false);
-            if (state == null) return;
+            LessonQuizState state = GetLessonState(lessonPath, false);
+            if (state == null)
+            {
+                return;
+            }
+
             CourseProgressStore.SaveToDisk();
         }
     }
 }
-
-

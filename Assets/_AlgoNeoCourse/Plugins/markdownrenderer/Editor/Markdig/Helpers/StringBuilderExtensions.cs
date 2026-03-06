@@ -7,12 +7,12 @@ using System.Text;
 namespace Markdig.Helpers
 {
     /// <summary>
-    /// Extensions for StringBuilder
+    ///     Extensions for StringBuilder
     /// </summary>
     public static class StringBuilderExtensions
     {
         /// <summary>
-        /// Appends the specified slice to this <see cref="StringBuilder"/> instance.
+        ///     Appends the specified slice to this <see cref="StringBuilder" /> instance.
         /// </summary>
         /// <param name="builder">The builder.</param>
         /// <param name="slice">The slice.</param>

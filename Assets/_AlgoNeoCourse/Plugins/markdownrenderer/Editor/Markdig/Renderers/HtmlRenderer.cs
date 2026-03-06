@@ -3,6 +3,7 @@
 // See the license.txt file in the project root for more information.
 
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -15,13 +16,15 @@ using Markdig.Syntax;
 namespace Markdig.Renderers
 {
     /// <summary>
-    /// Default HTML renderer for a Markdown <see cref="MarkdownDocument"/> object.
+    ///     Default HTML renderer for a Markdown <see cref="MarkdownDocument" /> object.
     /// </summary>
     /// <seealso cref="TextRendererBase{HtmlRenderer}" />
     public class HtmlRenderer : TextRendererBase<HtmlRenderer>
     {
+        private static readonly IdnMapping IdnMapping = new();
+
         /// <summary>
-        /// Initializes a new instance of the <see cref="HtmlRenderer"/> class.
+        ///     Initializes a new instance of the <see cref="HtmlRenderer" /> class.
         /// </summary>
         /// <param name="writer">The writer.</param>
         public HtmlRenderer(TextWriter writer) : base(writer)
@@ -42,7 +45,7 @@ namespace Markdig.Renderers
             ObjectRenderers.Add(new EmphasisInlineRenderer());
             ObjectRenderers.Add(new LineBreakInlineRenderer());
             ObjectRenderers.Add(new HtmlInlineRenderer());
-            ObjectRenderers.Add(new HtmlEntityInlineRenderer());            
+            ObjectRenderers.Add(new HtmlEntityInlineRenderer());
             ObjectRenderers.Add(new LinkInlineRenderer());
             ObjectRenderers.Add(new LiteralInlineRenderer());
 
@@ -52,42 +55,42 @@ namespace Markdig.Renderers
         }
 
         /// <summary>
-        /// Gets or sets a value indicating whether to output HTML tags when rendering. See remarks.
+        ///     Gets or sets a value indicating whether to output HTML tags when rendering. See remarks.
         /// </summary>
         /// <remarks>
-        /// This is used by some renderers to disable HTML tags when rendering some inline elements (for image links).
+        ///     This is used by some renderers to disable HTML tags when rendering some inline elements (for image links).
         /// </remarks>
         public bool EnableHtmlForInline { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether to output HTML tags when rendering. See remarks.
+        ///     Gets or sets a value indicating whether to output HTML tags when rendering. See remarks.
         /// </summary>
         /// <remarks>
-        /// This is used by some renderers to disable HTML tags when rendering some block elements (for image links).
+        ///     This is used by some renderers to disable HTML tags when rendering some block elements (for image links).
         /// </remarks>
         public bool EnableHtmlForBlock { get; set; }
 
         public bool EnableHtmlEscape { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether to use implicit paragraph (optional &lt;p&gt;)
+        ///     Gets or sets a value indicating whether to use implicit paragraph (optional &lt;p&gt;)
         /// </summary>
         public bool ImplicitParagraph { get; set; }
 
         public bool UseNonAsciiNoEscape { get; set; }
 
         /// <summary>
-        /// Gets a value to use as the base url for all relative links
+        ///     Gets a value to use as the base url for all relative links
         /// </summary>
         public Uri? BaseUrl { get; set; }
 
         /// <summary>
-        /// Allows links to be rewritten
+        ///     Allows links to be rewritten
         /// </summary>
         public Func<string, string>? LinkRewriter { get; set; }
 
         /// <summary>
-        /// Writes the content escaped for HTML.
+        ///     Writes the content escaped for HTML.
         /// </summary>
         /// <param name="content">The content.</param>
         /// <returns>This instance</returns>
@@ -98,11 +101,12 @@ namespace Markdig.Renderers
             {
                 WriteEscape(content, 0, content.Length);
             }
+
             return this;
         }
 
         /// <summary>
-        /// Writes the content escaped for HTML.
+        ///     Writes the content escaped for HTML.
         /// </summary>
         /// <param name="slice">The slice.</param>
         /// <param name="softEscape">Only escape &lt; and &amp;</param>
@@ -114,11 +118,12 @@ namespace Markdig.Renderers
             {
                 return this;
             }
+
             return WriteEscape(slice.Text, slice.Start, slice.Length, softEscape);
         }
 
         /// <summary>
-        /// Writes the content escaped for HTML.
+        ///     Writes the content escaped for HTML.
         /// </summary>
         /// <param name="slice">The slice.</param>
         /// <param name="softEscape">Only escape &lt; and &amp;</param>
@@ -130,7 +135,7 @@ namespace Markdig.Renderers
         }
 
         /// <summary>
-        /// Writes the content escaped for HTML.
+        ///     Writes the content escaped for HTML.
         /// </summary>
         /// <param name="content">The content.</param>
         /// <param name="offset">The offset.</param>
@@ -140,11 +145,13 @@ namespace Markdig.Renderers
         public HtmlRenderer WriteEscape(string content, int offset, int length, bool softEscape = false)
         {
             if (string.IsNullOrEmpty(content) || length == 0)
+            {
                 return this;
+            }
 
-            var end = offset + length;
+            int end = offset + length;
             int previousOffset = offset;
-            for (;offset < end;  offset++)
+            for (; offset < end; offset++)
             {
                 switch (content[offset])
                 {
@@ -154,6 +161,7 @@ namespace Markdig.Renderers
                         {
                             Write("&lt;");
                         }
+
                         previousOffset = offset + 1;
                         break;
                     case '>':
@@ -164,8 +172,10 @@ namespace Markdig.Renderers
                             {
                                 Write("&gt;");
                             }
+
                             previousOffset = offset + 1;
                         }
+
                         break;
                     case '&':
                         Write(content, previousOffset, offset - previousOffset);
@@ -173,6 +183,7 @@ namespace Markdig.Renderers
                         {
                             Write("&amp;");
                         }
+
                         previousOffset = offset + 1;
                         break;
                     case '"':
@@ -183,8 +194,10 @@ namespace Markdig.Renderers
                             {
                                 Write("&quot;");
                             }
+
                             previousOffset = offset + 1;
                         }
+
                         break;
                 }
             }
@@ -193,22 +206,22 @@ namespace Markdig.Renderers
             return this;
         }
 
-        private static readonly IdnMapping IdnMapping = new IdnMapping();
-
         /// <summary>
-        /// Writes the URL escaped for HTML.
+        ///     Writes the URL escaped for HTML.
         /// </summary>
         /// <param name="content">The content.</param>
         /// <returns>This instance</returns>
         public HtmlRenderer WriteEscapeUrl(string? content)
         {
             if (content is null)
+            {
                 return this;
+            }
 
             if (BaseUrl != null
                 // According to https://github.com/dotnet/runtime/issues/22718
                 // this is the proper cross-platform way to check whether a uri is absolute or not:
-                && Uri.TryCreate(content, UriKind.RelativeOrAbsolute, out var contentUri) && !contentUri.IsAbsoluteUri)
+                && Uri.TryCreate(content, UriKind.RelativeOrAbsolute, out Uri? contentUri) && !contentUri.IsAbsoluteUri)
             {
                 content = new Uri(BaseUrl, contentUri).AbsoluteUri;
             }
@@ -234,6 +247,7 @@ namespace Markdig.Renderers
                     {
                         break;
                     }
+
                     if (c > 127)
                     {
                         idnaEncodeDomain = true;
@@ -259,7 +273,7 @@ namespace Markdig.Renderers
                     int previousPosition = 0;
                     for (int i = 0; i < domainName.Length; i++)
                     {
-                        var escape = HtmlHelper.EscapeUrlCharacter(domainName[i]);
+                        string? escape = HtmlHelper.EscapeUrlCharacter(domainName[i]);
                         if (escape != null)
                         {
                             Write(domainName, previousPosition, i - previousPosition);
@@ -267,6 +281,7 @@ namespace Markdig.Renderers
                             Write(escape);
                         }
                     }
+
                     Write(domainName, previousPosition, domainName.Length - previousPosition);
                     WriteEscapeUrl(content, endOfDomain, content.Length);
                 }
@@ -286,13 +301,13 @@ namespace Markdig.Renderers
         private void WriteEscapeUrl(string content, int start, int length)
         {
             int previousPosition = start;
-            for (var i = previousPosition; i < length; i++)
+            for (int i = previousPosition; i < length; i++)
             {
-                var c = content[i];
+                char c = content[i];
 
                 if (c < 128)
                 {
-                    var escape = HtmlHelper.EscapeUrlCharacter(c);
+                    string? escape = HtmlHelper.EscapeUrlCharacter(c);
                     if (escape != null)
                     {
                         Write(content, previousPosition, i - previousPosition);
@@ -324,29 +339,35 @@ namespace Markdig.Renderers
                         {
                             bytes = Encoding.UTF8.GetBytes(new[] { c });
                         }
-                        for (var j = 0; j < bytes.Length; j++)
+
+                        for (int j = 0; j < bytes.Length; j++)
                         {
                             Write($"%{bytes[j]:X2}");
                         }
                     }
                 }
             }
+
             Write(content, previousPosition, length - previousPosition);
         }
 
         /// <summary>
-        /// Writes the attached <see cref="HtmlAttributes"/> on the specified <see cref="MarkdownObject"/>.
+        ///     Writes the attached <see cref="HtmlAttributes" /> on the specified <see cref="MarkdownObject" />.
         /// </summary>
         /// <param name="markdownObject">The object.</param>
         /// <returns></returns>
         public HtmlRenderer WriteAttributes(MarkdownObject markdownObject)
         {
-            if (markdownObject is null) ThrowHelper.ArgumentNullException_markdownObject();
+            if (markdownObject is null)
+            {
+                ThrowHelper.ArgumentNullException_markdownObject();
+            }
+
             return WriteAttributes(markdownObject.TryGetAttributes());
         }
 
         /// <summary>
-        /// Writes the specified <see cref="HtmlAttributes"/>.
+        ///     Writes the specified <see cref="HtmlAttributes" />.
         /// </summary>
         /// <param name="attributes">The attributes to render.</param>
         /// <param name="classFilter">A class filter used to transform a class into another class at writing time</param>
@@ -368,19 +389,21 @@ namespace Markdig.Renderers
                 Write(" class=\"");
                 for (int i = 0; i < attributes.Classes.Count; i++)
                 {
-                    var cssClass = attributes.Classes[i];
+                    string? cssClass = attributes.Classes[i];
                     if (i > 0)
                     {
                         Write(' ');
                     }
+
                     WriteEscape(classFilter != null ? classFilter(cssClass) : cssClass);
                 }
+
                 Write('"');
             }
 
             if (attributes.Properties is { Count: > 0 })
             {
-                foreach (var property in attributes.Properties)
+                foreach (KeyValuePair<string, string?> property in attributes.Properties)
                 {
                     Write(' ').Write(property.Key);
                     Write("=\"");
@@ -393,26 +416,32 @@ namespace Markdig.Renderers
         }
 
         /// <summary>
-        /// Writes the lines of a <see cref="LeafBlock"/>
+        ///     Writes the lines of a <see cref="LeafBlock" />
         /// </summary>
         /// <param name="leafBlock">The leaf block.</param>
         /// <param name="writeEndOfLines">if set to <c>true</c> write end of lines.</param>
         /// <param name="escape">if set to <c>true</c> escape the content for HTML</param>
         /// <param name="softEscape">Only escape &lt; and &amp;</param>
         /// <returns>This instance</returns>
-        public HtmlRenderer WriteLeafRawLines(LeafBlock leafBlock, bool writeEndOfLines, bool escape, bool softEscape = false)
+        public HtmlRenderer WriteLeafRawLines(LeafBlock leafBlock, bool writeEndOfLines, bool escape,
+            bool softEscape = false)
         {
-            if (leafBlock is null) ThrowHelper.ArgumentNullException_leafBlock();
+            if (leafBlock is null)
+            {
+                ThrowHelper.ArgumentNullException_leafBlock();
+            }
+
             if (leafBlock.Lines.Lines != null)
             {
-                var lines = leafBlock.Lines;
-                var slices = lines.Lines;
+                StringLineGroup lines = leafBlock.Lines;
+                StringLine[] slices = lines.Lines;
                 for (int i = 0; i < lines.Count; i++)
                 {
                     if (!writeEndOfLines && i > 0)
                     {
                         WriteLine();
                     }
+
                     if (escape)
                     {
                         WriteEscape(ref slices[i].Slice, softEscape);
@@ -421,12 +450,14 @@ namespace Markdig.Renderers
                     {
                         Write(ref slices[i].Slice);
                     }
+
                     if (writeEndOfLines)
                     {
                         WriteLine();
                     }
                 }
             }
+
             return this;
         }
     }

@@ -13,23 +13,34 @@ using Markdig.Syntax;
 namespace Markdig.Parsers
 {
     /// <summary>
-    /// The block processor.
+    ///     The block processor.
     /// </summary>
     public class BlockProcessor
     {
+        private static readonly BlockProcessorCache _cache = new();
         private int currentStackIndex;
+
+        /// <summary>
+        ///     The current line being processed.
+        /// </summary>
+        public StringSlice Line;
+
         private int originalLineStart;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="BlockProcessor" /> class.
+        ///     Initializes a new instance of the <see cref="BlockProcessor" /> class.
         /// </summary>
         /// <param name="document">The document to build blocks into.</param>
         /// <param name="parsers">The list of parsers.</param>
         /// <param name="context">A parser context used for the parsing.</param>
-        /// <param name="trackTrivia">Whether to parse trivia such as whitespace, extra heading characters and unescaped string values.</param>
+        /// <param name="trackTrivia">
+        ///     Whether to parse trivia such as whitespace, extra heading characters and unescaped string
+        ///     values.
+        /// </param>
         /// <exception cref="ArgumentNullException">
         /// </exception>
-        public BlockProcessor(MarkdownDocument document, BlockParserList parsers, MarkdownParserContext? context, bool trackTrivia = false)
+        public BlockProcessor(MarkdownDocument document, BlockParserList parsers, MarkdownParserContext? context,
+            bool trackTrivia = false)
         {
             Setup(document, parsers, context, trackTrivia);
 
@@ -37,169 +48,168 @@ namespace Markdig.Parsers
             Open(document);
         }
 
-        private BlockProcessor() { }
+        private BlockProcessor()
+        {
+        }
 
         public bool SkipFirstUnwindSpace { get; set; }
 
         /// <summary>
-        /// Gets the new blocks to push. A <see cref="BlockParser"/> is required to push new blocks that it creates to this property.
+        ///     Gets the new blocks to push. A <see cref="BlockParser" /> is required to push new blocks that it creates to this
+        ///     property.
         /// </summary>
         public Stack<Block> NewBlocks { get; } = new();
 
         /// <summary>
-        /// Gets the list of <see cref="BlockParser"/>s configured with this parser state.
+        ///     Gets the list of <see cref="BlockParser" />s configured with this parser state.
         /// </summary>
         public BlockParserList Parsers { get; private set; } = null!; // Set in Setup
 
         /// <summary>
-        /// Gets the parser context or <c>null</c> if none is available.
+        ///     Gets the parser context or <c>null</c> if none is available.
         /// </summary>
         public MarkdownParserContext? Context { get; private set; }
 
         /// <summary>
-        /// Gets the current active container.
+        ///     Gets the current active container.
         /// </summary>
         public ContainerBlock? CurrentContainer { get; private set; }
 
         /// <summary>
-        /// Gets the last block that is opened.
+        ///     Gets the last block that is opened.
         /// </summary>
         public Block? CurrentBlock { get; private set; }
 
         /// <summary>
-        /// Gets the last block that is created.
+        ///     Gets the last block that is created.
         /// </summary>
         public Block? LastBlock { get; private set; }
 
         /// <summary>
-        /// Gets the next block in a <see cref="BlockParser.TryContinue"/>.
+        ///     Gets the next block in a <see cref="BlockParser.TryContinue" />.
         /// </summary>
-        public Block? NextContinue => currentStackIndex + 1 < OpenedBlocks.Count ? OpenedBlocks[currentStackIndex + 1] : null;
+        public Block? NextContinue =>
+            currentStackIndex + 1 < OpenedBlocks.Count ? OpenedBlocks[currentStackIndex + 1] : null;
 
         /// <summary>
-        /// Gets the root document.
+        ///     Gets the root document.
         /// </summary>
         public MarkdownDocument Document { get; private set; } = null!; // Set in Setup
 
         /// <summary>
-        /// The current line being processed.
-        /// </summary>
-        public StringSlice Line;
-
-        /// <summary>
-        /// Gets or sets the current line start position.
+        ///     Gets or sets the current line start position.
         /// </summary>
         public int CurrentLineStartPosition { get; private set; }
 
         /// <summary>
-        /// Gets the index of the line in the source text.
+        ///     Gets the index of the line in the source text.
         /// </summary>
         public int LineIndex { get; set; }
 
         /// <summary>
-        /// Gets a value indicating whether the line is blank (valid only after <see cref="ParseIndent"/> has been called).
+        ///     Gets a value indicating whether the line is blank (valid only after <see cref="ParseIndent" /> has been called).
         /// </summary>
         public bool IsBlankLine => Line.IsEmpty;
 
         /// <summary>
-        /// Gets the current character being processed.
+        ///     Gets the current character being processed.
         /// </summary>
         public char CurrentChar => Line.CurrentChar;
 
         /// <summary>
-        /// Gets or sets the column.
+        ///     Gets or sets the column.
         /// </summary>
         public int Column { get; set; }
 
         /// <summary>
-        /// Gets the position of the current character in the line being processed.
+        ///     Gets the position of the current character in the line being processed.
         /// </summary>
         public int Start => Line.Start;
 
         /// <summary>
-        /// Gets the current indent position (number of columns between the previous indent and the current position).
+        ///     Gets the current indent position (number of columns between the previous indent and the current position).
         /// </summary>
         public int Indent => Column - ColumnBeforeIndent;
 
         /// <summary>
-        /// Gets a value indicating whether a code indentation is at the beginning of the line being processed.
+        ///     Gets a value indicating whether a code indentation is at the beginning of the line being processed.
         /// </summary>
         public bool IsCodeIndent => Indent >= 4;
 
         /// <summary>
-        /// Gets the column position before the indent occurred.
+        ///     Gets the column position before the indent occurred.
         /// </summary>
         public int ColumnBeforeIndent { get; private set; }
 
         /// <summary>
-        /// Gets the character position before the indent occurred.
+        ///     Gets the character position before the indent occurred.
         /// </summary>
         public int StartBeforeIndent { get; private set; }
 
         /// <summary>
-        /// Gets a boolean indicating whether the current line being parsed is lazy continuation.
+        ///     Gets a boolean indicating whether the current line being parsed is lazy continuation.
         /// </summary>
         public bool IsLazy { get; private set; }
 
         /// <summary>
-        /// Gets the current stack of <see cref="Block"/> being processed.
+        ///     Gets the current stack of <see cref="Block" /> being processed.
         /// </summary>
         private List<Block> OpenedBlocks { get; } = new();
 
         private bool ContinueProcessingLine { get; set; }
 
         /// <summary>
-        /// Gets or sets the position of the first character trivia is encountered
-        /// and not yet assigned to a syntax node.
-        /// Trivia: only used when <see cref="TrackTrivia"/> is enabled, otherwise 0.
+        ///     Gets or sets the position of the first character trivia is encountered
+        ///     and not yet assigned to a syntax node.
+        ///     Trivia: only used when <see cref="TrackTrivia" /> is enabled, otherwise 0.
         /// </summary>
         public int TriviaStart { get; set; }
 
         /// <summary>
-        /// Returns trivia that has not yet been assigned to any node and
-        /// advances the position of trivia to the ending position.
+        ///     Gets or sets the stack of empty lines not yet assigned to any <see cref="Block" />.
+        ///     An entry may contain an empty <see cref="StringSlice" />. In that case the
+        ///     <see cref="StringSlice.NewLine" /> is relevant. Otherwise, the <see cref="StringSlice" />
+        ///     entry will contain trivia.
+        /// </summary>
+        public List<StringSlice>? LinesBefore { get; set; }
+
+        /// <summary>
+        ///     True to parse trivia such as whitespace, extra heading characters and unescaped
+        ///     string values.
+        /// </summary>
+        public bool TrackTrivia { get; private set; }
+
+        /// <summary>
+        ///     Returns trivia that has not yet been assigned to any node and
+        ///     advances the position of trivia to the ending position.
         /// </summary>
         /// <param name="end">End position of the trivia</param>
         /// <returns></returns>
         public StringSlice UseTrivia(int end)
         {
-            var stringSlice = new StringSlice(Line.Text, TriviaStart, end);
+            StringSlice stringSlice = new(Line.Text, TriviaStart, end);
             TriviaStart = end + 1;
             return stringSlice;
         }
 
         /// <summary>
-        /// Returns the current stack of <see cref="LinesBefore"/> to assign it to a <see cref="Block"/>.
-        /// Afterwards, the <see cref="LinesBefore"/> is set to null.
+        ///     Returns the current stack of <see cref="LinesBefore" /> to assign it to a <see cref="Block" />.
+        ///     Afterwards, the <see cref="LinesBefore" /> is set to null.
         /// </summary>
         internal List<StringSlice> UseLinesBefore()
         {
-            var linesBefore = LinesBefore;
+            List<StringSlice>? linesBefore = LinesBefore;
             LinesBefore = null;
             return linesBefore!;
         }
 
         /// <summary>
-        /// Gets or sets the stack of empty lines not yet assigned to any <see cref="Block"/>.
-        /// An entry may contain an empty <see cref="StringSlice"/>. In that case the
-        /// <see cref="StringSlice.NewLine"/> is relevant. Otherwise, the <see cref="StringSlice"/>
-        /// entry will contain trivia.
-        /// </summary>
-        public List<StringSlice>? LinesBefore { get; set; }
-
-        /// <summary>
-        /// True to parse trivia such as whitespace, extra heading characters and unescaped
-        /// string values.
-        /// </summary>
-        public bool TrackTrivia { get; private set; }
-
-        /// <summary>
-        /// Get the current Container that is currently opened
+        ///     Get the current Container that is currently opened
         /// </summary>
         /// <returns>The current Container that is currently opened</returns>
         public ContainerBlock GetCurrentContainerOpened()
         {
-            var container = CurrentContainer;
+            ContainerBlock? container = CurrentContainer;
             while (container != null && !container.IsOpen)
             {
                 container = container.Parent;
@@ -209,12 +219,12 @@ namespace Markdig.Parsers
         }
 
         /// <summary>
-        /// Returns the next character in the line being processed. Update <see cref="Start"/> and <see cref="Column"/>.
+        ///     Returns the next character in the line being processed. Update <see cref="Start" /> and <see cref="Column" />.
         /// </summary>
         /// <returns>The next character or `\0` if end of line is reached</returns>
         public char NextChar()
         {
-            var c = Line.CurrentChar;
+            char c = Line.CurrentChar;
             if (c == '\t')
             {
                 Column = CharHelper.AddTab(Column);
@@ -223,15 +233,17 @@ namespace Markdig.Parsers
             {
                 Column++;
             }
+
             return Line.NextChar();
         }
 
         /// <summary>
-        /// Returns the next character in the line taking into space taken by tabs. Update <see cref="Start"/> and <see cref="Column"/>.
+        ///     Returns the next character in the line taking into space taken by tabs. Update <see cref="Start" /> and
+        ///     <see cref="Column" />.
         /// </summary>
         public void NextColumn()
         {
-            var c = Line.CurrentChar;
+            char c = Line.CurrentChar;
             // If we are across a tab, we should just add 1 column
             if (c == '\t' && CharHelper.IsAcrossTab(Column))
             {
@@ -245,7 +257,7 @@ namespace Markdig.Parsers
         }
 
         /// <summary>
-        /// Peeks a character at the specified offset from the current position in the line.
+        ///     Peeks a character at the specified offset from the current position in the line.
         /// </summary>
         /// <param name="offset">The offset.</param>
         /// <returns>A character peeked at the specified offset</returns>
@@ -255,7 +267,7 @@ namespace Markdig.Parsers
         }
 
         /// <summary>
-        /// Restarts the indent from the current position.
+        ///     Restarts the indent from the current position.
         /// </summary>
         public void RestartIndent()
         {
@@ -264,17 +276,17 @@ namespace Markdig.Parsers
         }
 
         /// <summary>
-        /// Parses the indentation from the current position in the line, updating <see cref="StartBeforeIndent"/>,
-        /// <see cref="ColumnBeforeIndent"/>, <see cref="Start"/> and <see cref="Column"/> accordingly
-        /// taking into account space taken by tabs.
+        ///     Parses the indentation from the current position in the line, updating <see cref="StartBeforeIndent" />,
+        ///     <see cref="ColumnBeforeIndent" />, <see cref="Start" /> and <see cref="Column" /> accordingly
+        ///     taking into account space taken by tabs.
         /// </summary>
         public void ParseIndent()
         {
-            var c = CurrentChar;
-            var previousStartBeforeIndent = StartBeforeIndent;
-            var startBeforeIndent = Start;
-            var previousColumnBeforeIndent = ColumnBeforeIndent;
-            var columnBeforeIndent = Column;
+            char c = CurrentChar;
+            int previousStartBeforeIndent = StartBeforeIndent;
+            int startBeforeIndent = Start;
+            int previousColumnBeforeIndent = ColumnBeforeIndent;
+            int columnBeforeIndent = Column;
             while (c != '\0')
             {
                 if (c == '\t')
@@ -289,8 +301,10 @@ namespace Markdig.Parsers
                 {
                     break;
                 }
+
                 c = Line.NextChar();
             }
+
             if (columnBeforeIndent == Column)
             {
                 StartBeforeIndent = previousStartBeforeIndent;
@@ -304,7 +318,7 @@ namespace Markdig.Parsers
         }
 
         /// <summary>
-        /// Moves to the position to the specified column position, taking into account spaces in tabs.
+        ///     Moves to the position to the specified column position, taking into account spaces in tabs.
         /// </summary>
         /// <param name="newColumn">The new column position to move the cursor to.</param>
         public void GoToColumn(int newColumn)
@@ -322,9 +336,10 @@ namespace Markdig.Parsers
                 ColumnBeforeIndent = 0;
                 StartBeforeIndent = originalLineStart;
             }
+
             for (; Line.Start <= Line.End && Column < newColumn; Line.Start++)
             {
-                var c = Line.Text[Line.Start];
+                char c = Line.Text[Line.Start];
                 if (c == '\t')
                 {
                     Column = CharHelper.AddTab(Column);
@@ -340,6 +355,7 @@ namespace Markdig.Parsers
                     Column++;
                 }
             }
+
             if (Column > newColumn)
             {
                 Column = newColumn;
@@ -351,31 +367,34 @@ namespace Markdig.Parsers
         }
 
         /// <summary>
-        /// Unwind any previous indent from the current character back to the first space.
+        ///     Unwind any previous indent from the current character back to the first space.
         /// </summary>
         public void UnwindAllIndents()
         {
             // Find the previous first space on the current line
-            var previousStart = Line.Start;
+            int previousStart = Line.Start;
             for (; Line.Start > originalLineStart; Line.Start--)
             {
-                var c = Line.PeekCharAbsolute(Line.Start - 1);
+                char c = Line.PeekCharAbsolute(Line.Start - 1);
 
                 // don't unwind all the way next to a '>', but one space right of the '>' if there is a space
                 if (TrackTrivia && SkipFirstUnwindSpace && Line.Start == TriviaStart)
                 {
                     break;
                 }
+
                 if (c == 0)
                 {
                     break;
                 }
+
                 if (!c.IsSpaceOrTab())
                 {
                     break;
                 }
             }
-            var targetStart = Line.Start;
+
+            int targetStart = Line.Start;
             // Nothing changed? Early exit
             if (previousStart == targetStart)
             {
@@ -392,7 +411,7 @@ namespace Markdig.Parsers
 
             for (; Line.Start < targetStart; Line.Start++)
             {
-                var c = Line.Text[Line.Start];
+                char c = Line.Text[Line.Start];
                 if (c == '\t')
                 {
                     Column = CharHelper.AddTab(Column);
@@ -415,7 +434,7 @@ namespace Markdig.Parsers
         }
 
         /// <summary>
-        /// Moves to the position to the code indent (<see cref="ColumnBeforeIndent"/> + 4 spaces).
+        ///     Moves to the position to the code indent (<see cref="ColumnBeforeIndent" /> + 4 spaces).
         /// </summary>
         /// <param name="columnOffset">The column offset to apply to this indent.</param>
         public void GoToCodeIndent(int columnOffset = 0)
@@ -424,20 +443,28 @@ namespace Markdig.Parsers
         }
 
         /// <summary>
-        /// Opens the specified block.
+        ///     Opens the specified block.
         /// </summary>
         /// <param name="block">The block.</param>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="ArgumentException">The block must be opened</exception>
         public void Open(Block block)
         {
-            if (block is null) ThrowHelper.ArgumentNullException(nameof(block));
-            if (!block.IsOpen) ThrowHelper.ArgumentException("The block must be opened", nameof(block));
+            if (block is null)
+            {
+                ThrowHelper.ArgumentNullException(nameof(block));
+            }
+
+            if (!block.IsOpen)
+            {
+                ThrowHelper.ArgumentException("The block must be opened", nameof(block));
+            }
+
             OpenedBlocks.Add(block);
         }
 
         /// <summary>
-        /// Force closing the specified block.
+        ///     Force closing the specified block.
         /// </summary>
         /// <param name="block">The block.</param>
         public void Close(Block block)
@@ -451,13 +478,14 @@ namespace Markdig.Parsers
                     {
                         Close(j);
                     }
+
                     break;
                 }
             }
         }
 
         /// <summary>
-        /// Discards the specified block from the stack, remove from its parent.
+        ///     Discards the specified block from the stack, remove from its parent.
         /// </summary>
         /// <param name="block">The block.</param>
         public void Discard(Block block)
@@ -474,7 +502,7 @@ namespace Markdig.Parsers
         }
 
         /// <summary>
-        /// Processes a new line.
+        ///     Processes a new line.
         /// </summary>
         /// <param name="newLine">The new line.</param>
         public void ProcessLine(StringSlice newLine)
@@ -504,12 +532,12 @@ namespace Markdig.Parsers
         }
 
         /// <summary>
-        /// Closes a block at the specified index.
+        ///     Closes a block at the specified index.
         /// </summary>
         /// <param name="index">The index.</param>
         private void Close(int index)
         {
-            var block = OpenedBlocks[index];
+            Block? block = OpenedBlocks[index];
             // If the pending object is removed, we need to remove it from the parent container
             if (block.Parser != null)
             {
@@ -525,15 +553,16 @@ namespace Markdig.Parsers
                 else
                 {
                     // Invoke the Closed event
-                    var blockClosed = block.Parser.GetClosedEvent;
+                    ProcessBlockDelegate? blockClosed = block.Parser.GetClosedEvent;
                     blockClosed?.Invoke(this, block);
                 }
             }
+
             OpenedBlocks.RemoveAt(index);
         }
 
         /// <summary>
-        /// Closes all the blocks opened.
+        ///     Closes all the blocks opened.
         /// </summary>
         /// <param name="force">if set to <c>true</c> [force].</param>
         internal void CloseAll(bool force)
@@ -541,13 +570,14 @@ namespace Markdig.Parsers
             // Close any previous blocks not opened
             for (int i = OpenedBlocks.Count - 1; i >= 1; i--)
             {
-                var block = OpenedBlocks[i];
+                Block? block = OpenedBlocks[i];
 
                 // Stop on the first open block
                 if (!force && block.IsOpen)
                 {
                     break;
                 }
+
                 if (TrackTrivia)
                 {
                     if (LinesBefore is { Count: > 0 })
@@ -557,26 +587,28 @@ namespace Markdig.Parsers
                         if (LinesBefore.Count == 1)
                         {
                             block.LinesAfter ??= new List<StringSlice>();
-                            var linesBefore = UseLinesBefore();
+                            List<StringSlice> linesBefore = UseLinesBefore();
                             block.LinesAfter.AddRange(linesBefore);
                         }
                         else
                         {
                             // attach multiple lines after to the root most parent ContainerBlock
-                            var rootMostContainerBlock = Block.FindRootMostContainerParent(block);
+                            Block rootMostContainerBlock = Block.FindRootMostContainerParent(block);
                             rootMostContainerBlock.LinesAfter ??= new List<StringSlice>();
-                            var linesBefore = UseLinesBefore();
+                            List<StringSlice> linesBefore = UseLinesBefore();
                             rootMostContainerBlock.LinesAfter.AddRange(linesBefore);
                         }
                     }
                 }
+
                 Close(i);
             }
+
             UpdateLastBlockAndContainer();
         }
 
         /// <summary>
-        /// Mark all blocks in the stack as opened.
+        ///     Mark all blocks in the stack as opened.
         /// </summary>
         private void OpenAll()
         {
@@ -587,7 +619,7 @@ namespace Markdig.Parsers
         }
 
         /// <summary>
-        /// Updates the <see cref="CurrentBlock"/> and <see cref="CurrentContainer"/>.
+        ///     Updates the <see cref="CurrentBlock" /> and <see cref="CurrentContainer" />.
         /// </summary>
         /// <param name="stackIndex">Index of a block in a stack considered as the last block to update from.</param>
         private void UpdateLastBlockAndContainer(int stackIndex = -1)
@@ -597,7 +629,7 @@ namespace Markdig.Parsers
             LastBlock = null;
             for (int i = OpenedBlocks.Count - 1; i >= 0; i--)
             {
-                var block = OpenedBlocks[i];
+                Block? block = OpenedBlocks[i];
                 if (CurrentBlock is null)
                 {
                     CurrentBlock = block;
@@ -613,12 +645,12 @@ namespace Markdig.Parsers
         }
 
         /// <summary>
-        /// Tries to continue matching existing opened <see cref="Block"/>.
+        ///     Tries to continue matching existing opened <see cref="Block" />.
         /// </summary>
         /// <exception cref="InvalidOperationException">
-        /// A pending parser cannot add a new block when it is not the last pending block
-        /// or
-        /// The NewBlocks is not empty. This is happening if a LeafBlock is not the last to be pushed
+        ///     A pending parser cannot add a new block when it is not the last pending block
+        ///     or
+        ///     The NewBlocks is not empty. This is happening if a LeafBlock is not the last to be pushed
         /// </exception>
         private void TryContinueBlocks()
         {
@@ -634,7 +666,7 @@ namespace Markdig.Parsers
             // Process any current block potentially opened
             for (int i = 1; i < OpenedBlocks.Count; i++)
             {
-                var block = OpenedBlocks[i];
+                Block? block = OpenedBlocks[i];
 
                 ParseIndent();
 
@@ -645,11 +677,11 @@ namespace Markdig.Parsers
                 }
 
                 // Else tries to match the Default with the current line
-                var parser = block.Parser!;
+                BlockParser parser = block.Parser!;
 
                 // If we have a discard, we can remove it from the current state
                 UpdateLastBlockAndContainer(i);
-                var result = parser.TryContinue(this, block);
+                BlockState result = parser.TryContinue(this, block);
                 if (result == BlockState.Skip)
                 {
                     continue;
@@ -669,9 +701,10 @@ namespace Markdig.Parsers
                 }
 
                 // If a parser is adding a block, it must be the last of the list
-                if ((i + 1) < OpenedBlocks.Count && NewBlocks.Count > 0)
+                if (i + 1 < OpenedBlocks.Count && NewBlocks.Count > 0)
                 {
-                    ThrowHelper.InvalidOperationException("A pending parser cannot add a new block when it is not the last pending block");
+                    ThrowHelper.InvalidOperationException(
+                        "A pending parser cannot add a new block when it is not the last pending block");
                 }
 
                 // If we have a leaf block
@@ -689,6 +722,7 @@ namespace Markdig.Parsers
                                 UnwindAllIndents();
                             }
                         }
+
                         leaf.AppendLine(ref Line, Column, LineIndex, CurrentLineStartPosition, TrackTrivia);
                     }
                 }
@@ -704,11 +738,12 @@ namespace Markdig.Parsers
                         if (TrackTrivia)
                         {
                             LinesBefore ??= new List<StringSlice>();
-                            var line = new StringSlice(Line.Text, TriviaStart, Line.Start - 1, Line.NewLine);
+                            StringSlice line = new(Line.Text, TriviaStart, Line.Start - 1, Line.NewLine);
                             LinesBefore.Add(line);
                             Line.Start = StartBeforeIndent;
                         }
                     }
+
                     ContinueProcessingLine = false;
                     break;
                 }
@@ -718,6 +753,7 @@ namespace Markdig.Parsers
                 {
                     ProcessNewBlocks(result, false);
                 }
+
                 if (isLast || !ContinueProcessingLine)
                 {
                     break;
@@ -726,7 +762,7 @@ namespace Markdig.Parsers
         }
 
         /// <summary>
-        /// First phase of the process, try to open new blocks.
+        ///     First phase of the process, try to open new blocks.
         /// </summary>
         private void TryOpenBlocks()
         {
@@ -736,15 +772,17 @@ namespace Markdig.Parsers
                 // Security check so that the parser can't go into a crazy infinite loop if one extension is messing
                 if (previousStart == Start)
                 {
-                    ThrowHelper.InvalidOperationException($"The parser is in an invalid infinite loop while trying to parse blocks at line [{LineIndex}] with line [{Line}]");
+                    ThrowHelper.InvalidOperationException(
+                        $"The parser is in an invalid infinite loop while trying to parse blocks at line [{LineIndex}] with line [{Line}]");
                 }
+
                 previousStart = Start;
 
                 // Eat indent spaces before checking the character
                 ParseIndent();
 
-                var parsers = Parsers.GetParsersForOpeningCharacter(CurrentChar);
-                var globalParsers = Parsers.GlobalParsers;
+                BlockParser[]? parsers = Parsers.GetParsersForOpeningCharacter(CurrentChar);
+                BlockParser[]? globalParsers = Parsers.GlobalParsers;
 
                 if (parsers != null)
                 {
@@ -769,7 +807,7 @@ namespace Markdig.Parsers
         }
 
         /// <summary>
-        /// Tries to open new blocks using the specified list of <see cref="BlockParser"/>
+        ///     Tries to open new blocks using the specified list of <see cref="BlockParser" />
         /// </summary>
         /// <param name="parsers">The parsers.</param>
         /// <returns><c>true</c> to continue processing the current line</returns>
@@ -778,16 +816,17 @@ namespace Markdig.Parsers
             for (int j = 0; j < parsers.Length; j++)
             {
                 IsLazy = false;
-                var blockParser = parsers[j];
+                BlockParser blockParser = parsers[j];
                 if (Line.IsEmpty)
                 {
                     if (TrackTrivia)
                     {
                         LinesBefore ??= new List<StringSlice>();
-                        var line = new StringSlice(Line.Text, TriviaStart, Line.Start - 1, Line.NewLine);
+                        StringSlice line = new(Line.Text, TriviaStart, Line.Start - 1, Line.NewLine);
                         LinesBefore.Add(line);
                         Line.Start = StartBeforeIndent;
                     }
+
                     ContinueProcessingLine = false;
                     break;
                 }
@@ -798,7 +837,7 @@ namespace Markdig.Parsers
                 // If a block parser cannot interrupt a paragraph, and the last block is a paragraph
                 // we can skip this parser
 
-                var lastBlock = CurrentBlock!;
+                Block lastBlock = CurrentBlock!;
                 if (!blockParser.CanInterrupt(this, lastBlock))
                 {
                     continue;
@@ -806,7 +845,7 @@ namespace Markdig.Parsers
 
                 IsLazy = blockParser is ParagraphBlockParser && lastBlock is ParagraphBlock;
 
-                var result = IsLazy
+                BlockState result = IsLazy
                     ? blockParser.TryContinue(this, lastBlock)
                     : blockParser.TryOpen(this);
 
@@ -819,6 +858,7 @@ namespace Markdig.Parsers
                         ContinueProcessingLine = false;
                         break;
                     }
+
                     continue;
                 }
 
@@ -835,17 +875,20 @@ namespace Markdig.Parsers
                         {
                             UnwindAllIndents();
                         }
+
                         paragraph.AppendLine(ref Line, Column, LineIndex, CurrentLineStartPosition, TrackTrivia);
                     }
+
                     if (TrackTrivia)
                     {
                         // special case: take care when refactoring this
                         if (paragraph.Parent is QuoteBlock qb)
                         {
-                            var triviaAfter = UseTrivia(Start - 1);
+                            StringSlice triviaAfter = UseTrivia(Start - 1);
                             qb.QuoteLines.Last().TriviaAfter = triviaAfter;
                         }
                     }
+
                     // We have just found a lazy continuation for a paragraph, early exit
                     // Mark all block opened after a lazy continuation
                     OpenAll();
@@ -873,27 +916,31 @@ namespace Markdig.Parsers
         }
 
         /// <summary>
-        /// Processes any new blocks that have been pushed to <see cref="NewBlocks"/>.
+        ///     Processes any new blocks that have been pushed to <see cref="NewBlocks" />.
         /// </summary>
         /// <param name="result">The last result of matching.</param>
         /// <param name="allowClosing">if set to <c>true</c> the processing of a new block will close existing opened blocks].</param>
-        /// <exception cref="InvalidOperationException">The NewBlocks is not empty. This is happening if a LeafBlock is not the last to be pushed</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     The NewBlocks is not empty. This is happening if a LeafBlock is not the
+        ///     last to be pushed
+        /// </exception>
         private void ProcessNewBlocks(BlockState result, bool allowClosing)
         {
-            var newBlocks = NewBlocks;
+            Stack<Block> newBlocks = NewBlocks;
             while (newBlocks.Count > 0)
             {
-                var block = newBlocks.Pop();
+                Block? block = newBlocks.Pop();
 
                 if (block.Parser is null)
                 {
-                    ThrowHelper.InvalidOperationException($"The new block [{block.GetType()}] must have a valid Parser property");
+                    ThrowHelper.InvalidOperationException(
+                        $"The new block [{block.GetType()}] must have a valid Parser property");
                 }
 
                 block.Line = LineIndex;
 
                 // If we have a leaf block
-                var leaf = block as LeafBlock;
+                LeafBlock? leaf = block as LeafBlock;
                 if (leaf != null)
                 {
                     if (!result.IsDiscard())
@@ -906,6 +953,7 @@ namespace Markdig.Parsers
                                 UnwindAllIndents();
                             }
                         }
+
                         leaf.AppendLine(ref Line, Column, LineIndex, CurrentLineStartPosition, TrackTrivia);
                     }
 
@@ -955,12 +1003,19 @@ namespace Markdig.Parsers
         }
 
 
-
         [MemberNotNull(nameof(Document), nameof(Parsers))]
-        internal void Setup(MarkdownDocument document, BlockParserList parsers, MarkdownParserContext? context, bool trackTrivia)
+        internal void Setup(MarkdownDocument document, BlockParserList parsers, MarkdownParserContext? context,
+            bool trackTrivia)
         {
-            if (document is null) ThrowHelper.ArgumentNullException(nameof(document));
-            if (parsers is null) ThrowHelper.ArgumentNullException(nameof(parsers));
+            if (document is null)
+            {
+                ThrowHelper.ArgumentNullException(nameof(document));
+            }
+
+            if (parsers is null)
+            {
+                ThrowHelper.ArgumentNullException(nameof(parsers));
+            }
 
             Document = document;
             Parsers = parsers;
@@ -998,15 +1053,20 @@ namespace Markdig.Parsers
             LinesBefore = null;
         }
 
-        public BlockProcessor CreateChild() => Rent(Document, Parsers, Context, TrackTrivia);
-
-        public void ReleaseChild() => Release(this);
-
-        private static readonly BlockProcessorCache _cache = new();
-
-        internal static BlockProcessor Rent(MarkdownDocument document, BlockParserList parsers, MarkdownParserContext? context, bool trackTrivia)
+        public BlockProcessor CreateChild()
         {
-            var processor = _cache.Get();
+            return Rent(Document, Parsers, Context, TrackTrivia);
+        }
+
+        public void ReleaseChild()
+        {
+            Release(this);
+        }
+
+        internal static BlockProcessor Rent(MarkdownDocument document, BlockParserList parsers,
+            MarkdownParserContext? context, bool trackTrivia)
+        {
+            BlockProcessor processor = _cache.Get();
             processor.Setup(document, parsers, context, trackTrivia);
             return processor;
         }
@@ -1018,9 +1078,15 @@ namespace Markdig.Parsers
 
         private sealed class BlockProcessorCache : ObjectCache<BlockProcessor>
         {
-            protected override BlockProcessor NewInstance() => new BlockProcessor();
+            protected override BlockProcessor NewInstance()
+            {
+                return new BlockProcessor();
+            }
 
-            protected override void Reset(BlockProcessor instance) => instance.Reset();
+            protected override void Reset(BlockProcessor instance)
+            {
+                instance.Reset();
+            }
         }
     }
 }

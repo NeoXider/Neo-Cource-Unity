@@ -7,7 +7,7 @@ using Markdig.Syntax.Inlines;
 namespace Markdig.Renderers.Roundtrip.Inlines
 {
     /// <summary>
-    /// A Normalize renderer for a <see cref="LinkInline"/>.
+    ///     A Normalize renderer for a <see cref="LinkInline" />.
     /// </summary>
     /// <seealso cref="RoundtripObjectRenderer{LinkInline}" />
     public class LinkInlineRenderer : RoundtripObjectRenderer<LinkInline>
@@ -18,6 +18,7 @@ namespace Markdig.Renderers.Roundtrip.Inlines
             {
                 renderer.Write('!');
             }
+
             // link text
             renderer.Write('[');
             renderer.WriteChildren(link);
@@ -32,6 +33,7 @@ namespace Markdig.Renderers.Roundtrip.Inlines
                     {
                         renderer.Write(link.LabelWithTrivia);
                     }
+
                     renderer.Write(']');
                 }
             }
@@ -45,21 +47,24 @@ namespace Markdig.Renderers.Roundtrip.Inlines
                     {
                         renderer.Write('<');
                     }
+
                     renderer.Write(link.UnescapedUrl);
                     if (link.UrlHasPointyBrackets)
                     {
                         renderer.Write('>');
                     }
+
                     renderer.Write(link.TriviaAfterUrl);
 
                     if (!string.IsNullOrEmpty(link.Title))
                     {
-                        var open = link.TitleEnclosingCharacter;
-                        var close = link.TitleEnclosingCharacter;
+                        char open = link.TitleEnclosingCharacter;
+                        char close = link.TitleEnclosingCharacter;
                         if (link.TitleEnclosingCharacter == '(')
                         {
                             close = ')';
                         }
+
                         renderer.Write(open);
                         renderer.Write(link.UnescapedTitle);
                         renderer.Write(close);

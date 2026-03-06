@@ -8,30 +8,33 @@ using System.Diagnostics.CodeAnalysis;
 namespace Markdig.Extensions.MediaLinks
 {
     /// <summary>
-    /// Provides url for media links.
+    ///     Provides url for media links.
     /// </summary>
     public interface IHostProvider
     {
         /// <summary>
-        /// "class" attribute of generated iframe.
+        ///     "class" attribute of generated iframe.
         /// </summary>
         string? Class { get; }
 
         /// <summary>
-        /// Generate url for iframe.
-        /// </summary>
-        /// <param name="mediaUri">Input media uri.</param>
-        /// <param name="isSchemaRelative"><see langword="true"/> if <paramref name="mediaUri"/> is a schema relative uri, i.e. uri starts with "//".</param>
-        /// <param name="iframeUrl">Generated url for iframe.</param>
-        /// <seealso href="https://tools.ietf.org/html/rfc3986#section-4.2"/>
-        bool TryHandle(Uri mediaUri, bool isSchemaRelative, [NotNullWhen(true)] out string? iframeUrl);
-
-        /// <summary>
-        /// Should the generated iframe has allowfullscreen attribute.
+        ///     Should the generated iframe has allowfullscreen attribute.
         /// </summary>
         /// <remarks>
-        /// Should be false for audio embedding.
+        ///     Should be false for audio embedding.
         /// </remarks>
         bool AllowFullScreen { get; }
+
+        /// <summary>
+        ///     Generate url for iframe.
+        /// </summary>
+        /// <param name="mediaUri">Input media uri.</param>
+        /// <param name="isSchemaRelative">
+        ///     <see langword="true" /> if <paramref name="mediaUri" /> is a schema relative uri, i.e.
+        ///     uri starts with "//".
+        /// </param>
+        /// <param name="iframeUrl">Generated url for iframe.</param>
+        /// <seealso href="https://tools.ietf.org/html/rfc3986#section-4.2" />
+        bool TryHandle(Uri mediaUri, bool isSchemaRelative, [NotNullWhen(true)] out string? iframeUrl);
     }
 }

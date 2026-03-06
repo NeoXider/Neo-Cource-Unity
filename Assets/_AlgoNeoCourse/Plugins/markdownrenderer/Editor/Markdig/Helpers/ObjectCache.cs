@@ -8,7 +8,7 @@ using System.Collections.Generic;
 namespace Markdig.Helpers
 {
     /// <summary>
-    /// A simple object recycling system.
+    ///     A simple object recycling system.
     /// </summary>
     /// <typeparam name="T">Type of the object to cache</typeparam>
     public abstract class ObjectCache<T> where T : class
@@ -16,7 +16,7 @@ namespace Markdig.Helpers
         private readonly Stack<T> builders;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ObjectCache{T}"/> class.
+        ///     Initializes a new instance of the <see cref="ObjectCache{T}" /> class.
         /// </summary>
         protected ObjectCache()
         {
@@ -24,7 +24,7 @@ namespace Markdig.Helpers
         }
 
         /// <summary>
-        /// Clears this cache.
+        ///     Clears this cache.
         /// </summary>
         public void Clear()
         {
@@ -35,7 +35,7 @@ namespace Markdig.Helpers
         }
 
         /// <summary>
-        /// Gets a new instance.
+        ///     Gets a new instance.
         /// </summary>
         /// <returns></returns>
         public T Get()
@@ -52,13 +52,17 @@ namespace Markdig.Helpers
         }
 
         /// <summary>
-        /// Releases the specified instance.
+        ///     Releases the specified instance.
         /// </summary>
         /// <param name="instance">The instance.</param>
         /// <exception cref="ArgumentNullException">if instance is null</exception>
         public void Release(T instance)
         {
-            if (instance is null) ThrowHelper.ArgumentNullException(nameof(instance));
+            if (instance is null)
+            {
+                ThrowHelper.ArgumentNullException(nameof(instance));
+            }
+
             Reset(instance);
             lock (builders)
             {
@@ -67,13 +71,13 @@ namespace Markdig.Helpers
         }
 
         /// <summary>
-        /// Creates a new instance of {T}
+        ///     Creates a new instance of {T}
         /// </summary>
         /// <returns>A new instance of {T}</returns>
         protected abstract T NewInstance();
 
         /// <summary>
-        /// Resets the specified instance when <see cref="Release"/> is called before storing back to this cache.
+        ///     Resets the specified instance when <see cref="Release" /> is called before storing back to this cache.
         /// </summary>
         /// <param name="instance">The instance.</param>
         protected abstract void Reset(T instance);

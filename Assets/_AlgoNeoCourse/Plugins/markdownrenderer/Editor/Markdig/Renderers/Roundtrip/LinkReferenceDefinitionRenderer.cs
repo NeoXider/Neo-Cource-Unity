@@ -14,7 +14,7 @@ namespace Markdig.Renderers.Roundtrip
             renderer.RenderLinesBefore(linkDef);
 
             renderer.Write(linkDef.TriviaBefore);
-            renderer.Write('[');            
+            renderer.Write('[');
             renderer.Write(linkDef.LabelWithTrivia);
             renderer.Write("]:");
 
@@ -23,6 +23,7 @@ namespace Markdig.Renderers.Roundtrip
             {
                 renderer.Write('<');
             }
+
             renderer.Write(linkDef.UnescapedUrl);
             if (linkDef.UrlHasPointyBrackets)
             {
@@ -32,16 +33,18 @@ namespace Markdig.Renderers.Roundtrip
             renderer.Write(linkDef.TriviaBeforeTitle);
             if (linkDef.Title != null)
             {
-                var open = linkDef.TitleEnclosingCharacter;
-                var close = linkDef.TitleEnclosingCharacter;
+                char open = linkDef.TitleEnclosingCharacter;
+                char close = linkDef.TitleEnclosingCharacter;
                 if (linkDef.TitleEnclosingCharacter == '(')
                 {
                     close = ')';
                 }
+
                 renderer.Write(open);
                 renderer.Write(linkDef.UnescapedTitle);
                 renderer.Write(close);
             }
+
             renderer.Write(linkDef.TriviaAfter);
             renderer.Write(linkDef.NewLine.AsString());
 

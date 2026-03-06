@@ -7,7 +7,7 @@ using Markdig.Syntax.Inlines;
 namespace Markdig.Extensions.CustomContainers
 {
     /// <summary>
-    /// An inline custom container
+    ///     An inline custom container
     /// </summary>
     /// <seealso cref="ContainerInline" />
     /// <seealso cref="EmphasisInline" />

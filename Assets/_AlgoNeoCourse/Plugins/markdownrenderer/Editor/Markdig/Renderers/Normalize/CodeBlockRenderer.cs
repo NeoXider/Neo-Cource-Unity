@@ -8,7 +8,7 @@ using Markdig.Syntax;
 namespace Markdig.Renderers.Normalize
 {
     /// <summary>
-    /// An Normalize renderer for a <see cref="CodeBlock"/> and <see cref="FencedCodeBlock"/>.
+    ///     An Normalize renderer for a <see cref="CodeBlock" /> and <see cref="FencedCodeBlock" />.
     /// </summary>
     /// <seealso cref="NormalizeObjectRenderer{CodeBlock}" />
     public class CodeBlockRenderer : NormalizeObjectRenderer<CodeBlock>
@@ -19,13 +19,15 @@ namespace Markdig.Renderers.Normalize
         {
             if (obj is FencedCodeBlock fencedCodeBlock)
             {
-                var fencedCharCount = Math.Min(fencedCodeBlock.OpeningFencedCharCount, fencedCodeBlock.ClosingFencedCharCount);
-                var opening = new string(fencedCodeBlock.FencedChar, fencedCharCount);
+                int fencedCharCount = Math.Min(fencedCodeBlock.OpeningFencedCharCount,
+                    fencedCodeBlock.ClosingFencedCharCount);
+                string opening = new(fencedCodeBlock.FencedChar, fencedCharCount);
                 renderer.Write(opening);
                 if (fencedCodeBlock.Info != null)
                 {
                     renderer.Write(fencedCodeBlock.Info);
                 }
+
                 if (!string.IsNullOrEmpty(fencedCodeBlock.Arguments))
                 {
                     renderer.Write(' ').Write(fencedCodeBlock.Arguments);

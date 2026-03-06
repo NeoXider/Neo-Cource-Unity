@@ -7,13 +7,14 @@ using Markdig.Syntax.Inlines;
 namespace Markdig.Renderers.Normalize.Inlines
 {
     /// <summary>
-    /// A Normalize renderer for a <see cref="LineBreakInline"/>.
+    ///     A Normalize renderer for a <see cref="LineBreakInline" />.
     /// </summary>
     /// <seealso cref="NormalizeObjectRenderer{LineBreakInline}" />
     public class LineBreakInlineRenderer : NormalizeObjectRenderer<LineBreakInline>
     {
         /// <summary>
-        /// Gets or sets a value indicating whether to render this softline break as a Normalize hardline break tag (&lt;br /&gt;)
+        ///     Gets or sets a value indicating whether to render this softline break as a Normalize hardline break tag (&lt;br /
+        ///     &gt;)
         /// </summary>
         public bool RenderAsHardlineBreak { get; set; }
 
@@ -23,6 +24,7 @@ namespace Markdig.Renderers.Normalize.Inlines
             {
                 renderer.Write(obj.IsBackslash ? "\\" : "  ");
             }
+
             renderer.WriteLine();
         }
     }

@@ -5,17 +5,17 @@
 namespace Markdig.Parsers
 {
     /// <summary>
-    /// The default parser used to parse unordered list item (-, +, *)
+    ///     The default parser used to parse unordered list item (-, +, *)
     /// </summary>
     /// <seealso cref="ListItemParser" />
     public class UnorderedListItemParser : ListItemParser
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="UnorderedListItemParser"/> class.
+        ///     Initializes a new instance of the <see cref="UnorderedListItemParser" /> class.
         /// </summary>
         public UnorderedListItemParser()
         {
-            OpeningCharacters = new [] {'-', '+', '*'};
+            OpeningCharacters = new[] { '-', '+', '*' };
         }
 
         public override bool TryParse(BlockProcessor state, char pendingBulletType, out ListInfo result)

@@ -8,7 +8,7 @@ using Markdig.Syntax;
 namespace Markdig.Renderers.Roundtrip
 {
     /// <summary>
-    /// A Roundtrip renderer for a <see cref="ListBlock"/>.
+    ///     A Roundtrip renderer for a <see cref="ListBlock" />.
     /// </summary>
     /// <seealso cref="RoundtripObjectRenderer{ListBlock}" />
     public class ListRenderer : RoundtripObjectRenderer<ListBlock>
@@ -18,33 +18,33 @@ namespace Markdig.Renderers.Roundtrip
             renderer.RenderLinesBefore(listBlock);
             if (listBlock.IsOrdered)
             {
-                for (var i = 0; i < listBlock.Count; i++)
+                for (int i = 0; i < listBlock.Count; i++)
                 {
-                    var item = listBlock[i];
-                    var listItem = (ListItemBlock) item;
+                    Block item = listBlock[i];
+                    ListItemBlock listItem = (ListItemBlock)item;
                     renderer.RenderLinesBefore(listItem);
 
-                    var bws = listItem.TriviaBefore.ToString();
-                    var bullet = listItem.SourceBullet.ToString();
-                    var delimiter = listBlock.OrderedDelimiter;
-                    renderer.PushIndent(new string[] { $"{bws}{bullet}{delimiter}" });
+                    string bws = listItem.TriviaBefore.ToString();
+                    string bullet = listItem.SourceBullet.ToString();
+                    char delimiter = listBlock.OrderedDelimiter;
+                    renderer.PushIndent(new[] { $"{bws}{bullet}{delimiter}" });
                     renderer.WriteChildren(listItem);
                     renderer.RenderLinesAfter(listItem);
                 }
             }
             else
             {
-                for (var i = 0; i < listBlock.Count; i++)
+                for (int i = 0; i < listBlock.Count; i++)
                 {
-                    var item = listBlock[i];
-                    var listItem = (ListItemBlock) item;
+                    Block item = listBlock[i];
+                    ListItemBlock listItem = (ListItemBlock)item;
                     renderer.RenderLinesBefore(listItem);
 
                     StringSlice bws = listItem.TriviaBefore;
                     char bullet = listBlock.BulletType;
                     StringSlice aws = listItem.TriviaAfter;
 
-                    renderer.PushIndent(new string[] { $"{bws}{bullet}{aws}" });
+                    renderer.PushIndent(new[] { $"{bws}{bullet}{aws}" });
                     if (listItem.Count == 0)
                     {
                         renderer.Write(""); // trigger writing of indent
@@ -53,6 +53,7 @@ namespace Markdig.Renderers.Roundtrip
                     {
                         renderer.WriteChildren(listItem);
                     }
+
                     renderer.PopIndent();
 
                     renderer.RenderLinesAfter(listItem);

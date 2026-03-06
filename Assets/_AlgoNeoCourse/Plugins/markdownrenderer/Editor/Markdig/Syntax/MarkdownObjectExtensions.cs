@@ -2,7 +2,6 @@
 // This file is licensed under the BSD-Clause 2 license. 
 // See the license.txt file in the project root for more information.
 
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Markdig.Helpers;
@@ -11,34 +10,39 @@ using Markdig.Syntax.Inlines;
 namespace Markdig.Syntax
 {
     /// <summary>
-    /// Extensions for visiting <see cref="Block"/> or <see cref="Inline"/>
+    ///     Extensions for visiting <see cref="Block" /> or <see cref="Inline" />
     /// </summary>
     public static class MarkdownObjectExtensions
     {
         /// <summary>
-        /// Iterates over the descendant elements for the specified markdown element, including <see cref="Block"/> and <see cref="Inline"/>.
-        /// <para>The descendant elements are returned in DFS-like order.</para>
+        ///     Iterates over the descendant elements for the specified markdown element, including <see cref="Block" /> and
+        ///     <see cref="Inline" />.
+        ///     <para>The descendant elements are returned in DFS-like order.</para>
         /// </summary>
         /// <param name="markdownObject">The markdown object.</param>
         /// <returns>An iteration over the descendant elements</returns>
         public static IEnumerable<MarkdownObject> Descendants(this MarkdownObject markdownObject)
         {
-            Stack<MarkdownObject> stack = new Stack<MarkdownObject>();
-            Stack<bool> pushStack = new Stack<bool>();
+            Stack<MarkdownObject> stack = new();
+            Stack<bool> pushStack = new();
 
             stack.Push(markdownObject);
             pushStack.Push(false);
 
             while (stack.Count > 0)
             {
-                var block = stack.Pop();
-                if (pushStack.Pop()) yield return block;
+                MarkdownObject? block = stack.Pop();
+                if (pushStack.Pop())
+                {
+                    yield return block;
+                }
+
                 if (block is ContainerBlock containerBlock)
                 {
                     int subBlockIndex = containerBlock.Count;
                     while (subBlockIndex-- > 0)
                     {
-                        var subBlock = containerBlock[subBlockIndex];
+                        Block subBlock = containerBlock[subBlockIndex];
                         if (subBlock is LeafBlock leafBlock)
                         {
                             if (leafBlock.Inline != null)
@@ -47,13 +51,14 @@ namespace Markdig.Syntax
                                 pushStack.Push(false);
                             }
                         }
+
                         stack.Push(subBlock);
                         pushStack.Push(true);
                     }
                 }
                 else if (block is ContainerInline containerInline)
                 {
-                    var child = containerInline.LastChild;
+                    Inline? child = containerInline.LastChild;
                     while (child != null)
                     {
                         stack.Push(child);
@@ -65,8 +70,9 @@ namespace Markdig.Syntax
         }
 
         /// <summary>
-        /// Iterates over the descendant elements for the specified markdown element, including <see cref="Block"/> and <see cref="Inline"/> and filters by the type <typeparamref name="T"/>.
-        /// <para>The descendant elements are returned in DFS-like order.</para>
+        ///     Iterates over the descendant elements for the specified markdown element, including <see cref="Block" /> and
+        ///     <see cref="Inline" /> and filters by the type <typeparamref name="T" />.
+        ///     <para>The descendant elements are returned in DFS-like order.</para>
         /// </summary>
         /// <typeparam name="T">Type to use for filtering the descendants</typeparam>
         /// <param name="markdownObject">The markdown object.</param>
@@ -99,23 +105,27 @@ namespace Markdig.Syntax
         }
 
         /// <summary>
-        /// Iterates over the descendant elements for the specified markdown <see cref="Inline" /> element and filters by the type <typeparamref name="T"/>.
+        ///     Iterates over the descendant elements for the specified markdown <see cref="Inline" /> element and filters by the
+        ///     type <typeparamref name="T" />.
         /// </summary>
         /// <typeparam name="T">Type to use for filtering the descendants</typeparam>
         /// <param name="inline">The inline markdown object.</param>
         /// <returns>
-        /// An iteration over the descendant elements
+        ///     An iteration over the descendant elements
         /// </returns>
         public static IEnumerable<T> Descendants<T>(this ContainerInline inline) where T : Inline
-            => inline.FindDescendants<T>();
+        {
+            return inline.FindDescendants<T>();
+        }
 
         /// <summary>
-        /// Iterates over the descendant elements for the specified markdown <see cref="Block" /> element and filters by the type <typeparamref name="T"/>.
+        ///     Iterates over the descendant elements for the specified markdown <see cref="Block" /> element and filters by the
+        ///     type <typeparamref name="T" />.
         /// </summary>
         /// <typeparam name="T">Type to use for filtering the descendants</typeparam>
         /// <param name="block">The markdown object.</param>
         /// <returns>
-        /// An iteration over the descendant elements
+        ///     An iteration over the descendant elements
         /// </returns>
         public static IEnumerable<T> Descendants<T>(this ContainerBlock block) where T : Block
         {
@@ -123,17 +133,15 @@ namespace Markdig.Syntax
             {
                 return BlockDescendantsInternal<T>(block);
             }
-            else
-            {
-                return ArrayHelper.Empty<T>();
-            }
+
+            return ArrayHelper.Empty<T>();
         }
 
         private static IEnumerable<T> BlockDescendantsInternal<T>(ContainerBlock block) where T : MarkdownObject
         {
             Debug.Assert(typeof(T).IsSubclassOf(typeof(Block)));
 
-            var stack = new Stack<Block>();
+            Stack<Block> stack = new();
 
             int childrenCount = block.Count;
             while (childrenCount-- > 0)
@@ -143,7 +151,7 @@ namespace Markdig.Syntax
 
             while (stack.Count > 0)
             {
-                var subBlock = stack.Pop();
+                Block? subBlock = stack.Pop();
                 if (subBlock is T subBlockT)
                 {
                     yield return subBlockT;

@@ -8,13 +8,13 @@ using Markdig.Syntax;
 namespace Markdig.Extensions.DefinitionLists
 {
     /// <summary>
-    /// A definition list contains <see cref="DefinitionItem"/> children.
+    ///     A definition list contains <see cref="DefinitionItem" /> children.
     /// </summary>
     /// <seealso cref="ContainerBlock" />
     public class DefinitionList : ContainerBlock
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="DefinitionList"/> class.
+        ///     Initializes a new instance of the <see cref="DefinitionList" /> class.
         /// </summary>
         /// <param name="parser">The parser used to create this block.</param>
         public DefinitionList(BlockParser parser) : base(parser)

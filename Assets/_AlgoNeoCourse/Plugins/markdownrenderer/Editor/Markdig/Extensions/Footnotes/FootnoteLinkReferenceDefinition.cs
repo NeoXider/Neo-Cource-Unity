@@ -7,7 +7,7 @@ using Markdig.Syntax;
 namespace Markdig.Extensions.Footnotes
 {
     /// <summary>
-    /// A link reference definition stored at the <see cref="MarkdownDocument"/> level.
+    ///     A link reference definition stored at the <see cref="MarkdownDocument" /> level.
     /// </summary>
     /// <seealso cref="LinkReferenceDefinition" />
     public class FootnoteLinkReferenceDefinition : LinkReferenceDefinition
@@ -18,7 +18,7 @@ namespace Markdig.Extensions.Footnotes
         }
 
         /// <summary>
-        /// Gets or sets the footnote related to this link reference definition.
+        ///     Gets or sets the footnote related to this link reference definition.
         /// </summary>
         public Footnote Footnote { get; set; }
     }

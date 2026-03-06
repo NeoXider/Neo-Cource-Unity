@@ -1,19 +1,19 @@
+using NeoCource.Editor.Utils;
 using UnityEditor;
 using UnityEngine;
-using NeoCource.Editor.Utils;
 
 namespace NeoCource.Editor.Settings
 {
     [CustomEditor(typeof(QuizSettings))]
     public class QuizSettingsEditor : UnityEditor.Editor
     {
+        private SerializedProperty enableDebugLoggingProperty;
+        private SerializedProperty enableMultipleChoiceProperty;
+        private SerializedProperty enableSingleChoiceProperty;
+        private SerializedProperty enableTrueFalseProperty;
+        private SerializedProperty guardSlideNavigationProperty;
         private SerializedProperty maxAttemptsPerQuestionProperty;
         private SerializedProperty randomizeAnswersOnCourseOpenProperty;
-        private SerializedProperty guardSlideNavigationProperty;
-        private SerializedProperty enableDebugLoggingProperty;
-        private SerializedProperty enableSingleChoiceProperty;
-        private SerializedProperty enableMultipleChoiceProperty;
-        private SerializedProperty enableTrueFalseProperty;
         private SerializedProperty stateJsonFolderProperty;
 
         private void OnEnable()
@@ -30,7 +30,7 @@ namespace NeoCource.Editor.Settings
 
         public override void OnInspectorGUI()
         {
-            var settings = (QuizSettings)target;
+            QuizSettings settings = (QuizSettings)target;
             serializedObject.Update();
 
             AlgoNeoEditorGui.DrawHeader(
@@ -55,7 +55,8 @@ namespace NeoCource.Editor.Settings
             EditorGUILayout.PropertyField(stateJsonFolderProperty);
             AlgoNeoEditorGui.DrawPathRow("Папка прогресса", settings.GetProgressFolderAssetPath());
             AlgoNeoEditorGui.DrawPathRow("Файл прогресса", settings.GetProgressFileAssetPath());
-            AlgoNeoEditorGui.DrawInfoBox("Состояние всех квизов сохраняется автоматически в один локальный JSON-файл.", MessageType.None);
+            AlgoNeoEditorGui.DrawInfoBox("Состояние всех квизов сохраняется автоматически в один локальный JSON-файл.",
+                MessageType.None);
 
             GUILayout.Space(4f);
             EditorGUILayout.BeginHorizontal();
@@ -63,10 +64,19 @@ namespace NeoCource.Editor.Settings
             {
                 settings.OpenStateFolder();
             }
+
             if (AlgoNeoEditorGui.DrawActionButton("Очистить сохранения", new Color(0.83f, 0.34f, 0.34f)))
             {
-                settings.ClearState();
+                if (EditorUtility.DisplayDialog(
+                        "AlgoNeoCourse",
+                        "Сбросить локальный прогресс курса и все сохранения квизов?",
+                        "Сбросить",
+                        "Отмена"))
+                {
+                    settings.ClearState();
+                }
             }
+
             EditorGUILayout.EndHorizontal();
             AlgoNeoEditorGui.EndSection();
 

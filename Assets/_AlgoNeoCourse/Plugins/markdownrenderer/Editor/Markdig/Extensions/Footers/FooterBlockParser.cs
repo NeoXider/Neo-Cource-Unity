@@ -9,17 +9,17 @@ using Markdig.Syntax;
 namespace Markdig.Extensions.Footers
 {
     /// <summary>
-    /// A block parser for a <see cref="FooterBlock"/>.
+    ///     A block parser for a <see cref="FooterBlock" />.
     /// </summary>
     /// <seealso cref="BlockParser" />
     public class FooterBlockParser : BlockParser
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="FooterBlockParser"/> class.
+        ///     Initializes a new instance of the <see cref="FooterBlockParser" /> class.
         /// </summary>
         public FooterBlockParser()
         {
-            OpeningCharacters = new[] {'^'};
+            OpeningCharacters = new[] { '^' };
         }
 
         public override BlockState TryOpen(BlockProcessor processor)
@@ -29,28 +29,30 @@ namespace Markdig.Extensions.Footers
                 return BlockState.None;
             }
 
-            var column = processor.Column;
-            var startPosition = processor.Start;
+            int column = processor.Column;
+            int startPosition = processor.Start;
 
             // A footer
             // A Footer marker consists of 0-3 spaces of initial indent, plus (a) the characters ^^ together with a following space, or (b) a double character ^^ not followed by a space.
-            var openingChar = processor.CurrentChar;
+            char openingChar = processor.CurrentChar;
             if (processor.PeekChar(1) != openingChar)
             {
                 return BlockState.None;
             }
+
             processor.NextChar(); // Grab 2nd^
-            var c = processor.NextChar(); // grab space
+            char c = processor.NextChar(); // grab space
             if (c.IsSpaceOrTab())
             {
                 processor.NextColumn();
             }
+
             processor.NewBlocks.Push(new FooterBlock(this)
             {
                 Span = new SourceSpan(startPosition, processor.Line.End),
                 OpeningCharacter = openingChar,
                 Column = column,
-                Line = processor.LineIndex,
+                Line = processor.LineIndex
             });
             return BlockState.Continue;
         }
@@ -62,12 +64,12 @@ namespace Markdig.Extensions.Footers
                 return BlockState.None;
             }
 
-            var quote = (FooterBlock) block;
+            FooterBlock quote = (FooterBlock)block;
 
             // A footer
             // A Footer marker consists of 0-3 spaces of initial indent, plus (a) the characters ^^ together with a following space, or (b) a double character ^^ not followed by a space.
-            var c = processor.CurrentChar;
-            var result = BlockState.Continue;
+            char c = processor.CurrentChar;
+            BlockState result = BlockState.Continue;
             if (c != quote.OpeningCharacter || processor.PeekChar(1) != c)
             {
                 result = processor.IsBlankLine ? BlockState.BreakDiscard : BlockState.None;
@@ -80,8 +82,10 @@ namespace Markdig.Extensions.Footers
                 {
                     processor.NextChar(); // Skip following space
                 }
+
                 block.UpdateSpanEnd(processor.Line.End);
             }
+
             return result;
         }
     }

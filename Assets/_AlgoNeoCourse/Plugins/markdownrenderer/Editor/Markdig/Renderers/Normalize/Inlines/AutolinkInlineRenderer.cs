@@ -7,7 +7,7 @@ using Markdig.Syntax.Inlines;
 namespace Markdig.Renderers.Normalize.Inlines
 {
     /// <summary>
-    /// A Normalize renderer for an <see cref="AutolinkInline"/>.
+    ///     A Normalize renderer for an <see cref="AutolinkInline" />.
     /// </summary>
     /// <seealso cref="NormalizeObjectRenderer{AutolinkInline}" />
     public class AutolinkInlineRenderer : NormalizeObjectRenderer<AutolinkInline>

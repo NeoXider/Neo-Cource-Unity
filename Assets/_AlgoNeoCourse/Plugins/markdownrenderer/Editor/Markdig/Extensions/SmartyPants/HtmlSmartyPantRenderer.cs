@@ -9,17 +9,17 @@ using Markdig.Renderers.Html;
 namespace Markdig.Extensions.SmartyPants
 {
     /// <summary>
-    /// A HTML renderer for a <see cref="SmartyPant"/>.
+    ///     A HTML renderer for a <see cref="SmartyPant" />.
     /// </summary>
     /// <seealso cref="HtmlObjectRenderer{SmartyPant}" />
     public class HtmlSmartyPantRenderer : HtmlObjectRenderer<SmartyPant>
     {
-        private static readonly SmartyPantOptions DefaultOptions = new SmartyPantOptions();
+        private static readonly SmartyPantOptions DefaultOptions = new();
 
         private readonly SmartyPantOptions options;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="HtmlSmartyPantRenderer"/> class.
+        ///     Initializes a new instance of the <see cref="HtmlSmartyPantRenderer" /> class.
         /// </summary>
         /// <param name="options">The options.</param>
         /// <exception cref="ArgumentNullException"></exception>
@@ -34,6 +34,7 @@ namespace Markdig.Extensions.SmartyPants
             {
                 DefaultOptions.Mapping.TryGetValue(obj.Type, out text);
             }
+
             renderer.Write(text);
         }
     }

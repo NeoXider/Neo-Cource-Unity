@@ -3,7 +3,6 @@
 // See the license.txt file in the project root for more information.
 
 using System;
-
 using Markdig.Helpers;
 using Markdig.Renderers.Html;
 using Markdig.Syntax;
@@ -13,35 +12,37 @@ namespace Markdig.Parsers
     public abstract class FencedBlockParserBase : BlockParser, IAttributesParseable
     {
         /// <summary>
-        /// Delegate used to parse the string on the first line after the fenced code block special characters (usually ` or ~)
+        ///     Delegate used to parse the string on the first line after the fenced code block special characters (usually ` or ~)
         /// </summary>
         /// <param name="state">The parser processor.</param>
         /// <param name="line">The being processed line.</param>
         /// <param name="fenced">The fenced code block.</param>
         /// <param name="openingCharacter">The opening character for the fenced code block (usually ` or ~)</param>
         /// <returns><c>true</c> if parsing of the line is successfull; <c>false</c> otherwise</returns>
-        public delegate bool InfoParserDelegate(BlockProcessor state, ref StringSlice line, IFencedBlock fenced, char openingCharacter);
+        public delegate bool InfoParserDelegate(BlockProcessor state, ref StringSlice line, IFencedBlock fenced,
+            char openingCharacter);
 
 
         /// <summary>
-        /// Gets or sets the information parser.
+        ///     Gets or sets the information parser.
         /// </summary>
         public InfoParserDelegate? InfoParser { get; set; }
 
         /// <summary>
-        /// A delegates that allows to process attached attributes
+        ///     A delegates that allows to process attached attributes
         /// </summary>
         public TryParseAttributesDelegate? TryParseAttributes { get; set; }
     }
 
     /// <summary>
-    /// Base parser for fenced blocks (opened by 3 or more character delimiters on a first line, and closed by at least the same number of delimiters)
+    ///     Base parser for fenced blocks (opened by 3 or more character delimiters on a first line, and closed by at least the
+    ///     same number of delimiters)
     /// </summary>
     /// <seealso cref="BlockParser" />
     public abstract class FencedBlockParserBase<T> : FencedBlockParserBase where T : Block, IFencedBlock
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="FencedBlockParserBase{T}"/> class.
+        ///     Initializes a new instance of the <see cref="FencedBlockParserBase{T}" /> class.
         /// </summary>
         protected FencedBlockParserBase()
         {
@@ -51,7 +52,7 @@ namespace Markdig.Parsers
         }
 
         /// <summary>
-        /// Gets or sets the language prefix (default is "language-")
+        ///     Gets or sets the language prefix (default is "language-")
         /// </summary>
         public string? InfoPrefix { get; set; }
 
@@ -59,32 +60,24 @@ namespace Markdig.Parsers
 
         public int MaximumMatchCount { get; set; }
 
-        private enum ParseState
-        {
-            AfterFence,
-            Info,
-            AfterInfo,
-            Args,
-            AfterArgs,
-        }
-
         /// <summary>
-        /// The roundtrip parser for the information after the fenced code block special characters (usually ` or ~)
+        ///     The roundtrip parser for the information after the fenced code block special characters (usually ` or ~)
         /// </summary>
         /// <param name="blockProcessor">The parser processor.</param>
         /// <param name="line">The line.</param>
         /// <param name="fenced">The fenced code block.</param>
         /// <param name="openingCharacter">The opening character for this fenced code block.</param>
         /// <returns><c>true</c> if parsing of the line is successfull; <c>false</c> otherwise</returns>
-        public static bool RoundtripInfoParser(BlockProcessor blockProcessor, ref StringSlice line, IFencedBlock fenced, char openingCharacter)
+        public static bool RoundtripInfoParser(BlockProcessor blockProcessor, ref StringSlice line, IFencedBlock fenced,
+            char openingCharacter)
         {
-            var start = line.Start;
-            var end = start - 1;
-            var afterFence = new StringSlice(line.Text, start, end);
-            var info = new StringSlice(line.Text, start, end);
-            var afterInfo = new StringSlice(line.Text, start, end);
-            var arg = new StringSlice(line.Text, start, end);
-            var afterArg = new StringSlice(line.Text, start, end);
+            int start = line.Start;
+            int end = start - 1;
+            StringSlice afterFence = new(line.Text, start, end);
+            StringSlice info = new(line.Text, start, end);
+            StringSlice afterInfo = new(line.Text, start, end);
+            StringSlice arg = new(line.Text, start, end);
+            StringSlice afterArg = new(line.Text, start, end);
             ParseState state = ParseState.AfterFence;
 
             for (int i = line.Start; i <= line.End; i++)
@@ -95,6 +88,7 @@ namespace Markdig.Parsers
                 {
                     return false;
                 }
+
                 switch (state)
                 {
                     case ParseState.AfterFence:
@@ -109,6 +103,7 @@ namespace Markdig.Parsers
                             info.End = i;
                             afterFence.End = i - 1;
                         }
+
                         break;
                     case ParseState.Info:
                         if (c.IsSpaceOrTab())
@@ -121,6 +116,7 @@ namespace Markdig.Parsers
                         {
                             info.End += 1;
                         }
+
                         break;
                     case ParseState.AfterInfo:
                         if (c.IsSpaceOrTab())
@@ -133,6 +129,7 @@ namespace Markdig.Parsers
                             arg.End = i;
                             state = ParseState.Args;
                         }
+
                         break;
                     case ParseState.Args:
                         // walk from end, as rest (except trailing spaces) is args
@@ -151,15 +148,16 @@ namespace Markdig.Parsers
                                 goto end;
                             }
                         }
+
                         goto end;
                     case ParseState.AfterArgs:
-                        {
-                            return false;
-                        }
+                    {
+                        return false;
+                    }
                 }
             }
 
-        end:
+            end:
             fenced.TriviaAfterFencedChar = afterFence;
             fenced.Info = HtmlHelper.Unescape(info.ToString());
             fenced.UnescapedInfo = info;
@@ -173,14 +171,15 @@ namespace Markdig.Parsers
         }
 
         /// <summary>
-        /// The default parser for the information after the fenced code block special characters (usually ` or ~)
+        ///     The default parser for the information after the fenced code block special characters (usually ` or ~)
         /// </summary>
         /// <param name="state">The parser processor.</param>
         /// <param name="line">The line.</param>
         /// <param name="fenced">The fenced code block.</param>
         /// <param name="openingCharacter">The opening character for this fenced code block.</param>
         /// <returns><c>true</c> if parsing of the line is successfull; <c>false</c> otherwise</returns>
-        public static bool DefaultInfoParser(BlockProcessor state, ref StringSlice line, IFencedBlock fenced, char openingCharacter)
+        public static bool DefaultInfoParser(BlockProcessor state, ref StringSlice line, IFencedBlock fenced,
+            char openingCharacter)
         {
             string infoString;
             string? argString = null;
@@ -238,7 +237,7 @@ namespace Markdig.Parsers
             }
             else
             {
-                var lineCopy = line;
+                StringSlice lineCopy = line;
                 lineCopy.Trim();
                 infoString = lineCopy.ToString();
             }
@@ -258,7 +257,7 @@ namespace Markdig.Parsers
             }
 
             // Match fenced char
-            var line = processor.Line;
+            StringSlice line = processor.Line;
             char matchChar = line.CurrentChar;
             int count = line.CountAndSkipChar(matchChar);
 
@@ -274,14 +273,15 @@ namespace Markdig.Parsers
                 line.TrimStart();
             }
 
-            var fenced = CreateFencedBlock(processor);
+            T fenced = CreateFencedBlock(processor);
             {
                 fenced.Column = processor.Column;
                 fenced.FencedChar = matchChar;
                 fenced.OpeningFencedCharCount = count;
                 fenced.Span.Start = processor.Start;
                 fenced.Span.End = line.Start;
-            };
+            }
+            ;
 
             // Try to parse any attached attributes
             TryParseAttributes?.Invoke(processor, ref line, fenced);
@@ -309,28 +309,28 @@ namespace Markdig.Parsers
 
         public override BlockState TryContinue(BlockProcessor processor, Block block)
         {
-            var fence = (IFencedBlock)block;
-            var openingCount = fence.OpeningFencedCharCount;
+            IFencedBlock fence = (IFencedBlock)block;
+            int openingCount = fence.OpeningFencedCharCount;
 
             // Match if we have a closing fence
-            var line = processor.Line;
-            var sourcePosition = processor.Start;
-            var closingCount = line.CountAndSkipChar(fence.FencedChar);
-            var diff = openingCount - closingCount;
+            StringSlice line = processor.Line;
+            int sourcePosition = processor.Start;
+            int closingCount = line.CountAndSkipChar(fence.FencedChar);
+            int diff = openingCount - closingCount;
 
             char c = line.CurrentChar;
-            var lastFenceCharPosition = processor.Start + closingCount;
+            int lastFenceCharPosition = processor.Start + closingCount;
 
             // If we have a closing fence, close it and discard the current line
             // The line must contain only fence opening character followed only by whitespaces.
-            var startBeforeTrim = line.Start;
-            var endBeforeTrim = line.End;
-            var trimmed = line.TrimEnd();
+            int startBeforeTrim = line.Start;
+            int endBeforeTrim = line.End;
+            bool trimmed = line.TrimEnd();
             if (diff <= 0 && !processor.IsCodeIndent && (c == '\0' || c.IsWhitespace()) && trimmed)
             {
                 block.UpdateSpanEnd(startBeforeTrim - 1);
 
-                var fencedBlock = (IFencedBlock)block;
+                IFencedBlock fencedBlock = (IFencedBlock)block;
                 fencedBlock.ClosingFencedCharCount = closingCount;
                 fencedBlock.NewLine = processor.Line.NewLine;
                 fencedBlock.TriviaBeforeClosingFence = processor.UseTrivia(sourcePosition - 1);
@@ -344,6 +344,15 @@ namespace Markdig.Parsers
             processor.GoToColumn(processor.ColumnBeforeIndent);
 
             return BlockState.Continue;
+        }
+
+        private enum ParseState
+        {
+            AfterFence,
+            Info,
+            AfterInfo,
+            Args,
+            AfterArgs
         }
     }
 }

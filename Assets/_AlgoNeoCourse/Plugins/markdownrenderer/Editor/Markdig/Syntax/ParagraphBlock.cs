@@ -7,22 +7,22 @@ using Markdig.Parsers;
 namespace Markdig.Syntax
 {
     /// <summary>
-    /// Represents a paragraph.
+    ///     Represents a paragraph.
     /// </summary>
     /// <remarks>
-    /// Related to CommonMark spec: 4.8 Paragraphs
+    ///     Related to CommonMark spec: 4.8 Paragraphs
     /// </remarks>
     public class ParagraphBlock : LeafBlock
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ParagraphBlock"/> class.
+        ///     Initializes a new instance of the <see cref="ParagraphBlock" /> class.
         /// </summary>
         public ParagraphBlock() : this(null)
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ParagraphBlock"/> class.
+        ///     Initializes a new instance of the <see cref="ParagraphBlock" /> class.
         /// </summary>
         /// <param name="parser">The parser used to create this block.</param>
         public ParagraphBlock(BlockParser? parser) : base(parser)

@@ -10,17 +10,17 @@ using Markdig.Syntax;
 namespace Markdig.Extensions.Mathematics
 {
     /// <summary>
-    /// The block parser for a <see cref="MathBlock"/>.
+    ///     The block parser for a <see cref="MathBlock" />.
     /// </summary>
     /// <seealso cref="MathBlock" />
     public class MathBlockParser : FencedBlockParserBase<MathBlock>
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MathBlockParser"/> class.
+        ///     Initializes a new instance of the <see cref="MathBlockParser" /> class.
         /// </summary>
         public MathBlockParser()
         {
-            OpeningCharacters = new [] {'$'};
+            OpeningCharacters = new[] { '$' };
             // We expect to match only a $$, no less, no more
             MinimumMatchCount = 2;
             MaximumMatchCount = 2;
@@ -37,15 +37,17 @@ namespace Markdig.Extensions.Mathematics
 
         protected override MathBlock CreateFencedBlock(BlockProcessor processor)
         {
-            var block = new MathBlock(this);
+            MathBlock block = new(this);
             if (DefaultClass != null)
             {
                 block.GetAttributes().AddClass(DefaultClass);
             }
+
             return block;
         }
 
-        private static bool NoInfoParser(BlockProcessor state, ref StringSlice line, IFencedBlock fenced, char openingCharacter)
+        private static bool NoInfoParser(BlockProcessor state, ref StringSlice line, IFencedBlock fenced,
+            char openingCharacter)
         {
             for (int i = line.Start; i <= line.End; i++)
             {
@@ -54,6 +56,7 @@ namespace Markdig.Extensions.Mathematics
                     return false;
                 }
             }
+
             return true;
         }
     }

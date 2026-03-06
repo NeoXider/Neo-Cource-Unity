@@ -8,7 +8,7 @@ using Markdig.Renderers.Html;
 namespace Markdig.Extensions.Mathematics
 {
     /// <summary>
-    /// A HTML renderer for a <see cref="MathBlock"/>.
+    ///     A HTML renderer for a <see cref="MathBlock" />.
     /// </summary>
     /// <seealso cref="HtmlObjectRenderer{T}" />
     public class HtmlMathBlockRenderer : HtmlObjectRenderer<MathBlock>

@@ -38,72 +38,16 @@ using System.Text;
 namespace Markdig.Helpers
 {
     /// <summary>
-    /// Helper class to decode an entity.
+    ///     Helper class to decode an entity.
     /// </summary>
     public static class EntityHelper
     {
-        /// <summary>
-        /// Decodes the given HTML entity to the matching Unicode characters.
-        /// </summary>
-        /// <param name="entity">The entity without <c>&amp;</c> and <c>;</c> symbols, for example, <c>copy</c>.</param>
-        /// <returns>The unicode character set or <c>null</c> if the entity was not recognized.</returns>
-        public static string? DecodeEntity(ReadOnlySpan<char> entity)
-        {
-            if (EntityMap.TryMatchExact(entity, out KeyValuePair<string, string> result))
-                return result.Value;
-
-            return null;
-        }
+        #region [ EntityMap ]
 
         /// <summary>
-        /// Decodes the given UTF-32 character code to the matching set of UTF-16 characters.
+        ///     Source: http://www.w3.org/html/wg/drafts/html/master/syntax.html#named-character-references
         /// </summary>
-        /// <returns>The unicode character set or <c>null</c> if the entity was not recognized.</returns>
-        public static string DecodeEntity(int utf32)
-        {
-            if (!CharHelper.IsInInclusiveRange(utf32, 1, 1114111) || CharHelper.IsInInclusiveRange(utf32, 55296, 57343))
-                return CharHelper.ReplacementCharString;
-
-            if (utf32 < 65536)
-                return char.ToString((char)utf32);
-
-            utf32 -= 65536;
-            return new string(
-#if NETCORE
-                stackalloc
-#else
-                new
-#endif
-                char[]
-            {
-                (char)((uint)utf32 / 1024 + 55296),
-                (char)((uint)utf32 % 1024 + 56320)
-            });
-        }
-
-        public static void DecodeEntity(int utf32, StringBuilder sb)
-        {
-            if (!CharHelper.IsInInclusiveRange(utf32, 1, 1114111) || CharHelper.IsInInclusiveRange(utf32, 55296, 57343))
-            {
-                sb.Append(CharHelper.ReplacementChar);
-            }
-            else if (utf32 < 65536)
-            {
-                sb.Append((char)utf32);
-            }
-            else
-            {
-                utf32 -= 65536;
-                sb.Append((char)((uint)utf32 / 1024 + 55296));
-                sb.Append((char)((uint)utf32 % 1024 + 56320));
-            }
-        }
-
-#region [ EntityMap ]
-        /// <summary>
-        /// Source: http://www.w3.org/html/wg/drafts/html/master/syntax.html#named-character-references
-        /// </summary>
-        private static readonly CompactPrefixTree<string> EntityMap = new CompactPrefixTree<string>(2125, 3385, 3510)
+        private static readonly CompactPrefixTree<string> EntityMap = new(2125, 3385, 3510)
         {
             { "Aacute", "\u00C1" },
             { "aacute", "\u00E1" },
@@ -2231,6 +2175,70 @@ namespace Markdig.Helpers
             { "zwj", "\u200D" },
             { "zwnj", "\u200C" }
         };
-#endregion
+
+        #endregion
+
+        /// <summary>
+        ///     Decodes the given HTML entity to the matching Unicode characters.
+        /// </summary>
+        /// <param name="entity">The entity without <c>&amp;</c> and <c>;</c> symbols, for example, <c>copy</c>.</param>
+        /// <returns>The unicode character set or <c>null</c> if the entity was not recognized.</returns>
+        public static string? DecodeEntity(ReadOnlySpan<char> entity)
+        {
+            if (EntityMap.TryMatchExact(entity, out KeyValuePair<string, string> result))
+            {
+                return result.Value;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        ///     Decodes the given UTF-32 character code to the matching set of UTF-16 characters.
+        /// </summary>
+        /// <returns>The unicode character set or <c>null</c> if the entity was not recognized.</returns>
+        public static string DecodeEntity(int utf32)
+        {
+            if (!CharHelper.IsInInclusiveRange(utf32, 1, 1114111) || CharHelper.IsInInclusiveRange(utf32, 55296, 57343))
+            {
+                return CharHelper.ReplacementCharString;
+            }
+
+            if (utf32 < 65536)
+            {
+                return char.ToString((char)utf32);
+            }
+
+            utf32 -= 65536;
+            return new string(
+#if NETCORE
+                stackalloc
+#else
+                new
+#endif
+                    char[]
+                    {
+                        (char)((uint)utf32 / 1024 + 55296),
+                        (char)((uint)utf32 % 1024 + 56320)
+                    });
+        }
+
+        public static void DecodeEntity(int utf32, StringBuilder sb)
+        {
+            if (!CharHelper.IsInInclusiveRange(utf32, 1, 1114111) || CharHelper.IsInInclusiveRange(utf32, 55296, 57343))
+            {
+                sb.Append(CharHelper.ReplacementChar);
+            }
+            else if (utf32 < 65536)
+            {
+                sb.Append((char)utf32);
+            }
+            else
+            {
+                utf32 -= 65536;
+                sb.Append((char)((uint)utf32 / 1024 + 55296));
+                sb.Append((char)((uint)utf32 % 1024 + 56320));
+            }
+        }
     }
 }

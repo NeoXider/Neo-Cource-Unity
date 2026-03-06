@@ -7,8 +7,8 @@ using Markdig.Renderers;
 namespace Markdig.Extensions.TextRenderer
 {
     /// <summary>
-    /// Extension that allows setting line-endings for any IMarkdownRenderer
-    /// that inherits from <see cref="TextRendererBase"/>
+    ///     Extension that allows setting line-endings for any IMarkdownRenderer
+    ///     that inherits from <see cref="TextRendererBase" />
     /// </summary>
     /// <seealso cref="IMarkdownExtension" />
     public class ConfigureNewLineExtension : IMarkdownExtension

@@ -8,7 +8,7 @@ using Markdig.Syntax.Inlines;
 namespace Markdig.Extensions.TaskLists
 {
     /// <summary>
-    /// An inline for TaskList.
+    ///     An inline for TaskList.
     /// </summary>
     [DebuggerDisplay("TaskList {Checked}")]
     public class TaskList : LeafInline

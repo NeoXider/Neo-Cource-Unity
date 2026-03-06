@@ -10,27 +10,27 @@ using Markdig.Syntax;
 namespace Markdig.Extensions.TaskLists
 {
     /// <summary>
-    /// The inline parser for SmartyPants.
+    ///     The inline parser for SmartyPants.
     /// </summary>
     public class TaskListInlineParser : InlineParser
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="TaskListInlineParser"/> class.
+        ///     Initializes a new instance of the <see cref="TaskListInlineParser" /> class.
         /// </summary>
         public TaskListInlineParser()
         {
-            OpeningCharacters = new[] {'['};
+            OpeningCharacters = new[] { '[' };
             ListClass = "contains-task-list";
             ListItemClass = "task-list-item";
         }
 
         /// <summary>
-        /// Gets or sets the list class used for a task list.
+        ///     Gets or sets the list class used for a task list.
         /// </summary>
         public string ListClass { get; set; }
 
         /// <summary>
-        /// Gets or sets the list item class used for a task list.
+        ///     Gets or sets the list item class used for a task list.
         /// </summary>
         public string ListItemClass { get; set; }
 
@@ -45,21 +45,23 @@ namespace Markdig.Extensions.TaskLists
                 return false;
             }
 
-            var startingPosition = slice.Start;
-            var c = slice.NextChar();
+            int startingPosition = slice.Start;
+            char c = slice.NextChar();
             if (!c.IsSpace() && c != 'x' && c != 'X')
             {
                 return false;
             }
+
             if (slice.NextChar() != ']')
             {
                 return false;
             }
+
             // Skip last ]
             slice.SkipChar();
 
             // Create the TaskList
-            var taskItem = new TaskList()
+            TaskList taskItem = new()
             {
                 Span = { Start = processor.GetSourcePosition(startingPosition, out int line, out int column) },
                 Line = line,
@@ -75,7 +77,7 @@ namespace Markdig.Extensions.TaskLists
                 listItemBlock.GetAttributes().AddClass(ListItemClass);
             }
 
-            var listBlock = (ListBlock) listItemBlock.Parent!;
+            ListBlock listBlock = (ListBlock)listItemBlock.Parent!;
             if (!string.IsNullOrEmpty(ListClass))
             {
                 listBlock.GetAttributes().AddClass(ListClass);

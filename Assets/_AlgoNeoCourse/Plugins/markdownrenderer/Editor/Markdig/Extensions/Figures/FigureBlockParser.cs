@@ -2,19 +2,20 @@
 // This file is licensed under the BSD-Clause 2 license. 
 // See the license.txt file in the project root for more information.
 
+using Markdig.Helpers;
 using Markdig.Parsers;
 using Markdig.Syntax;
 
 namespace Markdig.Extensions.Figures
 {
     /// <summary>
-    /// The block parser for a <see cref="Figure"/> block.
+    ///     The block parser for a <see cref="Figure" /> block.
     /// </summary>
     /// <seealso cref="BlockParser" />
     public class FigureBlockParser : BlockParser
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="FencedBlockParserBase"/> class.
+        ///     Initializes a new instance of the <see cref="FencedBlockParserBase" /> class.
         /// </summary>
         public FigureBlockParser()
         {
@@ -30,7 +31,7 @@ namespace Markdig.Extensions.Figures
             }
 
             // Match fenced char
-            var line = processor.Line;
+            StringSlice line = processor.Line;
             char openingChar = line.CurrentChar;
             int count = line.CountAndSkipChar(openingChar);
 
@@ -42,7 +43,7 @@ namespace Markdig.Extensions.Figures
 
             int startPosition = processor.Start;
             int column = processor.Column;
-            var figure = new Figure(this)
+            Figure figure = new(this)
             {
                 Span = new SourceSpan(startPosition, line.End),
                 Line = processor.LineIndex,
@@ -54,16 +55,18 @@ namespace Markdig.Extensions.Figures
             line.TrimStart();
             if (!line.IsEmpty)
             {
-                var caption = new FigureCaption(this)
+                FigureCaption caption = new(this)
                 {
                     Span = new SourceSpan(line.Start, line.End),
                     Line = processor.LineIndex,
                     Column = column + line.Start - startPosition,
                     IsOpen = false
                 };
-                caption.AppendLine(ref line, caption.Column, processor.LineIndex, processor.CurrentLineStartPosition, processor.TrackTrivia);
+                caption.AppendLine(ref line, caption.Column, processor.LineIndex, processor.CurrentLineStartPosition,
+                    processor.TrackTrivia);
                 figure.Add(caption);
             }
+
             processor.NewBlocks.Push(figure);
 
             // Discard the current line as it is already parsed
@@ -72,13 +75,13 @@ namespace Markdig.Extensions.Figures
 
         public override BlockState TryContinue(BlockProcessor processor, Block block)
         {
-            var figure = (Figure)block;
+            Figure figure = (Figure)block;
             int count = figure.OpeningCharacterCount;
             char matchChar = figure.OpeningCharacter;
 
             int column = processor.Column;
             // Match if we have a closing fence
-            var line = processor.Line;
+            StringSlice line = processor.Line;
             int startPosition = line.Start;
             count -= line.CountAndSkipChar(matchChar);
 
@@ -89,14 +92,15 @@ namespace Markdig.Extensions.Figures
                 line.TrimStart();
                 if (!line.IsEmpty)
                 {
-                    var caption = new FigureCaption(this)
+                    FigureCaption caption = new(this)
                     {
                         Span = new SourceSpan(line.Start, line.End),
                         Line = processor.LineIndex,
                         Column = column + line.Start - startPosition,
                         IsOpen = false
                     };
-                    caption.AppendLine(ref line, caption.Column, processor.LineIndex, processor.CurrentLineStartPosition, processor.TrackTrivia);
+                    caption.AppendLine(ref line, caption.Column, processor.LineIndex,
+                        processor.CurrentLineStartPosition, processor.TrackTrivia);
                     figure.Add(caption);
                 }
 

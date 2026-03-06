@@ -5,15 +5,13 @@ using UnityEngine.UIElements;
 using UnityEngine.Video;
 
 /// <summary>
-/// A VisualElement that is a VideoPlayer with a roll up play bar with play, speed and audio controls
+///     A VisualElement that is a VideoPlayer with a roll up play bar with play, speed and audio controls
 /// </summary>
-public partial class VideoPlayerElement : VisualElement
+public class VideoPlayerElement : VisualElement
 {
-    public new class UxmlFactory : UxmlFactory<VideoPlayerElement> { }
-
     // Use a pool where unused player are returned. This avoid creating player
     // in a loop.
-    static Queue<VideoPlayer> s_VideoPlayerPool = new();
+    private static readonly Queue<VideoPlayer> s_VideoPlayerPool = new();
 
     // This is to fix a bug in the videoplayer in edit mode in Unity : audio isn't initialized properly until you
     // enter play mode. Audio Source seems to properly initialize the audio subsystem, so we play a dummy clip
@@ -21,66 +19,66 @@ public partial class VideoPlayerElement : VisualElement
     private static AudioSource s_BugFixAudioSource;
     private static AudioClip s_BugFixClip;
 
-    private VisualElement m_PlaySurface;
-    private VisualElement m_PlayControlBar;
-
-    private VisualElement m_PlayOverlay;
-    private VisualElement m_PlayTrack;
-
-    private VisualElement m_Popout;
-    private VisualElement m_PlayButton;
-
     private VisualElement m_AudioIcon;
-    private Slider m_VolumeSlider;
-
-    private VisualElement m_SpeedSelectionRoot;
-    private Label m_SpeedSelectionLabel;
-    private VisualElement m_SpeedSelectionButton;
-    private VisualElement m_SpeedSelectorPopup;
+    private bool m_AudioWasMuted;
+    private bool m_AutoStart;
 
     private Label m_ErrorString;
 
+    private bool m_IsLooping;
+    private bool m_IsScrubbing;
+
     private GameObject m_PlaybackObject;
-    private VideoPlayer m_VideoPlayer;
+    private VisualElement m_PlayButton;
+    private VisualElement m_PlayControlBar;
 
-    private VideoClip m_VideoClip;
-    private string m_Url;
-
-    private bool m_IsLooping = false;
-    private bool m_AudioWasMuted = false;
-    private bool m_AutoStart = false;
-    private bool m_IsScrubbing = false;
-
-    private VisualElement m_SelectedSpeedButton;
+    private VisualElement m_PlayOverlay;
     private float m_PlaySpeed = 1.0f;
+
+    private VisualElement m_PlaySurface;
+    private VisualElement m_PlayTrack;
+
+    private VisualElement m_Popout;
 
     //we save the time on detaching, as this could just be moving the player from one element to another, and this should
     //maintain the same state
-    private double m_PreviousTime = 0.0;
+    private double m_PreviousTime;
+
+    private VisualElement m_SelectedSpeedButton;
+    private VisualElement m_SpeedSelectionButton;
+    private Label m_SpeedSelectionLabel;
+
+    private VisualElement m_SpeedSelectionRoot;
+    private VisualElement m_SpeedSelectorPopup;
+    private string m_Url;
+
+    private VideoClip m_VideoClip;
+    private VideoPlayer m_VideoPlayer;
+    private Slider m_VolumeSlider;
 
     /// <summary>
-    /// Build a new VideoPlayer
+    ///     Build a new VideoPlayer
     /// </summary>
     public VideoPlayerElement()
     {
         if (s_BugFixClip == null)
         {
             s_BugFixClip = AudioClip.Create("testClip", 44000, 1, 44000, false);
-            var sourceGo = new GameObject() { hideFlags = HideFlags.HideAndDontSave };
+            GameObject sourceGo = new() { hideFlags = HideFlags.HideAndDontSave };
             s_BugFixAudioSource = sourceGo.AddComponent<AudioSource>();
             s_BugFixAudioSource.clip = s_BugFixClip;
         }
 
         RegisterCallback<AttachToPanelEvent>(OnAttachedToPanel);
         RegisterCallback<DetachFromPanelEvent>(OnDetachedFromPanel);
-        
+
         RegisterCallback<GeometryChangedEvent>(GeometryChangedHandler);
     }
 
-    void PreparePlayer()
+    private void PreparePlayer()
     {
         //we try to get a player from the pool, if not available, we create a new one
-        if (s_VideoPlayerPool.TryDequeue(out var player))
+        if (s_VideoPlayerPool.TryDequeue(out VideoPlayer player))
         {
             m_PlaybackObject = player.gameObject;
             m_VideoPlayer = player;
@@ -89,7 +87,7 @@ public partial class VideoPlayerElement : VisualElement
         }
         else
         {
-            m_PlaybackObject = new GameObject() { hideFlags = HideFlags.HideAndDontSave };
+            m_PlaybackObject = new GameObject { hideFlags = HideFlags.HideAndDontSave };
 
             m_VideoPlayer = m_PlaybackObject.AddComponent<VideoPlayer>();
 
@@ -113,14 +111,14 @@ public partial class VideoPlayerElement : VisualElement
         m_VideoPlayer.errorReceived += OnErrorReceived;
 
         //if a clip or url was set before the player was ready, we assign it
-        if(m_VideoClip != null)
+        if (m_VideoClip != null)
         {
             m_VideoPlayer.clip = m_VideoClip;
             m_VideoPlayer.Prepare();
 
             m_VideoPlayer.time = m_PreviousTime;
         }
-        else if(!string.IsNullOrEmpty(m_Url))
+        else if (!string.IsNullOrEmpty(m_Url))
         {
             m_VideoPlayer.url = m_Url;
             m_VideoPlayer.Prepare();
@@ -133,7 +131,7 @@ public partial class VideoPlayerElement : VisualElement
         m_VideoPlayer.Pause();
     }
 
-    void FreePlayer()
+    private void FreePlayer()
     {
         m_VideoPlayer.prepareCompleted -= PreparedHandler;
         m_VideoPlayer.frameReady -= FrameReadyHandler;
@@ -149,7 +147,7 @@ public partial class VideoPlayerElement : VisualElement
     }
 
     /// <summary>
-    /// Set the player used clip. Will set url to null if one was set.
+    ///     Set the player used clip. Will set url to null if one was set.
     /// </summary>
     /// <param name="clip">The VideoClip to use</param>
     /// <param name="autoplay">If true, the video will immediately start to play the clip</param>
@@ -159,17 +157,19 @@ public partial class VideoPlayerElement : VisualElement
         m_VideoClip = clip;
         m_Url = null;
 
-        if(m_VideoPlayer != null)
+        if (m_VideoPlayer != null)
         {
             m_VideoPlayer.clip = clip;
             m_VideoPlayer.Prepare();
-            if(m_AutoStart)
+            if (m_AutoStart)
+            {
                 PlayerPlay();
+            }
         }
     }
 
     /// <summary>
-    /// Set the URL used by the player. If a clip was set, it will be set to null.
+    ///     Set the URL used by the player. If a clip was set, it will be set to null.
     /// </summary>
     /// <param name="url">The Url to be used by the player</param>
     /// <param name="autoplay">If true, the player will play immediately</param>
@@ -179,28 +179,32 @@ public partial class VideoPlayerElement : VisualElement
         m_Url = url;
         m_VideoClip = null;
 
-        if(m_VideoPlayer != null)
+        if (m_VideoPlayer != null)
         {
             m_VideoPlayer.url = url;
             m_VideoPlayer.Prepare();
-            if(m_AutoStart)
+            if (m_AutoStart)
+            {
                 PlayerPlay();
+            }
         }
     }
 
     /// <summary>
-    /// Change the looping settings of the player
+    ///     Change the looping settings of the player
     /// </summary>
     /// <param name="looping">If true the player loop once it reach the end of the video</param>
     public void SetLooping(bool looping)
     {
         m_IsLooping = looping;
-        if(m_VideoPlayer != null)
+        if (m_VideoPlayer != null)
+        {
             m_VideoPlayer.isLooping = looping;
+        }
     }
 
     /// <summary>
-    /// Is the player set to loop?
+    ///     Is the player set to loop?
     /// </summary>
     /// <returns>True if looping, False otherwise</returns>
     public bool IsLooping()
@@ -208,7 +212,7 @@ public partial class VideoPlayerElement : VisualElement
         return m_IsLooping;
     }
 
-    void OnAttachedToPanel(AttachToPanelEvent evt)
+    private void OnAttachedToPanel(AttachToPanelEvent evt)
     {
         PreparePlayer();
 
@@ -230,7 +234,7 @@ public partial class VideoPlayerElement : VisualElement
         this.AddManipulator(new Clickable(PlayerPause));
         //we had a clickable manipulator on our control bar at the bottom so it eat click event so that
         //the player above doesn't receive it to stop the video
-        m_PlayControlBar.AddManipulator(new Clickable(() => {}));
+        m_PlayControlBar.AddManipulator(new Clickable(() => { }));
 
         m_PlayOverlay.AddManipulator(new Clickable(PlayerPlay));
 
@@ -253,10 +257,7 @@ public partial class VideoPlayerElement : VisualElement
         m_PlayTrack.parent.RegisterCallback<MouseCaptureOutEvent>(_ => { m_IsScrubbing = false; });
 
         //Popout button
-        m_Popout.AddManipulator(new Clickable(() =>
-        {
-            MediaPopoutWindow.Popout(this);
-        }));
+        m_Popout.AddManipulator(new Clickable(() => { MediaPopoutWindow.Popout(this); }));
 
         //Speed selection
         m_SpeedSelectorPopup = this.Q<VisualElement>("SpeedSelectorPopup");
@@ -274,15 +275,16 @@ public partial class VideoPlayerElement : VisualElement
         }));
 
         //Bind all button to their speed
-        float[] speeds = new[] { 2.0f, 1.5f, 1.0f, 0.5f, 0.25f };
+        float[] speeds = { 2.0f, 1.5f, 1.0f, 0.5f, 0.25f };
 
         m_SpeedSelectionLabel = m_SpeedSelectionButton.Q<Label>();
 
-        var children = m_SpeedSelectorPopup.Query<VisualElement>(className: "video-speed-label-container").Build().ToList();
+        List<VisualElement> children = m_SpeedSelectorPopup
+            .Query<VisualElement>(className: "video-speed-label-container").Build().ToList();
         for (int i = 0; i < children.Count; ++i)
         {
-            var child = children[i];
-            var label = children[i].Q<Label>();
+            VisualElement child = children[i];
+            Label label = children[i].Q<Label>();
 
             if (speeds.Length > i)
             {
@@ -294,7 +296,7 @@ public partial class VideoPlayerElement : VisualElement
                 }
             }
 
-            var i1 = i;
+            int i1 = i;
             children[i].AddManipulator(new Clickable(() =>
             {
                 m_SelectedSpeedButton?.RemoveFromClassList("selected");
@@ -310,11 +312,13 @@ public partial class VideoPlayerElement : VisualElement
 
         EditorApplication.playModeStateChanged += PlayModeChanged;
 
-        if(m_AutoStart)
+        if (m_AutoStart)
+        {
             PlayerPlay();
+        }
     }
 
-    void OnDetachedFromPanel(DetachFromPanelEvent evt)
+    private void OnDetachedFromPanel(DetachFromPanelEvent evt)
     {
         // saving state to re apply if this is just detaching to reattach immediately somewhere
         m_PreviousTime = m_VideoPlayer.time;
@@ -326,19 +330,19 @@ public partial class VideoPlayerElement : VisualElement
         FreePlayer();
     }
 
-    void OnErrorReceived(VideoPlayer source, string message)
+    private void OnErrorReceived(VideoPlayer source, string message)
     {
         m_ErrorString.style.display = DisplayStyle.Flex;
         m_ErrorString.text = message;
     }
 
-    void PlayModeChanged(PlayModeStateChange state)
+    private void PlayModeChanged(PlayModeStateChange state)
     {
         //reset the state as changing playmode state will pause the player and mess with its internal state
         PlayerPause();
     }
 
-    void PlayButtonPushed()
+    private void PlayButtonPushed()
     {
         if (m_VideoPlayer.isPlaying)
         {
@@ -350,7 +354,7 @@ public partial class VideoPlayerElement : VisualElement
         }
     }
 
-    void AudioButtonPushed()
+    private void AudioButtonPushed()
     {
         //if the volume is 0 and we have a previous value, we return to that value
         if (m_VolumeSlider.value < 0.001f && m_VolumeSlider.userData != null)
@@ -366,42 +370,44 @@ public partial class VideoPlayerElement : VisualElement
         }
     }
 
-    void AudioSliderChangeHandler(ChangeEvent<float> evt)
+    private void AudioSliderChangeHandler(ChangeEvent<float> evt)
     {
         m_VideoPlayer.SetDirectAudioVolume(0, evt.newValue);
     }
 
-    void PlayTrackPressedHandler(MouseDownEvent evt)
+    private void PlayTrackPressedHandler(MouseDownEvent evt)
     {
         m_PlayTrack.parent.CaptureMouse();
         evt.StopPropagation();
         m_IsScrubbing = true;
 
-        float seekPosition = evt.localMousePosition.x /  m_PlayTrack.parent.contentRect.width;
+        float seekPosition = evt.localMousePosition.x / m_PlayTrack.parent.contentRect.width;
         SetPlayPercent(seekPosition);
 
         m_VideoPlayer.Pause();
     }
 
-    void PlayTrackMoveHandler(MouseMoveEvent evt)
+    private void PlayTrackMoveHandler(MouseMoveEvent evt)
     {
         if (!m_IsScrubbing)
+        {
             return;
+        }
 
-        float seekPosition = evt.localMousePosition.x /  m_PlayTrack.parent.contentRect.width;
+        float seekPosition = evt.localMousePosition.x / m_PlayTrack.parent.contentRect.width;
         SetPlayPercent(seekPosition);
 
         m_VideoPlayer.StepForward();
     }
 
-    void PlayTrackReleasedHandler(MouseUpEvent evt)
+    private void PlayTrackReleasedHandler(MouseUpEvent evt)
     {
         m_IsScrubbing = false;
         m_PlayTrack.parent.ReleaseMouse();
         m_VideoPlayer.Play();
     }
 
-    void PlayerPlay()
+    private void PlayerPlay()
     {
         //A button in GameView can mute audio and direct audio respect that. So we need to save if it was disable
         //so we can disable it again when the video is stopped/destroyed
@@ -416,7 +422,8 @@ public partial class VideoPlayerElement : VisualElement
         s_BugFixAudioSource.Play();
         m_VideoPlayer.Play();
     }
-    void PlayerPause()
+
+    private void PlayerPause()
     {
         //if we play then pause in between the player getting ready, the play when ready flag would be set and the player
         //would start playing when ready despite pausing. So always set the flag to false when pausing
@@ -428,14 +435,18 @@ public partial class VideoPlayerElement : VisualElement
 
         m_VideoPlayer.Pause();
 
-        if(m_AudioWasMuted)
+        if (m_AudioWasMuted)
+        {
             EditorUtility.audioMasterMute = true;
+        }
     }
 
-    void PreparedHandler(VideoPlayer source)
+    private void PreparedHandler(VideoPlayer source)
     {
         if (source.targetTexture != null)
+        {
             Object.DestroyImmediate(source.targetTexture);
+        }
 
         source.targetTexture = new RenderTexture((int)source.width, (int)source.height, 32);
         source.targetTexture.hideFlags = HideFlags.HideAndDontSave;
@@ -453,21 +464,21 @@ public partial class VideoPlayerElement : VisualElement
         style.width = 1;
     }
 
-    void FrameReadyHandler(VideoPlayer player, long frameIdx)
+    private void FrameReadyHandler(VideoPlayer player, long frameIdx)
     {
         MarkDirtyRepaint();
         m_PlayTrack.style.width =
             Length.Percent(GetPlayPercent() * 100.0f);
     }
 
-    void GeometryChangedHandler(GeometryChangedEvent evt)
+    private void GeometryChangedHandler(GeometryChangedEvent evt)
     {
         if (m_VideoPlayer.targetTexture != null)
         {
-            var texture = m_VideoPlayer.targetTexture;
+            RenderTexture texture = m_VideoPlayer.targetTexture;
             float aspectRatio = texture.width / (float)texture.height;
             float targetWidth = evt.newRect.width;
-            float targetHeight = targetWidth/aspectRatio;
+            float targetHeight = targetWidth / aspectRatio;
 
             if (!Mathf.Approximately(targetWidth, evt.newRect.width) ||
                 !Mathf.Approximately(targetHeight, evt.newRect.height))
@@ -481,23 +492,30 @@ public partial class VideoPlayerElement : VisualElement
     }
 
     /// <summary>
-    /// Return the percentage of the current clip/url the player is currently at
+    ///     Return the percentage of the current clip/url the player is currently at
     /// </summary>
     /// <returns>The percent from 0 to 1 at which the player is at</returns>
     public float GetPlayPercent()
     {
-        if (m_VideoPlayer.length == 0) return 0.0f;
+        if (m_VideoPlayer.length == 0)
+        {
+            return 0.0f;
+        }
 
-        return (float)(m_VideoPlayer.time/m_VideoPlayer.length);
+        return (float)(m_VideoPlayer.time / m_VideoPlayer.length);
     }
 
     /// <summary>
-    /// Set the percentage of the current clip/url the player is currently at
+    ///     Set the percentage of the current clip/url the player is currently at
     /// </summary>
     /// <param name="percent">The percent of the current video from 0 to 1 to which to set the player</param>
     public void SetPlayPercent(float percent)
     {
-        var player = m_VideoPlayer;
+        VideoPlayer player = m_VideoPlayer;
         player.time = percent * player.length;
+    }
+
+    public new class UxmlFactory : UxmlFactory<VideoPlayerElement>
+    {
     }
 }

@@ -2,6 +2,8 @@
 // This file is licensed under the BSD-Clause 2 license. 
 // See the license.txt file in the project root for more information.
 
+using Markdig.Extensions.Figures;
+using Markdig.Extensions.Tables;
 using Markdig.Renderers;
 using Markdig.Renderers.Html;
 using Markdig.Syntax;
@@ -10,7 +12,7 @@ using Markdig.Syntax.Inlines;
 namespace Markdig.Extensions.Bootstrap
 {
     /// <summary>
-    /// Extension for tagging some HTML elements with bootstrap classes.
+    ///     Extension for tagging some HTML elements with bootstrap classes.
     /// </summary>
     /// <seealso cref="IMarkdownExtension" />
     public class BootstrapExtension : IMarkdownExtension
@@ -28,11 +30,11 @@ namespace Markdig.Extensions.Bootstrap
 
         private static void PipelineOnDocumentProcessed(MarkdownDocument document)
         {
-            foreach(var node in document.Descendants())
+            foreach (MarkdownObject? node in document.Descendants())
             {
                 if (node is Block)
                 {
-                    if (node is Tables.Table)
+                    if (node is Table)
                     {
                         node.GetAttributes().AddClass("table");
                     }
@@ -40,11 +42,11 @@ namespace Markdig.Extensions.Bootstrap
                     {
                         node.GetAttributes().AddClass("blockquote");
                     }
-                    else if (node is Figures.Figure)
+                    else if (node is Figure)
                     {
                         node.GetAttributes().AddClass("figure");
                     }
-                    else if (node is Figures.FigureCaption)
+                    else if (node is FigureCaption)
                     {
                         node.GetAttributes().AddClass("figure-caption");
                     }

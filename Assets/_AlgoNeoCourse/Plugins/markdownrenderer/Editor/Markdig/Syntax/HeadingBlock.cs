@@ -9,13 +9,13 @@ using Markdig.Parsers;
 namespace Markdig.Syntax
 {
     /// <summary>
-    /// Represents a heading.
+    ///     Represents a heading.
     /// </summary>
     [DebuggerDisplay("{GetType().Name} Line: {Line}, {Lines} Level: {Level}")]
     public class HeadingBlock : LeafBlock
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="HeadingBlock"/> class.
+        ///     Initializes a new instance of the <see cref="HeadingBlock" /> class.
         /// </summary>
         /// <param name="parser">The parser.</param>
         public HeadingBlock(BlockParser parser) : base(parser)
@@ -24,34 +24,34 @@ namespace Markdig.Syntax
         }
 
         /// <summary>
-        /// Gets or sets the header character used to defines this heading (usually #)
+        ///     Gets or sets the header character used to defines this heading (usually #)
         /// </summary>
         public char HeaderChar { get; set; }
 
         /// <summary>
-        /// Gets or sets the level of heading (starting at 1 for the lowest level).
+        ///     Gets or sets the level of heading (starting at 1 for the lowest level).
         /// </summary>
         public int Level { get; set; }
 
         /// <summary>
-        /// True if this heading is a Setext heading.
+        ///     True if this heading is a Setext heading.
         /// </summary>
         public bool IsSetext { get; set; }
 
         /// <summary>
-        /// Gets or sets the amount of - or = characters when <see cref="IsSetext"/> is true.
+        ///     Gets or sets the amount of - or = characters when <see cref="IsSetext" /> is true.
         /// </summary>
         public int HeaderCharCount { get; set; }
 
         /// <summary>
-        /// Gets or sets the newline of the first line when <see cref="IsSetext"/> is true.
+        ///     Gets or sets the newline of the first line when <see cref="IsSetext" /> is true.
         /// </summary>
         public NewLine SetextNewline { get; set; }
 
         /// <summary>
-        /// Gets or sets the whitespace after the # character when <see cref="IsSetext"/> is false.
-        /// Trivia: only parsed when <see cref="MarkdownParser.TrackTrivia"/> is enabled, otherwise
-        /// <see cref="StringSlice.IsEmpty"/>.
+        ///     Gets or sets the whitespace after the # character when <see cref="IsSetext" /> is false.
+        ///     Trivia: only parsed when <see cref="MarkdownParser.TrackTrivia" /> is enabled, otherwise
+        ///     <see cref="StringSlice.IsEmpty" />.
         /// </summary>
         public StringSlice TriviaAfterAtxHeaderChar { get; set; }
     }

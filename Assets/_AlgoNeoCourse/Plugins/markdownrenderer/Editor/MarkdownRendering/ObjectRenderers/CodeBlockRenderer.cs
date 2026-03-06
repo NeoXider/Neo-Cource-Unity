@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Markdig.Renderers;
 using Markdig.Renderers.Html;
@@ -9,32 +10,39 @@ namespace UIMarkdownRenderer.ObjectRenderers
     {
         protected override void Write(UIMarkdownRenderer renderer, CodeBlock obj)
         {
-            var attribute = obj.GetAttributes();
-            List<string> classes = new () { "codeblock" };
-            if(attribute.Classes != null)
-                classes.AddRange(attribute.Classes);
-            
-            // Expose fenced code language as a CSS class, e.g. language-quiz, language-truefalse
-            if (obj is Markdig.Syntax.FencedCodeBlock fenced)
+            HtmlAttributes attribute = obj.GetAttributes();
+            List<string> classes = new() { "codeblock" };
+            if (attribute.Classes != null)
             {
-                var info = fenced.Info;
+                classes.AddRange(attribute.Classes);
+            }
+
+            // Expose fenced code language as a CSS class, e.g. language-quiz, language-truefalse
+            if (obj is FencedCodeBlock fenced)
+            {
+                string info = fenced.Info;
                 if (!string.IsNullOrWhiteSpace(info))
                 {
                     // Markdig allows multiple info words; add class for the first token and the full raw info
-                    var first = info.Trim().Split(' ')[0];
+                    string first = info.Trim().Split(' ')[0];
                     classes.Add($"language-{first}");
-                    if (!string.Equals(first, info.Trim(), System.StringComparison.Ordinal))
+                    if (!string.Equals(first, info.Trim(), StringComparison.Ordinal))
+                    {
                         classes.Add($"language-{info.Trim()}");
-                    if (string.Equals(first, "quiz", System.StringComparison.OrdinalIgnoreCase))
+                    }
+
+                    if (string.Equals(first, "quiz", StringComparison.OrdinalIgnoreCase))
+                    {
                         classes.Add("quiz");
+                    }
                 }
             }
-            
+
             renderer.StartBlock(classes);
 
             renderer.StartNewText();
-            renderer.WriteLeafRawLines( obj );
-        
+            renderer.WriteLeafRawLines(obj);
+
             renderer.FinishBlock();
         }
     }

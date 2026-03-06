@@ -7,7 +7,7 @@ using Markdig.Helpers;
 namespace Markdig.Syntax
 {
     /// <summary>
-    /// Helpers for the <see cref="ICharIterator"/> class.
+    ///     Helpers for the <see cref="ICharIterator" /> class.
     /// </summary>
     public static class CharIteratorHelper
     {
@@ -16,10 +16,11 @@ namespace Markdig.Syntax
             return TrimStartAndCountNewLines(ref iterator, out countNewLines, out _);
         }
 
-        public static bool TrimStartAndCountNewLines<T>(ref T iterator, out int countNewLines, out NewLine lastLine) where T : ICharIterator
+        public static bool TrimStartAndCountNewLines<T>(ref T iterator, out int countNewLines, out NewLine lastLine)
+            where T : ICharIterator
         {
             countNewLines = 0;
-            var c = iterator.CurrentChar;
+            char c = iterator.CurrentChar;
             bool hasWhitespaces = false;
             lastLine = NewLine.None;
             while (c != '\0' && c.IsWhitespace())
@@ -39,6 +40,7 @@ namespace Markdig.Syntax
                     {
                         lastLine = NewLine.CarriageReturn;
                     }
+
                     countNewLines++;
                 }
                 else
@@ -46,9 +48,11 @@ namespace Markdig.Syntax
                     // reset last line if if have a whitespace after
                     lastLine = NewLine.None;
                 }
+
                 hasWhitespaces = true;
                 c = iterator.NextChar();
             }
+
             return hasWhitespaces;
         }
     }

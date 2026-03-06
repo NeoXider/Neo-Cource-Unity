@@ -8,34 +8,34 @@ using Markdig.Parsers;
 namespace Markdig.Syntax.Inlines
 {
     /// <summary>
-    /// A delimiter for a link.
+    ///     A delimiter for a link.
     /// </summary>
     /// <seealso cref="DelimiterInline" />
     public class LinkDelimiterInline : DelimiterInline
     {
+        /// <summary>
+        ///     The label span
+        /// </summary>
+        public SourceSpan LabelSpan;
+
         public LinkDelimiterInline(InlineParser parser) : base(parser)
         {
         }
 
         /// <summary>
-        /// Gets or sets a value indicating whether this delimiter is an image link.
+        ///     Gets or sets a value indicating whether this delimiter is an image link.
         /// </summary>
         public bool IsImage { get; set; }
 
         /// <summary>
-        /// Gets or sets the label of this link.
+        ///     Gets or sets the label of this link.
         /// </summary>
         public string? Label { get; set; }
 
         /// <summary>
-        /// The label span
-        /// </summary>
-        public SourceSpan LabelSpan;
-
-        /// <summary>
-        /// Gets or sets the <see cref="Label"/> with trivia.
-        /// Trivia: only parsed when <see cref="MarkdownParser.TrackTrivia"/> is enabled, otherwise
-        /// <see cref="StringSlice.IsEmpty"/>.
+        ///     Gets or sets the <see cref="Label" /> with trivia.
+        ///     Trivia: only parsed when <see cref="MarkdownParser.TrackTrivia" /> is enabled, otherwise
+        ///     <see cref="StringSlice.IsEmpty" />.
         /// </summary>
         public StringSlice LabelWithTrivia { get; set; }
 

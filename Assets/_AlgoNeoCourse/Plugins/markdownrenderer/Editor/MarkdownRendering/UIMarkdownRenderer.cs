@@ -2,63 +2,61 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using Markdig;
+using Markdig.Helpers;
 using Markdig.Renderers;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
-using UIMarkdownRenderer.ObjectRenderers;
-using UIMarkdownRenderer;
 using NeoCource.Editor.Infrastructure;
+using UIMarkdownRenderer.ObjectRenderers;
 using UnityEditor;
-using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 using UnityEngine.UIElements.Experimental;
-using TextElement = UnityEngine.UIElements.TextElement;
 
 namespace UIMarkdownRenderer
 {
     public class UIMarkdownRenderer : RendererBase
     {
-        private static StyleSheet s_DefaultStylesheet = null;
+        private static StyleSheet s_DefaultStylesheet;
         private static VisualTreeAsset s_VideoPlayerElementPrefab;
-        private static StyleSheet s_VideoPlayerStyleSheet = null;
-        
-        private static MarkdownPipeline s_StaticPipeline = new MarkdownPipelineBuilder().UseGenericAttributes().UseYamlFrontMatter().Build();
+        private static StyleSheet s_VideoPlayerStyleSheet;
+
+        private static readonly MarkdownPipeline s_StaticPipeline =
+            new MarkdownPipelineBuilder().UseGenericAttributes().UseYamlFrontMatter().Build();
 
         public class Command
         {
             public string CommandName;
             public string[] CommandParameters;
-        };
+        }
 
         public delegate void CommandHandlerDelegate(Command cmd);
-        
+
         /// <summary>
-        /// The root visual element. Add this to your UI tree to render the Markdown.
+        ///     The root visual element. Add this to your UI tree to render the Markdown.
         /// </summary>
         public VisualElement RootElement { protected set; get; }
-        
+
         /// <summary>
-        /// This is the root of the content. This will be the same as RootElement if a ScrollView wasn't asked when
-        /// creating the Renderer, otherwise this will be the ScrollView
+        ///     This is the root of the content. This will be the same as RootElement if a ScrollView wasn't asked when
+        ///     creating the Renderer, otherwise this will be the ScrollView
         /// </summary>
         public VisualElement ContentRoot { protected set; get; }
+
         public bool LockTextCreation { get; set; } = false;
         public int IndentLevel { get; set; } = 0;
-        
-        public string FileFolder => m_FileFolder;
-        
-        private bool m_IncludeScrollView;
-        private Stack<VisualElement> m_BlockStack = new Stack<VisualElement>();
+
+        public string FileFolder { get; private set; }
+
+        private readonly bool m_IncludeScrollView;
+        private readonly Stack<VisualElement> m_BlockStack = new();
 
         private string m_LocalFilePath;
         //useful when using relative file path
-        private string m_FileFolder;
 
         private Label m_CurrentBlockText;
-        private Texture m_LoadingTexture;
+        private readonly Texture m_LoadingTexture;
 
         //used for jumping to header, the key is a whitespace removed version of the header
         public struct HeaderEntry
@@ -66,7 +64,8 @@ namespace UIMarkdownRenderer
             public string HeaderKey;
             public Label HeaderLabel;
         }
-        private List<HeaderEntry> m_HeadersToLabelMappings = new();
+
+        private readonly List<HeaderEntry> m_HeadersToLabelMappings = new();
 
 #if !UNITY_2022_2_OR_NEWER
         private PropertyInfo m_TextHandleFieldInfo;
@@ -86,11 +85,11 @@ namespace UIMarkdownRenderer
         }
 #endif
 
-        private Action<string, UIMarkdownRenderer> m_CurrentLinkHandler;
+        private readonly Action<string, UIMarkdownRenderer> m_CurrentLinkHandler;
 
         private CommandHandlerDelegate m_CommandHandler;
 
-        private List<StyleSheet> m_CustomStylesheets;
+        private readonly List<StyleSheet> m_CustomStylesheets;
 
         public override object Render(MarkdownObject markdownObject)
         {
@@ -99,7 +98,7 @@ namespace UIMarkdownRenderer
 
             return this;
         }
-        
+
         //Call to handle all type of link : relative, absolute and special search
         public string ResolveLink(string link)
         {
@@ -108,7 +107,7 @@ namespace UIMarkdownRenderer
                 //this is a relative link, so find the actual link
                 link = link.Replace("search:", "");
 
-                var files = AssetDatabase.FindAssets(link);
+                string[] files = AssetDatabase.FindAssets(link);
 
                 if (files.Length == 0)
                 {
@@ -122,8 +121,8 @@ namespace UIMarkdownRenderer
             {
                 //will search only in packages
                 link = link.Replace("package:", "");
-                    
-                var files = AssetDatabase.FindAssets($"a:packages {link}");
+
+                string[] files = AssetDatabase.FindAssets($"a:packages {link}");
 
                 if (files.Length == 0)
                 {
@@ -158,12 +157,16 @@ namespace UIMarkdownRenderer
             m_CommandHandler.Invoke(cmd);
         }
 
-        void DefaultCommandHandler(Command cmd)
+        private void DefaultCommandHandler(Command cmd)
         {
             switch (cmd.CommandName)
             {
                 case "log":
-                    if (cmd.CommandParameters.Length == 0) return;
+                    if (cmd.CommandParameters.Length == 0)
+                    {
+                        return;
+                    }
+
                     Debug.Log(cmd.CommandParameters[0]);
                     break;
                 case "highlight":
@@ -174,13 +177,14 @@ namespace UIMarkdownRenderer
                         return;
                     }
 
-                    Highlighter.Highlight(cmd.CommandParameters[0], cmd.CommandParameters[1], HighlightSearchMode.Identifier);
+                    Highlighter.Highlight(cmd.CommandParameters[0], cmd.CommandParameters[1],
+                        HighlightSearchMode.Identifier);
                 }
                     break;
             }
         }
 
-        void CreateNewRoot()
+        private void CreateNewRoot()
         {
             ContentRoot.Clear();
             m_BlockStack.Clear();
@@ -194,8 +198,10 @@ namespace UIMarkdownRenderer
                 s_DefaultStylesheet = AssetDatabase.LoadAssetAtPath(
                     AlgoNeoPackageAssetLocator.MarkdownStylesheetAssetPath,
                     typeof(StyleSheet)) as StyleSheet;
-                if(s_DefaultStylesheet == null)
+                if (s_DefaultStylesheet == null)
+                {
                     Debug.LogError("Couldn't load the MarkdownRenderer.uss stylesheet");
+                }
             }
 
             if (s_VideoPlayerElementPrefab == null)
@@ -204,7 +210,7 @@ namespace UIMarkdownRenderer
                     AssetDatabase.LoadAssetAtPath(
                         AlgoNeoPackageAssetLocator.VideoPlayerUxmlAssetPath,
                         typeof(VisualTreeAsset)) as VisualTreeAsset;
-                
+
                 s_VideoPlayerStyleSheet =
                     AssetDatabase.LoadAssetAtPath(
                         AlgoNeoPackageAssetLocator.VideoPlayerStylesheetAssetPath,
@@ -214,7 +220,7 @@ namespace UIMarkdownRenderer
             m_LoadingTexture = EditorGUIUtility.Load("WaitSpin00") as Texture;
 
             ObjectRenderers.Add(new YamlFrontMatterHandler());
-            
+
             ObjectRenderers.Add(new ParagraphBlockRenderer());
             ObjectRenderers.Add(new HeadingBlockRenderer());
             ObjectRenderers.Add(new ListBlockRenderer());
@@ -227,7 +233,7 @@ namespace UIMarkdownRenderer
             ObjectRenderers.Add(new LineBreakInlineRenderer());
             ObjectRenderers.Add(new CodeInlineRenderer());
             ObjectRenderers.Add(new LinkInlineRenderer());
-            
+
 #if UNITY_2022_2_OR_NEWER
             //In 2022.2 and after there is an event when hovering over link in a label so we can use that instead of reflection
 #else
@@ -240,7 +246,8 @@ namespace UIMarkdownRenderer
             string textHandleTypeName = "UnityEngine.UIElements.TextCoreHandle, UnityEngine.UIElementsModule";
             string textInfoName = "textInfoMesh";
 #endif
-             m_TextHandleFieldInfo = typeof(TextElement).GetProperty(handleName, BindingFlags.NonPublic|BindingFlags.Instance);
+             m_TextHandleFieldInfo =
+ typeof(TextElement).GetProperty(handleName, BindingFlags.NonPublic|BindingFlags.Instance);
             Type textCoreHandleType = Type.GetType(textHandleTypeName);
             m_TextInfoFieldInfo =
                 textCoreHandleType.GetProperty(textInfoName, BindingFlags.NonPublic | BindingFlags.Instance);
@@ -256,11 +263,11 @@ namespace UIMarkdownRenderer
                 Type.GetType("UnityEngine.TextCore.Text.TextElementInfo, UnityEngine.TextCoreTextEngineModule");
 #endif
             m_CommandHandler += DefaultCommandHandler;
-            
+
             m_CurrentLinkHandler = LinkHandler;
             m_CustomStylesheets = new List<StyleSheet>();
             m_HeadersToLabelMappings.Clear();
-            
+
             ContentRoot = new VisualElement
             {
                 name = "RendererRoot"
@@ -279,10 +286,12 @@ namespace UIMarkdownRenderer
                 RootElement = ContentRoot;
             }
 
-            if(s_DefaultStylesheet != null)
+            if (s_DefaultStylesheet != null)
+            {
                 RootElement.styleSheets.Add(s_DefaultStylesheet);
+            }
 
-            foreach (var stylesheet in m_CustomStylesheets)
+            foreach (StyleSheet stylesheet in m_CustomStylesheets)
             {
                 RootElement.styleSheets.Add(stylesheet);
             }
@@ -291,20 +300,20 @@ namespace UIMarkdownRenderer
         public void OpenFile(string filePath)
         {
             m_LocalFilePath = Path.GetDirectoryName(filePath);
-            m_FileFolder = Path.GetFullPath(m_LocalFilePath);
-            
+            FileFolder = Path.GetFullPath(m_LocalFilePath);
+
             SetMarkdown(File.ReadAllText(filePath));
         }
 
         public void SetMarkdown(string markdownText)
         {
-            var parsed = Markdown.Parse(markdownText, s_StaticPipeline);
+            MarkdownDocument parsed = Markdown.Parse(markdownText, s_StaticPipeline);
             Render(parsed);
         }
 
         internal void WriteLeafBlockInline(LeafBlock block)
         {
-            var inline = block.Inline as Inline;
+            Inline inline = block.Inline;
 
             while (inline != null)
             {
@@ -320,14 +329,17 @@ namespace UIMarkdownRenderer
                 return;
             }
 
-            var lines = block.Lines;
-            var slices = lines.Lines;
+            StringLineGroup lines = block.Lines;
+            StringLine[] slices = lines.Lines;
 
             for (int i = 0; i < lines.Count; i++)
             {
                 string line = slices[i].ToString();
-                if (i != lines.Count - 1) line += "\n";
-                
+                if (i != lines.Count - 1)
+                {
+                    line += "\n";
+                }
+
                 WriteText(line);
             }
         }
@@ -338,25 +350,27 @@ namespace UIMarkdownRenderer
             {
                 path = m_LocalFilePath + path.Remove(0, 1);
             }
-            
-            var stylesheet = AssetDatabase.LoadAssetAtPath<StyleSheet>(path);
+
+            StyleSheet stylesheet = AssetDatabase.LoadAssetAtPath<StyleSheet>(path);
 
             if (stylesheet == null)
             {
                 Debug.LogError($"Couldn't find custom USS {path} defined in file {m_LocalFilePath}");
                 return;
             }
-            
+
             m_CustomStylesheets.Add(stylesheet);
         }
 
         public void StartNewText(List<string> classLists)
         {
             if (LockTextCreation)
+            {
                 return;
+            }
 
             m_CurrentBlockText = new Label();
-            foreach (var c in classLists)
+            foreach (string c in classLists)
             {
                 m_CurrentBlockText.AddToClassList(c);
             }
@@ -378,7 +392,7 @@ namespace UIMarkdownRenderer
         {
             FinishBlock();
 
-            Image imgElement = new Image();
+            Image imgElement = new();
             imgElement.AddToClassList("md-image");
             imgElement.scaleMode = ScaleMode.ScaleToFit;
             imgElement.image = m_LoadingTexture;
@@ -395,7 +409,7 @@ namespace UIMarkdownRenderer
 
             VideoPlayerElement newPlayer = s_VideoPlayerElementPrefab.Instantiate().Q<VideoPlayerElement>();
             newPlayer.styleSheets.Add(s_VideoPlayerStyleSheet);
-            
+
             m_BlockStack.Peek().Add(newPlayer);
             StartBlock();
 
@@ -472,7 +486,7 @@ namespace UIMarkdownRenderer
             }
         }
 #else
-        
+
         public void OpenLink(string linkTarget)
         {
             m_CurrentBlockText.text += "<link=" + linkTarget + "><color=#4C7EFF><u>";
@@ -484,13 +498,13 @@ namespace UIMarkdownRenderer
             {
                 (evt.target as Label).RemoveFromClassList("linkHovered");
             });
-            
+
             m_CurrentBlockText.RegisterCallback<PointerUpLinkTagEvent>(evt =>
             {
                 m_CurrentLinkHandler(evt.linkID, this);
             });
         }
-    #endif
+#endif
 
         public void CloseLink()
         {
@@ -500,10 +514,10 @@ namespace UIMarkdownRenderer
         public void RegisterHeader(string headerText, Label label)
         {
             //we first change all space to - but also remove any non alpha numeric character 
-            var sanitizedHeader = headerText.Replace(" ", "-").ToLowerInvariant();
-            sanitizedHeader = String.Concat(sanitizedHeader.Where(c => char.IsLetterOrDigit(c) || c == '-'));
-            
-            m_HeadersToLabelMappings.Add(new HeaderEntry()
+            string sanitizedHeader = headerText.Replace(" ", "-").ToLowerInvariant();
+            sanitizedHeader = string.Concat(sanitizedHeader.Where(c => char.IsLetterOrDigit(c) || c == '-'));
+
+            m_HeadersToLabelMappings.Add(new HeaderEntry
             {
                 HeaderKey = sanitizedHeader,
                 HeaderLabel = label
@@ -511,31 +525,39 @@ namespace UIMarkdownRenderer
         }
 
         /// <summary>
-        /// Will return the Label that correspond to the link (in the form of #header-text) passed as parameter 
+        ///     Will return the Label that correspond to the link (in the form of #header-text) passed as parameter
         /// </summary>
         /// <param name="link">An anchor link in the form #header-text</param>
         /// <returns></returns>
         public Label GetLabelFromHeaderAnchor(string link)
         {
-            foreach (var headerEntry in m_HeadersToLabelMappings)
+            foreach (HeaderEntry headerEntry in m_HeadersToLabelMappings)
             {
                 if (headerEntry.HeaderKey.StartsWith(link.Remove(0, 1)))
+                {
                     return headerEntry.HeaderLabel;
+                }
             }
+
             return null;
         }
 
         public void ScrollToHeader(string link)
         {
             if (!m_IncludeScrollView)
+            {
                 return;
+            }
 
-            var label = GetLabelFromHeaderAnchor(link);
-            if (label == null) return;
-            
-            
-            var scrollView = RootElement as ScrollView;
-            var localLabelPos = scrollView.WorldToLocal(label.worldBound);
+            Label label = GetLabelFromHeaderAnchor(link);
+            if (label == null)
+            {
+                return;
+            }
+
+
+            ScrollView scrollView = RootElement as ScrollView;
+            Rect localLabelPos = scrollView.WorldToLocal(label.worldBound);
             scrollView.scrollOffset = new Vector2(scrollView.scrollOffset.x, localLabelPos.y);
         }
 
@@ -570,15 +592,17 @@ namespace UIMarkdownRenderer
             return null;
         }
 #endif
-        
+
         internal VisualElement StartBlock(List<string> classList)
         {
             if (LockTextCreation)
+            {
                 return null;
+            }
 
-            var newBlock = new VisualElement();
+            VisualElement newBlock = new();
             newBlock.AddToClassList("block");
-            foreach (var c in classList)
+            foreach (string c in classList)
             {
                 newBlock.AddToClassList(c);
             }
@@ -610,8 +634,8 @@ namespace UIMarkdownRenderer
                 m_CurrentBlockText.generateVisualContent += OnGenerateLinkVisualContent;
             }
 #endif
-            
-            m_BlockStack.Pop(); 
+
+            m_BlockStack.Pop();
         }
 
 #if !UNITY_2022_2_OR_NEWER
@@ -670,7 +694,7 @@ namespace UIMarkdownRenderer
 
         //Those are just copy of the internal class in TextCore to easily copy the content of those by reflection as their
         //counterpart are internal. If this is exposed someday, can be removed.
-    
+
 #if !UNITY_2022_2_OR_NEWER
         internal class TextElementInfoCopy
         {

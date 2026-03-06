@@ -8,5 +8,3 @@ namespace NeoCource.Editor.Tasks
         bool TryExecute(Dictionary<string, string> args, out string message);
     }
 }
-
-

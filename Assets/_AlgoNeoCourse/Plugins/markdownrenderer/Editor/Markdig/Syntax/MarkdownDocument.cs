@@ -7,26 +7,26 @@ using System.Collections.Generic;
 namespace Markdig.Syntax
 {
     /// <summary>
-    /// The root Markdown document.
+    ///     The root Markdown document.
     /// </summary>
     /// <seealso cref="ContainerBlock" />
     public class MarkdownDocument : ContainerBlock
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MarkdownDocument"/> class.
+        ///     Gets the number of lines in this <see cref="MarkdownDocument" />
+        /// </summary>
+        public int LineCount;
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="MarkdownDocument" /> class.
         /// </summary>
         public MarkdownDocument() : base(null)
         {
         }
 
         /// <summary>
-        /// Gets the number of lines in this <see cref="MarkdownDocument"/>
-        /// </summary>
-        public int LineCount;
-
-        /// <summary>
-        /// Gets a list of zero-based indexes of line beginnings in the source span
-        /// <para>Available if <see cref="MarkdownPipelineBuilder.PreciseSourceLocation"/> is used, otherwise null</para>
+        ///     Gets a list of zero-based indexes of line beginnings in the source span
+        ///     <para>Available if <see cref="MarkdownPipelineBuilder.PreciseSourceLocation" /> is used, otherwise null</para>
         /// </summary>
         public List<int>? LineStartIndexes { get; set; }
     }

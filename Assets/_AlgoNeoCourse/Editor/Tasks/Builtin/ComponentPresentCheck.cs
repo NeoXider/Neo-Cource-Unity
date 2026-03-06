@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 using NeoCource.Editor.Utils;
+using UnityEngine;
 
 namespace NeoCource.Editor.Tasks.Builtin
 {
@@ -13,17 +13,22 @@ namespace NeoCource.Editor.Tasks.Builtin
         public bool TryExecute(Dictionary<string, string> args, out string message)
         {
             message = string.Empty;
-            if (args == null) { message = "Параметры не заданы"; return false; }
-
-            args.TryGetValue("target", out var targetName);
-            args.TryGetValue("component", out var componentName);
-            if (string.IsNullOrEmpty(targetName) || string.IsNullOrEmpty(componentName))
+            if (args == null)
             {
-                message = "Нужно указать target и component"; return false;
+                message = "Параметры не заданы";
+                return false;
             }
 
-            var lines = new List<string>();
-            var go = GameObject.Find(targetName);
+            args.TryGetValue("target", out string targetName);
+            args.TryGetValue("component", out string componentName);
+            if (string.IsNullOrEmpty(targetName) || string.IsNullOrEmpty(componentName))
+            {
+                message = "Нужно указать target и component";
+                return false;
+            }
+
+            List<string> lines = new();
+            GameObject go = GameObject.Find(targetName);
             bool ok = false;
             string error = "";
 
@@ -33,9 +38,9 @@ namespace NeoCource.Editor.Tasks.Builtin
             }
             else
             {
-                var t = Type.GetType(componentName)
-                        ?? Type.GetType("UnityEngine." + componentName + ", UnityEngine")
-                        ?? Type.GetType(componentName + ", Assembly-CSharp");
+                Type t = Type.GetType(componentName)
+                         ?? Type.GetType("UnityEngine." + componentName + ", UnityEngine")
+                         ?? Type.GetType(componentName + ", Assembly-CSharp");
                 if (t == null)
                 {
                     error = $" (ОШИБКА: не найден тип компонента '{componentName}')";
@@ -50,7 +55,8 @@ namespace NeoCource.Editor.Tasks.Builtin
                 }
             }
 
-            lines.Add((ok ? AlgoNeoEditorUtils.OkMarkColored() : AlgoNeoEditorUtils.FailMarkColored()) + $" component_exists: {targetName}.{componentName}" + error);
+            lines.Add((ok ? AlgoNeoEditorUtils.OkMarkColored() : AlgoNeoEditorUtils.FailMarkColored()) +
+                      $" component_exists: {targetName}.{componentName}" + error);
             lines.Add($"Итого (компоненты): {(ok ? 1 : 0)}/1");
 
             message = string.Join("\n", lines);

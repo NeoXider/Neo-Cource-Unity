@@ -9,17 +9,17 @@ using Markdig.Syntax.Inlines;
 namespace Markdig.Parsers.Inlines
 {
     /// <summary>
-    /// An inline parser for <see cref="LinkInline"/>.
+    ///     An inline parser for <see cref="LinkInline" />.
     /// </summary>
     /// <seealso cref="InlineParser" />
     public class LinkInlineParser : InlineParser
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="LinkInlineParser"/> class.
+        ///     Initializes a new instance of the <see cref="LinkInlineParser" /> class.
         /// </summary>
         public LinkInlineParser()
         {
-            OpeningCharacters = new[] {'[', ']', '!'};
+            OpeningCharacters = new[] { '[', ']', '!' };
         }
 
         public override bool Match(InlineProcessor processor, ref StringSlice slice)
@@ -27,9 +27,9 @@ namespace Markdig.Parsers.Inlines
             // The following methods are inspired by the "An algorithm for parsing nested emphasis and links"
             // at the end of the CommonMark specs.
 
-            var c = slice.CurrentChar;
+            char c = slice.CurrentChar;
 
-            var startPosition = processor.GetSourcePosition(slice.Start, out int line, out int column);
+            int startPosition = processor.GetSourcePosition(slice.Start, out int line, out int column);
 
             bool isImage = false;
             if (c == '!')
@@ -41,6 +41,7 @@ namespace Markdig.Parsers.Inlines
                     return false;
                 }
             }
+
             string? label;
             SourceSpan labelWithTriviaSpan = SourceSpan.Empty;
             switch (c)
@@ -48,7 +49,7 @@ namespace Markdig.Parsers.Inlines
                 case '[':
                     // If this is not an image, we may have a reference link shortcut
                     // so we try to resolve it here
-                    var saved = slice;
+                    StringSlice saved = slice;
 
                     SourceSpan labelSpan;
                     // If the label is followed by either a ( or a [, this is not a shortcut
@@ -74,11 +75,12 @@ namespace Markdig.Parsers.Inlines
                             }
                         }
                     }
+
                     slice = saved;
 
                     // Else we insert a LinkDelimiter
                     slice.SkipChar();
-                    var labelWithTrivia = new StringSlice(slice.Text, labelWithTriviaSpan.Start, labelWithTriviaSpan.End);
+                    StringSlice labelWithTrivia = new(slice.Text, labelWithTriviaSpan.Start, labelWithTriviaSpan.End);
                     processor.Inline = new LinkDelimiterInline(this)
                     {
                         Type = DelimiterType.Open,
@@ -137,9 +139,9 @@ namespace Markdig.Parsers.Inlines
             // Create a default link if the callback was not found
             if (link is null)
             {
-                var labelWithTrivia = new StringSlice(text.Text, labelWithriviaSpan.Start, labelWithriviaSpan.End);
+                StringSlice labelWithTrivia = new(text.Text, labelWithriviaSpan.Start, labelWithriviaSpan.End);
                 // Inline Link
-                link = new LinkInline()
+                link = new LinkInline
                 {
                     Url = HtmlHelper.Unescape(linkRef.Url),
                     Title = HtmlHelper.Unescape(linkRef.Title),
@@ -155,23 +157,23 @@ namespace Markdig.Parsers.Inlines
                     Reference = linkRef,
                     Span = new SourceSpan(parent.Span.Start, endPosition),
                     Line = parent.Line,
-                    Column = parent.Column,
+                    Column = parent.Column
                 };
             }
 
             if (link is ContainerInline containerLink)
             {
-                var child = parent.FirstChild;
+                Inline? child = parent.FirstChild;
                 if (child is null)
                 {
-                    child = new LiteralInline()
+                    child = new LiteralInline
                     {
                         Content = StringSlice.Empty,
                         IsClosed = true,
                         // Not exact but we leave it like this
                         Span = parent.Span,
                         Line = parent.Line,
-                        Column = parent.Column,
+                        Column = parent.Column
                     };
                     containerLink.AppendChild(child);
                 }
@@ -180,7 +182,7 @@ namespace Markdig.Parsers.Inlines
                     // Insert all child into the link
                     while (child != null)
                     {
-                        var next = child.NextSibling;
+                        Inline? next = child.NextSibling;
                         child.Remove();
                         containerLink.AppendChild(child);
                         child = next;
@@ -212,12 +214,12 @@ namespace Markdig.Parsers.Inlines
             // and return a literal text node ].
             if (!openParent.IsActive)
             {
-                inlineState.Inline = new LiteralInline()
+                inlineState.Inline = new LiteralInline
                 {
                     Content = new StringSlice("["),
                     Span = openParent.Span,
                     Line = openParent.Line,
-                    Column = openParent.Column,
+                    Column = openParent.Column
                 };
                 openParent.ReplaceBy(inlineState.Inline);
                 return false;
@@ -228,34 +230,34 @@ namespace Markdig.Parsers.Inlines
             // an inline link/image, reference link/image,
             // compact reference link/image,
             // or shortcut reference link/image
-            var parentDelimiter = openParent.Parent;
-            var savedText = text;
+            ContainerInline? parentDelimiter = openParent.Parent;
+            StringSlice savedText = text;
 
             if (text.CurrentChar == '(')
             {
                 if (inlineState.TrackTrivia)
                 {
                     if (LinkHelper.TryParseInlineLinkTrivia(
-                        ref text,
-                        out string? url,
-                        out SourceSpan unescapedUrlSpan,
-                        out string? title,
-                        out SourceSpan unescapedTitleSpan,
-                        out char titleEnclosingCharacter,
-                        out SourceSpan linkSpan,
-                        out SourceSpan titleSpan,
-                        out SourceSpan triviaBeforeLink,
-                        out SourceSpan triviaAfterLink,
-                        out SourceSpan triviaAfterTitle,
-                        out bool urlHasPointyBrackets))
+                            ref text,
+                            out string? url,
+                            out SourceSpan unescapedUrlSpan,
+                            out string? title,
+                            out SourceSpan unescapedTitleSpan,
+                            out char titleEnclosingCharacter,
+                            out SourceSpan linkSpan,
+                            out SourceSpan titleSpan,
+                            out SourceSpan triviaBeforeLink,
+                            out SourceSpan triviaAfterLink,
+                            out SourceSpan triviaAfterTitle,
+                            out bool urlHasPointyBrackets))
                     {
-                        var wsBeforeLink = new StringSlice(text.Text, triviaBeforeLink.Start, triviaBeforeLink.End);
-                        var wsAfterLink = new StringSlice(text.Text, triviaAfterLink.Start, triviaAfterLink.End);
-                        var wsAfterTitle = new StringSlice(text.Text, triviaAfterTitle.Start, triviaAfterTitle.End);
-                        var unescapedUrl = new StringSlice(text.Text, unescapedUrlSpan.Start, unescapedUrlSpan.End);
-                        var unescapedTitle = new StringSlice(text.Text, unescapedTitleSpan.Start, unescapedTitleSpan.End);
+                        StringSlice wsBeforeLink = new(text.Text, triviaBeforeLink.Start, triviaBeforeLink.End);
+                        StringSlice wsAfterLink = new(text.Text, triviaAfterLink.Start, triviaAfterLink.End);
+                        StringSlice wsAfterTitle = new(text.Text, triviaAfterTitle.Start, triviaAfterTitle.End);
+                        StringSlice unescapedUrl = new(text.Text, unescapedUrlSpan.Start, unescapedUrlSpan.End);
+                        StringSlice unescapedTitle = new(text.Text, unescapedTitleSpan.Start, unescapedTitleSpan.End);
                         // Inline Link
-                        var link = new LinkInline()
+                        LinkInline link = new()
                         {
                             TriviaBeforeUrl = wsBeforeLink,
                             Url = HtmlHelper.Unescape(url),
@@ -272,7 +274,7 @@ namespace Markdig.Parsers.Inlines
                             TitleSpan = inlineState.GetSourcePositionFromLocalSpan(titleSpan),
                             Span = new SourceSpan(openParent.Span.Start, inlineState.GetSourcePosition(text.Start - 1)),
                             Line = openParent.Line,
-                            Column = openParent.Column,
+                            Column = openParent.Column
                         };
 
                         openParent.ReplaceBy(link);
@@ -297,10 +299,11 @@ namespace Markdig.Parsers.Inlines
                 }
                 else
                 {
-                    if (LinkHelper.TryParseInlineLink(ref text, out string? url, out string? title, out SourceSpan linkSpan, out SourceSpan titleSpan))
+                    if (LinkHelper.TryParseInlineLink(ref text, out string? url, out string? title,
+                            out SourceSpan linkSpan, out SourceSpan titleSpan))
                     {
                         // Inline Link
-                        var link = new LinkInline()
+                        LinkInline link = new()
                         {
                             Url = HtmlHelper.Unescape(url),
                             Title = HtmlHelper.Unescape(title),
@@ -310,7 +313,7 @@ namespace Markdig.Parsers.Inlines
                             TitleSpan = inlineState.GetSourcePositionFromLocalSpan(titleSpan),
                             Span = new SourceSpan(openParent.Span.Start, inlineState.GetSourcePosition(text.Start - 1)),
                             Line = openParent.Line,
-                            Column = openParent.Column,
+                            Column = openParent.Column
                         };
 
                         openParent.ReplaceBy(link);
@@ -337,7 +340,7 @@ namespace Markdig.Parsers.Inlines
                 text = savedText;
             }
 
-            var labelSpan = SourceSpan.Empty;
+            SourceSpan labelSpan = SourceSpan.Empty;
             string? label = null;
             SourceSpan labelWithTrivia = SourceSpan.Empty;
             bool isLabelSpanLocal = true;
@@ -363,6 +366,7 @@ namespace Markdig.Parsers.Inlines
                 label = openParent.Label;
                 isShortcut = true;
             }
+
             if (label != null || LinkHelper.TryParseLabelTrivia(ref text, true, out label, out labelSpan))
             {
                 labelWithTrivia = new SourceSpan(labelSpan.Start, labelSpan.End);
@@ -371,7 +375,8 @@ namespace Markdig.Parsers.Inlines
                     labelSpan = inlineState.GetSourcePositionFromLocalSpan(labelSpan);
                 }
 
-                if (ProcessLinkReference(inlineState, text, label!, labelWithTrivia, isShortcut, labelSpan, openParent, inlineState.GetSourcePosition(text.Start - 1), localLabel))
+                if (ProcessLinkReference(inlineState, text, label!, labelWithTrivia, isShortcut, labelSpan, openParent,
+                        inlineState.GetSourcePosition(text.Start - 1), localLabel))
                 {
                     // Remove the open parent
                     openParent.Remove();
@@ -379,9 +384,11 @@ namespace Markdig.Parsers.Inlines
                     {
                         MarkParentAsInactive(parentDelimiter);
                     }
+
                     return true;
                 }
-                else if (text.CurrentChar != ']' && text.CurrentChar != '[')
+
+                if (text.CurrentChar != ']' && text.CurrentChar != '[')
                 {
                     return false;
                 }
@@ -391,7 +398,7 @@ namespace Markdig.Parsers.Inlines
             // firstParent.Remove();
             // The opening [ will be transformed to a literal followed by all the children of the [
 
-            var literal = new LiteralInline()
+            LiteralInline literal = new()
             {
                 Span = openParent.Span,
                 Content = new StringSlice(openParent.IsImage ? "![" : "[")

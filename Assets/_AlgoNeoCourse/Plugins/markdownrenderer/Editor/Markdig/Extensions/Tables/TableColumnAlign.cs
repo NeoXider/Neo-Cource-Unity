@@ -5,23 +5,23 @@
 namespace Markdig.Extensions.Tables
 {
     /// <summary>
-    /// Defines the alignment of a column
+    ///     Defines the alignment of a column
     /// </summary>
     public enum TableColumnAlign
     {
         /// <summary>
-        /// Align the column to the left
+        ///     Align the column to the left
         /// </summary>
         Left,
 
         /// <summary>
-        /// Align the column to the center
+        ///     Align the column to the center
         /// </summary>
         Center,
 
         /// <summary>
-        /// Align the column to the right
+        ///     Align the column to the right
         /// </summary>
-        Right,
+        Right
     }
 }

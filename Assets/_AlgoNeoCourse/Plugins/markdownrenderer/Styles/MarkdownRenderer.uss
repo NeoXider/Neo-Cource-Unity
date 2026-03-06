@@ -38,6 +38,7 @@ VisualElement {
     border-color: #00E5FF; /* Cyan bright */
     background-color: rgba(0, 229, 255, 0.12);
 }
+
 .codeblock.quiz Label,
 .codeblock.language-quiz Label,
 .codeblock.fence-quiz Label,
@@ -49,6 +50,7 @@ VisualElement {
     border-color: #4DA3FF; /* Blue accent */
     background-color: rgba(77, 163, 255, 0.12);
 }
+
 .codeblock.language-truefalse Label {
     color: #E6F2FF;
 }

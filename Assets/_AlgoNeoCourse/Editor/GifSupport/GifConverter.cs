@@ -1,21 +1,42 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using UnityEditor;
-using UnityEngine;
+using System.Net;
+using System.Security.Cryptography;
+using System.Text;
 using NeoCource.Editor.Infrastructure;
 using NeoCource.Editor.Settings;
+using UnityEditor;
+using Debug = UnityEngine.Debug;
 
 namespace NeoCource.Editor.GifSupport
 {
     public static class GifConverter
     {
-        // Конвертирует gifUrl (http/file) в локальный mp4 в кэше проекта. Возвращает путь Assets/... к mp4 или null при ошибке.
+        private const int ConversionTimeoutMs = 120000;
+        private const string RequestUserAgent = "AlgoNeoCourseEditor/1.0";
+        private static readonly Dictionary<string, DateTime> s_FailedUrlsUntil = new();
+
         public static string ConvertGifToMp4IfNeeded(string gifUrl)
         {
-            var settings = CourseSettings.instance;
-            if (!settings.autoConvertGifToMp4) return null;
-            // Resolve ffmpeg path (supports Assets/...)
+            return ConvertGifToMp4IfNeeded(gifUrl, null, out _);
+        }
+
+        public static string ConvertGifToMp4IfNeeded(string gifUrl, Func<bool> shouldCancel, out bool wasCancelled)
+        {
+            wasCancelled = false;
+            CourseSettings settings = CourseSettings.instance;
+            if (!settings.autoConvertGifToMp4 || string.IsNullOrWhiteSpace(gifUrl))
+            {
+                return null;
+            }
+
+            if (ShouldSkipUrl(gifUrl))
+            {
+                return null;
+            }
+
             string ffmpegExe = settings.GetFfmpegAssetPath();
             if (!string.IsNullOrEmpty(ffmpegExe) &&
                 (ffmpegExe.StartsWith("Assets/", StringComparison.OrdinalIgnoreCase) ||
@@ -23,99 +44,280 @@ namespace NeoCource.Editor.GifSupport
             {
                 ffmpegExe = AlgoNeoPackageAssetLocator.ToAbsolutePath(ffmpegExe);
             }
+
             if (string.IsNullOrEmpty(ffmpegExe) || !File.Exists(ffmpegExe))
             {
                 if (settings.enableDebugLogging)
-                    UnityEngine.Debug.Log($"[AlgoNeoCourse] Skip GIF convert: ffmpeg not found at '{settings.ffmpegPath}'");
+                {
+                    Debug.Log($"[AlgoNeoCourse] Skip GIF convert: ffmpeg not found at '{settings.ffmpegPath}'");
+                }
+
                 return null;
             }
 
+            string tempGif = null;
             try
             {
-                // Создадим кэш-папку
                 string cacheDir = settings.GetGifVideoCacheFolderPath();
-                if (!Directory.Exists(cacheDir)) Directory.CreateDirectory(cacheDir);
+                if (!Directory.Exists(cacheDir))
+                {
+                    Directory.CreateDirectory(cacheDir);
+                }
 
-                // Имя файла по хэшу URL
-                string hash = gifUrl.GetHashCode().ToString("X8");
+                string hash = ComputeStableHash(gifUrl);
                 string outName = $"gif_{hash}.mp4";
                 string outPath = Path.Combine(cacheDir, outName).Replace('\\', '/');
 
-                // Если уже существует — вернуть
                 if (File.Exists(outPath))
                 {
                     if (settings.enableDebugLogging)
-                        UnityEngine.Debug.Log($"[AlgoNeoCourse] GIF cache hit → {outPath}");
+                    {
+                        Debug.Log($"[AlgoNeoCourse] GIF cache hit → {outPath}");
+                    }
+
                     return outPath;
                 }
 
-                // Скачать во временный файл
-                string tempGif = Path.Combine(Path.GetTempPath(), $"algo_gif_{hash}.bin");
-                if (settings.enableDebugLogging)
-                    UnityEngine.Debug.Log($"[AlgoNeoCourse] Download image: {gifUrl}");
-
-                using (var wc = new System.Net.WebClient())
+                string inputGifPath = ResolveInputGifPath(gifUrl, hash, out tempGif, settings.enableDebugLogging);
+                if (string.IsNullOrEmpty(inputGifPath) || !LooksLikeGif(inputGifPath))
                 {
-                    wc.DownloadFile(gifUrl, tempGif);
-                }
-
-                // Мини-проверка сигнатуры GIF: 'GIF87a' или 'GIF89a'
-                bool isGif = false;
-                try
-                {
-                    using (var fs = File.OpenRead(tempGif))
-                    {
-                        Span<byte> header = stackalloc byte[6];
-                        int read = fs.Read(header);
-                        if (read >= 6)
-                        {
-                            isGif = (header[0] == (byte)'G' && header[1] == (byte)'I' && header[2] == (byte)'F');
-                        }
-                    }
-                }
-                catch { }
-                if (!isGif)
-                {
-                    // if (settings.enableDebugLogging)
-                    //     UnityEngine.Debug.Log("[AlgoNeoCourse] Downloaded image is not GIF — skipping conversion.");
-                    try { File.Delete(tempGif); } catch { }
                     return null;
                 }
 
-                // Вызов ffmpeg: ffmpeg -y -i input.gif -movflags faststart -pix_fmt yuv420p output.mp4
-                // Оптимизированные параметры для скорости: -preset veryfast (быстрое кодирование), -crf 28 (ниже качество, быстрее), -vf "fps=15" (меньше кадров)
-                // scale=trunc(iw/2)*2:trunc(ih/2)*2 - для совместимости с yuv420p, который требует четных размеров кадра.
-                var psi = new ProcessStartInfo
+                ProcessStartInfo psi = new()
                 {
                     FileName = ffmpegExe,
-                    Arguments = $"-y -i \"{tempGif}\" -vf \"fps=15,scale=trunc(iw/2)*2:trunc(ih/2)*2\" -preset veryfast -crf 28 -movflags faststart -pix_fmt yuv420p \"{Path.GetFullPath(outPath)}\"",
+                    Arguments = BuildFfmpegArguments(inputGifPath, Path.GetFullPath(outPath), settings),
                     CreateNoWindow = true,
                     UseShellExecute = false,
                     RedirectStandardError = true,
                     RedirectStandardOutput = true
                 };
                 if (settings.enableDebugLogging)
-                    UnityEngine.Debug.Log($"[AlgoNeoCourse] Run ffmpeg: \"{psi.FileName}\" {psi.Arguments}");
-                var proc = Process.Start(psi);
-                proc.WaitForExit(30000);
-
-                if (proc.ExitCode != 0 || !File.Exists(outPath))
                 {
-                    var err = string.Empty;
-                    try { err = proc.StandardError.ReadToEnd(); } catch { }
-                    UnityEngine.Debug.LogWarning($"[AlgoNeoCourse] GIF convert failed: {gifUrl}\nExit {proc.ExitCode}\n{err}");
+                    Debug.Log($"[AlgoNeoCourse] Run ffmpeg: \"{psi.FileName}\" {psi.Arguments}");
+                }
+
+                using Process proc = Process.Start(psi);
+                if (proc == null)
+                {
+                    Debug.LogWarning($"[AlgoNeoCourse] GIF convert failed: process not started for {gifUrl}");
                     return null;
                 }
 
-                AssetDatabase.ImportAsset(outPath);
+                int waitedMs = 0;
+                while (!proc.WaitForExit(200))
+                {
+                    waitedMs += 200;
+
+                    if (shouldCancel != null && shouldCancel())
+                    {
+                        wasCancelled = true;
+                        TryKillProcess(proc);
+                        return null;
+                    }
+
+                    if (waitedMs >= ConversionTimeoutMs)
+                    {
+                        TryKillProcess(proc);
+                        Debug.LogWarning($"[AlgoNeoCourse] GIF convert timeout: {gifUrl}");
+                        return null;
+                    }
+                }
+
+                if (shouldCancel != null && shouldCancel())
+                {
+                    wasCancelled = true;
+                    TryKillProcess(proc);
+                    return null;
+                }
+
+                string err = string.Empty;
+                try
+                {
+                    err = proc.StandardError.ReadToEnd();
+                }
+                catch
+                {
+                }
+
+                if (proc.ExitCode != 0 || !File.Exists(outPath))
+                {
+                    Debug.LogWarning($"[AlgoNeoCourse] GIF convert failed: {gifUrl}\nExit {proc.ExitCode}\n{err}");
+                    return null;
+                }
+
+                AssetDatabase.ImportAsset(outPath, ImportAssetOptions.ForceSynchronousImport);
+                AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+                ClearFailedUrl(gifUrl);
                 if (settings.enableDebugLogging)
-                    UnityEngine.Debug.Log($"[AlgoNeoCourse] GIF converted → {outPath}");
+                {
+                    Debug.Log($"[AlgoNeoCourse] GIF converted → {outPath}");
+                }
+
                 return outPath;
+            }
+            catch (WebException ex)
+            {
+                HandleNetworkFailure(gifUrl, ex);
+                return null;
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.LogWarning($"[AlgoNeoCourse] GIF convert exception: {ex.Message}");
+                Debug.LogWarning($"[AlgoNeoCourse] GIF convert exception: {ex.Message}");
                 return null;
+            }
+            finally
+            {
+                if (!string.IsNullOrEmpty(tempGif) && File.Exists(tempGif))
+                {
+                    try
+                    {
+                        File.Delete(tempGif);
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+        }
+
+        private static string ResolveInputGifPath(string gifUrl, string hash, out string tempGif, bool debugLogging)
+        {
+            tempGif = null;
+            if (TryGetLocalGifPath(gifUrl, out string localPath) && File.Exists(localPath))
+            {
+                return localPath;
+            }
+
+            tempGif = Path.Combine(Path.GetTempPath(), $"algo_gif_{hash}.gif");
+            if (debugLogging)
+            {
+                Debug.Log($"[AlgoNeoCourse] Download image: {gifUrl}");
+            }
+
+            using WebClient wc = new();
+            wc.Headers[HttpRequestHeader.UserAgent] = RequestUserAgent;
+            wc.Headers[HttpRequestHeader.Accept] = "image/gif,image/*;q=0.9,*/*;q=0.8";
+            wc.DownloadFile(gifUrl, tempGif);
+            return tempGif;
+        }
+
+        private static bool TryGetLocalGifPath(string gifUrl, out string localPath)
+        {
+            localPath = null;
+            if (Uri.TryCreate(gifUrl, UriKind.Absolute, out Uri uri) && uri.IsFile)
+            {
+                localPath = uri.LocalPath;
+                return true;
+            }
+
+            if (File.Exists(gifUrl))
+            {
+                localPath = gifUrl;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool LooksLikeGif(string path)
+        {
+            try
+            {
+                using FileStream fs = File.OpenRead(path);
+                Span<byte> header = stackalloc byte[6];
+                int read = fs.Read(header);
+                return read >= 6 &&
+                       header[0] == (byte)'G' &&
+                       header[1] == (byte)'I' &&
+                       header[2] == (byte)'F';
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static string BuildFfmpegArguments(string inputGifPath, string outputMp4Path, CourseSettings settings)
+        {
+            int fps = Math.Clamp(settings.gifConversionFps, 1, 30);
+            int maxWidth = Math.Max(0, settings.gifConversionMaxWidth);
+            string videoFilter = BuildVideoFilter(fps, maxWidth);
+
+            return $"-y -hide_banner -loglevel error -nostdin -threads 0 -i \"{inputGifPath}\" -an -sn -dn -vf \"{videoFilter}\" -c:v libx264 -preset ultrafast -tune fastdecode -crf 32 -movflags +faststart -pix_fmt yuv420p \"{outputMp4Path}\"";
+        }
+
+        private static string BuildVideoFilter(int fps, int maxWidth)
+        {
+            if (maxWidth > 0)
+            {
+                return $"fps={fps},scale='if(gt(iw,{maxWidth}),{maxWidth},iw)':-2:flags=fast_bilinear,scale=trunc(iw/2)*2:trunc(ih/2)*2";
+            }
+
+            return $"fps={fps},scale=trunc(iw/2)*2:trunc(ih/2)*2";
+        }
+
+        private static string ComputeStableHash(string value)
+        {
+            byte[] bytes = Encoding.UTF8.GetBytes(value ?? string.Empty);
+            using SHA256 sha256 = SHA256.Create();
+            byte[] hash = sha256.ComputeHash(bytes);
+            StringBuilder builder = new StringBuilder(16);
+            for (int i = 0; i < 8 && i < hash.Length; i++)
+            {
+                builder.Append(hash[i].ToString("X2"));
+            }
+
+            return builder.ToString();
+        }
+
+        private static bool ShouldSkipUrl(string gifUrl)
+        {
+            if (s_FailedUrlsUntil.TryGetValue(gifUrl, out DateTime until))
+            {
+                if (until > DateTime.UtcNow)
+                {
+                    return true;
+                }
+
+                s_FailedUrlsUntil.Remove(gifUrl);
+            }
+
+            return false;
+        }
+
+        private static void ClearFailedUrl(string gifUrl)
+        {
+            s_FailedUrlsUntil.Remove(gifUrl);
+        }
+
+        private static void HandleNetworkFailure(string gifUrl, WebException ex)
+        {
+            HttpWebResponse response = ex.Response as HttpWebResponse;
+            HttpStatusCode? statusCode = response?.StatusCode;
+            TimeSpan cooldown = statusCode == HttpStatusCode.TooManyRequests
+                ? TimeSpan.FromMinutes(2)
+                : TimeSpan.FromMinutes(10);
+            s_FailedUrlsUntil[gifUrl] = DateTime.UtcNow.Add(cooldown);
+
+            string statusText = statusCode.HasValue
+                ? $"{(int)statusCode.Value} {statusCode.Value}"
+                : ex.Status.ToString();
+            Debug.LogWarning($"[AlgoNeoCourse] GIF download skipped for a while: {statusText} {gifUrl}");
+        }
+
+        private static void TryKillProcess(Process proc)
+        {
+            try
+            {
+                if (!proc.HasExited)
+                {
+                    proc.Kill();
+                }
+            }
+            catch
+            {
             }
         }
     }

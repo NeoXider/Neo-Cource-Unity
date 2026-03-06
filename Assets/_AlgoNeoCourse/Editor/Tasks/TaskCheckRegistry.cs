@@ -10,34 +10,60 @@ namespace NeoCource.Editor.Tasks
         private static readonly Dictionary<string, ITaskCheck> keyToChecker = new(StringComparer.OrdinalIgnoreCase);
         private static bool initialized;
 
+        public static IEnumerable<string> Keys
+        {
+            get
+            {
+                EnsureInitialized();
+                return keyToChecker.Keys;
+            }
+        }
+
         public static void EnsureInitialized()
         {
-            if (initialized) return;
+            if (initialized)
+            {
+                return;
+            }
+
             initialized = true;
 
-            var iface = typeof(ITaskCheck);
-            var attrType = typeof(TaskCheckAttribute);
+            Type iface = typeof(ITaskCheck);
+            Type attrType = typeof(TaskCheckAttribute);
 
-            var types = AppDomain.CurrentDomain.GetAssemblies()
+            IEnumerable<Type> types = AppDomain.CurrentDomain.GetAssemblies()
                 .SelectMany(a => SafeTypes(a))
-                .Where(t => !t.IsAbstract && iface.IsAssignableFrom(t) && t.GetCustomAttribute<TaskCheckAttribute>() != null);
+                .Where(t => !t.IsAbstract && iface.IsAssignableFrom(t) &&
+                            t.GetCustomAttribute<TaskCheckAttribute>() != null);
 
-            foreach (var t in types)
+            foreach (Type t in types)
             {
                 try
                 {
-                    var inst = (ITaskCheck)Activator.CreateInstance(t);
-                    var key = t.GetCustomAttribute<TaskCheckAttribute>().Key;
-                    if (!string.IsNullOrEmpty(key)) keyToChecker[key] = inst;
+                    ITaskCheck inst = (ITaskCheck)Activator.CreateInstance(t);
+                    string key = t.GetCustomAttribute<TaskCheckAttribute>().Key;
+                    if (!string.IsNullOrEmpty(key))
+                    {
+                        keyToChecker[key] = inst;
+                    }
                 }
-                catch { /* ignore bad types */ }
+                catch
+                {
+                    /* ignore bad types */
+                }
             }
         }
 
         private static IEnumerable<Type> SafeTypes(Assembly asm)
         {
-            try { return asm.GetTypes(); }
-            catch { return Array.Empty<Type>(); }
+            try
+            {
+                return asm.GetTypes();
+            }
+            catch
+            {
+                return Array.Empty<Type>();
+            }
         }
 
         public static bool TryGet(string key, out ITaskCheck check)
@@ -45,12 +71,5 @@ namespace NeoCource.Editor.Tasks
             EnsureInitialized();
             return keyToChecker.TryGetValue(key, out check);
         }
-
-        public static IEnumerable<string> Keys
-        {
-            get { EnsureInitialized(); return keyToChecker.Keys; }
-        }
     }
 }
-
-

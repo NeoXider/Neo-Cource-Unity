@@ -2,6 +2,8 @@
 // This file is licensed under the BSD-Clause 2 license. 
 // See the license.txt file in the project root for more information.
 
+using System.Collections.Generic;
+using System.Diagnostics;
 using Markdig.Extensions.Tables;
 using Markdig.Extensions.TaskLists;
 using Markdig.Helpers;
@@ -9,17 +11,14 @@ using Markdig.Renderers;
 using Markdig.Renderers.Html;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
-using System.Collections.Generic;
-using System.Diagnostics;
 
 namespace Markdig.Extensions.Globalization
 {
     /// <summary>
-    /// Extension to add support for RTL content.
+    ///     Extension to add support for RTL content.
     /// </summary>
     public class GlobalizationExtension : IMarkdownExtension
     {
-
         public void Setup(MarkdownPipelineBuilder pipeline)
         {
             // Make sure we don't have a delegate twice
@@ -27,16 +26,22 @@ namespace Markdig.Extensions.Globalization
             pipeline.DocumentProcessed += Pipeline_DocumentProcessed;
         }
 
+        public void Setup(MarkdownPipeline pipeline, IMarkdownRenderer renderer)
+        {
+        }
+
         private void Pipeline_DocumentProcessed(MarkdownDocument document)
         {
-            foreach (var node in document.Descendants())
+            foreach (MarkdownObject? node in document.Descendants())
             {
                 if (node is TableRow || node is TableCell || node is ListItemBlock)
+                {
                     continue;
+                }
 
                 if (ShouldBeRightToLeft(node))
                 {
-                    var attributes = node.GetAttributes();
+                    HtmlAttributes attributes = node.GetAttributes();
                     attributes.AddPropertyIfNotExist("dir", "rtl");
 
                     if (node is Table)
@@ -47,21 +52,18 @@ namespace Markdig.Extensions.Globalization
             }
         }
 
-        public void Setup(MarkdownPipeline pipeline, IMarkdownRenderer renderer)
-        {
-
-        }
-
         private static bool ShouldBeRightToLeft(MarkdownObject item)
         {
             if (item is IEnumerable<MarkdownObject> container)
             {
-                foreach (var child in container)
+                foreach (MarkdownObject? child in container)
                 {
                     // TaskList items contain an "X", which will cause
                     // the function to always return false.
                     if (child is TaskList)
+                    {
                         continue;
+                    }
 
                     return ShouldBeRightToLeft(child);
                 }
@@ -75,9 +77,9 @@ namespace Markdig.Extensions.Globalization
                 return StartsWithRtlCharacter(literal.Content);
             }
 
-            foreach (var paragraph in item.Descendants<ParagraphBlock>())
+            foreach (ParagraphBlock? paragraph in item.Descendants<ParagraphBlock>())
             {
-                foreach (var inline in paragraph.Inline!)
+                foreach (Inline inline in paragraph.Inline!)
                 {
                     if (inline is LiteralInline literal)
                     {
@@ -110,10 +112,14 @@ namespace Markdig.Extensions.Globalization
                 }
 
                 if (CharHelper.IsRightToLeft(rune))
+                {
                     return true;
+                }
 
                 if (CharHelper.IsLeftToRight(rune))
+                {
                     return false;
+                }
             }
 
             return false;

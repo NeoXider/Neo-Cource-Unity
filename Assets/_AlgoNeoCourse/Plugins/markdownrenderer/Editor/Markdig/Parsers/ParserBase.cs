@@ -5,26 +5,27 @@
 namespace Markdig.Parsers
 {
     /// <summary>
-    /// Base class for a <see cref="BlockParser"/> or <see cref="InlineParser"/>.
+    ///     Base class for a <see cref="BlockParser" /> or <see cref="InlineParser" />.
     /// </summary>
     /// <typeparam name="TProcessor">Type of the parser processor</typeparam>
     /// <seealso cref="IMarkdownParser{TParserState}" />
     public abstract class ParserBase<TProcessor> : IMarkdownParser<TProcessor>
     {
         /// <summary>
-        /// Gets the opening characters this parser will be triggered if the character is found.
+        ///     Gets the opening characters this parser will be triggered if the character is found.
         /// </summary>
         public char[]? OpeningCharacters { get; set; }
 
         /// <summary>
-        /// Initializes this parser with the specified parser processor.
+        ///     Initializes this parser with the specified parser processor.
         /// </summary>
         public virtual void Initialize()
         {
         }
 
         /// <summary>
-        /// Gets the index of this parser in <see cref="T:Markdig.Parsers.BlockParserList" /> or <see cref="T:Markdig.Parsers.InlineParserList" />.
+        ///     Gets the index of this parser in <see cref="T:Markdig.Parsers.BlockParserList" /> or
+        ///     <see cref="T:Markdig.Parsers.InlineParserList" />.
         /// </summary>
         public int Index { get; internal set; }
     }

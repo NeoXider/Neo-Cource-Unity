@@ -17,7 +17,7 @@
 - Локальное JSON-сохранение прогресса.
 - Поддержка медиа, ссылок и GIF → MP4 конвертации.
 
-Репозиторий: [AlgoNeoCource](https://github.com/NeoXider/AlgoNeoCource)
+Репозиторий: [Neo-Cource-Unity](https://github.com/NeoXider/Neo-Cource-Unity)
 
 Подробная спецификация уроков: `Assets/_AlgoNeoCourse/Docs/CourseMarkdownSpec.md`
 
@@ -27,10 +27,20 @@
 
 1. Откройте `Window -> Package Manager`.
 2. Нажмите `+ -> Add package from git URL...`.
-3. Укажите путь к пакету внутри репозитория:
+3. Укажите Git URL пакета:
 
 ```text
-https://github.com/NeoXider/AlgoNeoCource.git?path=Assets/_AlgoNeoCourse
+https://github.com/NeoXider/Neo-Cource-Unity.git?path=Assets/_AlgoNeoCourse
+```
+
+Альтернатива через `Packages/manifest.json`:
+
+```json
+{
+  "dependencies": {
+    "com.neoxider.algoneocourse": "https://github.com/NeoXider/Neo-Cource-Unity.git?path=Assets/_AlgoNeoCourse"
+  }
+}
 ```
 
 Пакет включает:
@@ -209,5 +219,5 @@ rules:
 
 ## Материалы
 
-- релизы и исходники: [AlgoNeoCource](https://github.com/NeoXider/AlgoNeoCource)
+- релизы и исходники: [Neo-Cource-Unity](https://github.com/NeoXider/Neo-Cource-Unity)
 - примеры уроков: `Assets/_AlgoNeoCourse/Docs/Examples`

@@ -2,12 +2,14 @@ using System;
 
 namespace NeoCource.Editor.Tasks
 {
-    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
+    [AttributeUsage(AttributeTargets.Class, Inherited = false)]
     public sealed class TaskCheckAttribute : Attribute
     {
+        public TaskCheckAttribute(string key)
+        {
+            Key = key;
+        }
+
         public string Key { get; }
-        public TaskCheckAttribute(string key) => Key = key;
     }
 }
-
-

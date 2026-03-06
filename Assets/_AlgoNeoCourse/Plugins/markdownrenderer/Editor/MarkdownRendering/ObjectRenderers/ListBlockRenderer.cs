@@ -11,27 +11,29 @@ namespace UIMarkdownRenderer.ObjectRenderers
         {
             renderer.StartBlock();
 
-            var attribute = obj.GetAttributes();
-            List<string> classes = new () { "list" };
-            if(attribute.Classes != null)
+            HtmlAttributes attribute = obj.GetAttributes();
+            List<string> classes = new() { "list" };
+            if (attribute.Classes != null)
+            {
                 classes.AddRange(attribute.Classes);
-            
+            }
+
             renderer.StartNewText(classes);
 
             bool lockValue = renderer.LockTextCreation;
             renderer.LockTextCreation = true;
-        
+
             renderer.IndentLevel++;
-            for( var i = 0; i < obj.Count; i++ )
+            for (int i = 0; i < obj.Count; i++)
             {
-                renderer.WriteText("<indent="+ (renderer.IndentLevel * 12) +"px>");
-                renderer.WriteText(obj.IsOrdered ? (i+1) + ". " : "\u2022 ");
-                renderer.WriteChildren( obj[ i ] as ListItemBlock );
+                renderer.WriteText("<indent=" + renderer.IndentLevel * 12 + "px>");
+                renderer.WriteText(obj.IsOrdered ? i + 1 + ". " : "\u2022 ");
+                renderer.WriteChildren(obj[i] as ListItemBlock);
                 renderer.WriteText("</indent>");
             }
-        
+
             renderer.LockTextCreation = lockValue;
-        
+
             renderer.IndentLevel--;
             renderer.FinishBlock();
         }

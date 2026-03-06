@@ -9,27 +9,26 @@ using Markdig.Syntax;
 namespace Markdig.Parsers
 {
     /// <summary>
-    /// Block parser for a <see cref="HeadingBlock"/>.
+    ///     Block parser for a <see cref="HeadingBlock" />.
     /// </summary>
     /// <seealso cref="BlockParser" />
     public class HeadingBlockParser : BlockParser, IAttributesParseable
     {
-
         /// <summary>
-        /// Initializes a new instance of the <see cref="HeadingBlockParser"/> class.
+        ///     Initializes a new instance of the <see cref="HeadingBlockParser" /> class.
         /// </summary>
         public HeadingBlockParser()
         {
-            OpeningCharacters = new[] {'#'};
+            OpeningCharacters = new[] { '#' };
         }
 
         /// <summary>
-        /// Gets or sets the max count of the leading unescaped # characters
+        ///     Gets or sets the max count of the leading unescaped # characters
         /// </summary>
         public int MaxLeadingCount { get; set; } = 6;
 
         /// <summary>
-        /// A delegates that allows to process attached attributes after #
+        ///     A delegates that allows to process attached attributes after #
         /// </summary>
         public TryParseAttributesDelegate? TryParseAttributes { get; set; }
 
@@ -51,11 +50,11 @@ namespace Markdig.Parsers
             // the heading are stripped of leading and trailing spaces before being parsed as 
             // inline content. The heading level is equal to the number of # characters in the 
             // opening sequence.
-            var column = processor.Column;
-            var line = processor.Line;
-            var sourcePosition = line.Start;
-            var c = line.CurrentChar;
-            var matchingChar = c;
+            int column = processor.Column;
+            StringSlice line = processor.Line;
+            int sourcePosition = line.Start;
+            char c = line.CurrentChar;
+            char matchingChar = c;
 
             Debug.Assert(MaxLeadingCount > 0);
             int leadingCount = 0;
@@ -65,6 +64,7 @@ namespace Markdig.Parsers
                 {
                     break;
                 }
+
                 c = processor.NextChar();
                 leadingCount++;
             }
@@ -78,8 +78,9 @@ namespace Markdig.Parsers
                     trivia = new StringSlice(processor.Line.Text, processor.Start, processor.Start);
                     processor.NextChar();
                 }
+
                 // Move to the content
-                var headingBlock = new HeadingBlock(this)
+                HeadingBlock headingBlock = new(this)
                 {
                     HeaderChar = matchingChar,
                     TriviaAfterAtxHeaderChar = trivia,
@@ -88,7 +89,7 @@ namespace Markdig.Parsers
                     Span = { Start = sourcePosition },
                     TriviaBefore = processor.UseTrivia(sourcePosition - 1),
                     LinesBefore = processor.UseLinesBefore(),
-                    NewLine = processor.Line.NewLine,
+                    NewLine = processor.Line.NewLine
                 };
                 processor.NewBlocks.Push(headingBlock);
                 if (!processor.TrackTrivia)
@@ -103,7 +104,9 @@ namespace Markdig.Parsers
                 int endState = 0;
                 int countClosingTags = 0;
                 int sourceEnd = processor.Line.End;
-                for (int i = processor.Line.End; i >= processor.Line.Start - 1; i--)  // Go up to Start - 1 in order to match the space after the first ###
+                for (int i = processor.Line.End;
+                     i >= processor.Line.Start - 1;
+                     i--) // Go up to Start - 1 in order to match the space after the first ###
                 {
                     c = processor.Line.Text[i];
                     if (endState == 0)
@@ -112,8 +115,10 @@ namespace Markdig.Parsers
                         {
                             continue;
                         }
+
                         endState = 1;
                     }
+
                     if (endState == 1)
                     {
                         if (c == matchingChar)
@@ -128,12 +133,9 @@ namespace Markdig.Parsers
                             {
                                 processor.Line.End = i - 1;
                             }
-                            break;
                         }
-                        else
-                        {
-                            break;
-                        }
+
+                        break;
                     }
                 }
 
@@ -142,7 +144,7 @@ namespace Markdig.Parsers
 
                 if (processor.TrackTrivia)
                 {
-                    var wsa = new StringSlice(processor.Line.Text, processor.Line.End + 1, sourceEnd);
+                    StringSlice wsa = new(processor.Line.Text, processor.Line.End + 1, sourceEnd);
                     headingBlock.TriviaAfter = wsa;
                     if (wsa.Overlaps(headingBlock.TriviaAfterAtxHeaderChar))
                     {
@@ -165,9 +167,10 @@ namespace Markdig.Parsers
         {
             if (!processor.TrackTrivia)
             {
-                var heading = (HeadingBlock)block;
+                HeadingBlock heading = (HeadingBlock)block;
                 heading.Lines.Trim();
             }
+
             return true;
         }
     }

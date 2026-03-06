@@ -7,7 +7,7 @@ using Markdig.Renderers;
 namespace Markdig.Extensions.Footnotes
 {
     /// <summary>
-    /// Extension to allow footnotes.
+    ///     Extension to allow footnotes.
     /// </summary>
     /// <seealso cref="IMarkdownExtension" />
     public class FootnoteExtension : IMarkdownExtension

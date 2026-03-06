@@ -7,7 +7,7 @@ using Markdig.Syntax;
 namespace Markdig.Extensions.AutoIdentifiers
 {
     /// <summary>
-    /// A link reference definition to a <see cref="HeadingBlock"/> stored at the <see cref="MarkdownDocument"/> level.
+    ///     A link reference definition to a <see cref="HeadingBlock" /> stored at the <see cref="MarkdownDocument" /> level.
     /// </summary>
     /// <seealso cref="LinkReferenceDefinition" />
     public class HeadingLinkReferenceDefinition : LinkReferenceDefinition
@@ -18,7 +18,7 @@ namespace Markdig.Extensions.AutoIdentifiers
         }
 
         /// <summary>
-        /// Gets or sets the heading related to this link reference definition.
+        ///     Gets or sets the heading related to this link reference definition.
         /// </summary>
         public HeadingBlock Heading { get; set; }
     }

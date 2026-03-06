@@ -1,5 +1,6 @@
-using NUnit.Framework;
+using System.Collections.Generic;
 using NeoCource.Editor.Quizzes;
+using NUnit.Framework;
 
 namespace NeoCource.Editor.Tests
 {
@@ -17,7 +18,7 @@ answers:
     correct: true
   - text: B
 ```";
-            var list = QuizParser.ParseQuestions(md);
+            List<QuizQuestion> list = QuizParser.ParseQuestions(md);
             Assert.AreEqual(1, list.Count);
             Assert.AreEqual("q1", list[0].id);
         }
@@ -34,11 +35,9 @@ answers:
     correct: true
   - text: False
 ```";
-            var outMd = QuizParser.ReplaceQuizBlocksWithMarkers(md, out var questions);
+            string outMd = QuizParser.ReplaceQuizBlocksWithMarkers(md, out List<QuizQuestion> questions);
             Assert.AreEqual(1, questions.Count);
             StringAssert.Contains("[[QUIZ:q1]]", outMd);
         }
     }
 }
-
-

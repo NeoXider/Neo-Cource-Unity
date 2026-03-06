@@ -8,7 +8,7 @@ using Markdig.Syntax.Inlines;
 namespace Markdig.Extensions.Tables
 {
     /// <summary>
-    /// The delimiter used to separate the columns of a pipe table.
+    ///     The delimiter used to separate the columns of a pipe table.
     /// </summary>
     /// <seealso cref="DelimiterInline" />
     public class PipeTableDelimiterInline : DelimiterInline
@@ -18,7 +18,7 @@ namespace Markdig.Extensions.Tables
         }
 
         /// <summary>
-        /// Gets or sets the index of line where this delimiter was found relative to the current block.
+        ///     Gets or sets the index of line where this delimiter was found relative to the current block.
         /// </summary>
         public int LocalLineIndex { get; set; }
 

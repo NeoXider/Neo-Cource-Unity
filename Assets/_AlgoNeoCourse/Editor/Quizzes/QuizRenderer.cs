@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using NeoCource.Editor.Settings;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -10,28 +9,33 @@ namespace NeoCource.Editor.Quizzes
 {
     public static class QuizRenderer
     {
-        public static void RenderQuizzes(VisualElement root, string lessonPath, List<QuizQuestion> questions, Action onStateChanged = null)
+        public static void RenderQuizzes(VisualElement root, string lessonPath, List<QuizQuestion> questions,
+            Action onStateChanged = null)
         {
-            if (root == null || questions == null || questions.Count == 0) return;
-            var settings = QuizSettings.instance;
-            var lessonState = QuizStateStore.GetLessonState(lessonPath);
-
-            foreach (var q in questions)
+            if (root == null || questions == null || questions.Count == 0)
             {
-                var block = new VisualElement();
+                return;
+            }
+
+            QuizSettings settings = QuizSettings.instance;
+            LessonQuizState lessonState = QuizStateStore.GetLessonState(lessonPath);
+
+            foreach (QuizQuestion q in questions)
+            {
+                VisualElement block = new();
                 block.AddToClassList("quiz-block");
 
-                var title = new Label(q.text);
+                Label title = new(q.text);
                 title.AddToClassList("quiz-title");
                 block.Add(title);
 
-                var answersRow = new VisualElement();
+                VisualElement answersRow = new();
                 answersRow.style.flexDirection = FlexDirection.Row;
                 answersRow.style.flexWrap = Wrap.Wrap;
                 answersRow.AddToClassList("quiz-answers");
                 block.Add(answersRow);
 
-                if (!lessonState.questionIdToState.TryGetValue(q.id, out var qState))
+                if (!lessonState.questionIdToState.TryGetValue(q.id, out QuizQuestionState qState))
                 {
                     qState = new QuizQuestionState
                     {
@@ -47,19 +51,20 @@ namespace NeoCource.Editor.Quizzes
                         int seed = (lessonPath + "|" + q.id).GetHashCode();
                         QuizUtils.Shuffle(qState.shuffledOrder, seed);
                     }
+
                     lessonState.questionIdToState[q.id] = qState;
                 }
 
                 // Кнопки ответов
-                var answerButtons = new List<Button>();
-                var answerByButton = new Dictionary<Button, QuizAnswer>();
+                List<Button> answerButtons = new();
+                Dictionary<Button, QuizAnswer> answerByButton = new();
                 Button checkBtn = null;
                 for (int i = 0; i < qState.shuffledOrder.Count; i++)
                 {
                     int ansIdx = qState.shuffledOrder[i];
-                    var ans = q.answers[ansIdx];
-                    var localAns = ans; // capture
-                    var btn = new Button { text = ans.text };
+                    QuizAnswer ans = q.answers[ansIdx];
+                    QuizAnswer localAns = ans; // capture
+                    Button btn = new() { text = ans.text };
                     btn.userData = ans; // для подсветки после завершения
                     btn.clicked += () =>
                     {
@@ -73,11 +78,13 @@ namespace NeoCource.Editor.Quizzes
                         }
                     };
                     btn.AddToClassList("quiz-answer");
-                    btn.style.marginRight = 6; btn.style.marginBottom = 6;
+                    btn.style.marginRight = 6;
+                    btn.style.marginBottom = 6;
                     if (q.kind == QuizKind.Multiple && qState.selectedAnswerIds.Contains(ans.id))
                     {
                         btn.AddToClassList("quiz-answer--selected");
                     }
+
                     btn.SetEnabled(!qState.isCompleted);
                     answersRow.Add(btn);
                     answerButtons.Add(btn);
@@ -89,21 +96,32 @@ namespace NeoCource.Editor.Quizzes
                 {
                     checkBtn = new Button(() =>
                     {
-                        if (qState.isCompleted) return;
+                        if (qState.isCompleted)
+                        {
+                            return;
+                        }
+
                         qState.attemptsUsed = Math.Max(0, qState.attemptsUsed) + 1;
                         bool correct = IsMultipleSelectionCorrect(q, qState);
                         if (correct)
                         {
                             qState.isCompleted = true;
                             qState.isCorrect = true;
-                            if (settings.enableDebugLogging) Debug.Log($"[Quiz] multiple OK: {q.id}");
+                            if (settings.enableDebugLogging)
+                            {
+                                Debug.Log($"[Quiz] multiple OK: {q.id}");
+                            }
                         }
                         else if (qState.attemptsUsed >= Math.Max(1, settings.maxAttemptsPerQuestion))
                         {
                             qState.isCompleted = true;
                             qState.isCorrect = false;
-                            if (settings.enableDebugLogging) Debug.Log($"[Quiz] multiple FAIL (exhausted): {q.id}");
+                            if (settings.enableDebugLogging)
+                            {
+                                Debug.Log($"[Quiz] multiple FAIL (exhausted): {q.id}");
+                            }
                         }
+
                         UpdateAfterStateChange(settings, lessonPath, qState, block, answerButtons, onStateChanged);
                     }) { text = "Проверить" };
                     checkBtn.style.marginBottom = 6;
@@ -112,7 +130,7 @@ namespace NeoCource.Editor.Quizzes
                 }
 
                 // Результат
-                var resultLabel = new Label(ComposeResultText(settings, qState));
+                Label resultLabel = new(ComposeResultText(settings, qState));
                 resultLabel.AddToClassList("quiz-result");
                 UpdateResultStyle(resultLabel, qState);
                 block.Add(resultLabel);
@@ -127,9 +145,14 @@ namespace NeoCource.Editor.Quizzes
             }
         }
 
-        private static void ToggleMultipleSelection(QuizQuestionState qState, QuizAnswer ans, Button btn, Button checkBtn)
+        private static void ToggleMultipleSelection(QuizQuestionState qState, QuizAnswer ans, Button btn,
+            Button checkBtn)
         {
-            if (qState.isCompleted) return;
+            if (qState.isCompleted)
+            {
+                return;
+            }
+
             if (qState.selectedAnswerIds.Contains(ans.id))
             {
                 qState.selectedAnswerIds.Remove(ans.id);
@@ -140,6 +163,7 @@ namespace NeoCource.Editor.Quizzes
                 qState.selectedAnswerIds.Add(ans.id);
                 btn.AddToClassList("quiz-answer--selected");
             }
+
             if (checkBtn != null)
             {
                 checkBtn.SetEnabled(qState.selectedAnswerIds.Count > 0);
@@ -148,37 +172,58 @@ namespace NeoCource.Editor.Quizzes
 
         private static bool IsMultipleSelectionCorrect(QuizQuestion q, QuizQuestionState qState)
         {
-            var correctIds = q.answers.Where(a => a.isCorrect).Select(a => a.id).OrderBy(x => x).ToArray();
-            var chosen = qState.selectedAnswerIds.OrderBy(x => x).ToArray();
-            if (correctIds.Length == 0) return false;
-            if (chosen.Length != correctIds.Length) return false;
+            string[] correctIds = q.answers.Where(a => a.isCorrect).Select(a => a.id).OrderBy(x => x).ToArray();
+            string[] chosen = qState.selectedAnswerIds.OrderBy(x => x).ToArray();
+            if (correctIds.Length == 0)
+            {
+                return false;
+            }
+
+            if (chosen.Length != correctIds.Length)
+            {
+                return false;
+            }
+
             for (int i = 0; i < correctIds.Length; i++)
-                if (!string.Equals(correctIds[i], chosen[i], StringComparison.Ordinal)) return false;
+            {
+                if (!string.Equals(correctIds[i], chosen[i], StringComparison.Ordinal))
+                {
+                    return false;
+                }
+            }
+
             return true;
         }
 
-        private static void UpdateAfterStateChange(QuizSettings settings, string lessonPath, QuizQuestionState qState, VisualElement block, List<Button> answerButtons, Action onStateChanged)
+        private static void UpdateAfterStateChange(QuizSettings settings, string lessonPath, QuizQuestionState qState,
+            VisualElement block, List<Button> answerButtons, Action onStateChanged)
         {
-            var resultLabel = block.Q<Label>(className: "quiz-result");
+            Label resultLabel = block.Q<Label>(className: "quiz-result");
             if (resultLabel != null)
             {
                 resultLabel.text = ComposeResultText(settings, qState);
                 UpdateResultStyle(resultLabel, qState);
             }
+
             if (qState.isCompleted && answerButtons != null)
             {
-                foreach (var b in answerButtons)
+                foreach (Button b in answerButtons)
                 {
                     b.SetEnabled(false);
                 }
+
                 // Подсветка правильных/неправильных
-                foreach (var b in answerButtons)
+                foreach (Button b in answerButtons)
                 {
                     b.RemoveFromClassList("quiz-answer--selected");
                     b.RemoveFromClassList("quiz-answer--correct");
                     b.RemoveFromClassList("quiz-answer--wrong");
-                    var a = b.userData as QuizAnswer;
-                    if (a == null) continue;
+                    QuizAnswer a = b.userData as QuizAnswer;
+                    if (a == null)
+                    {
+                        continue;
+                    }
+
                     if (a.isCorrect)
                     {
                         b.AddToClassList("quiz-answer--correct");
@@ -193,22 +238,31 @@ namespace NeoCource.Editor.Quizzes
                     }
                 }
             }
+
             QuizStateStore.SaveLessonState(lessonPath);
             onStateChanged?.Invoke();
         }
 
-        private static void HighlightAnswersAfterComplete(QuizQuestion q, QuizQuestionState qState, List<Button> buttons, Dictionary<Button, QuizAnswer> map)
+        private static void HighlightAnswersAfterComplete(QuizQuestion q, QuizQuestionState qState,
+            List<Button> buttons, Dictionary<Button, QuizAnswer> map)
         {
-            foreach (var b in buttons)
+            foreach (Button b in buttons)
             {
-                if (!map.TryGetValue(b, out var a)) continue;
+                if (!map.TryGetValue(b, out QuizAnswer a))
+                {
+                    continue;
+                }
+
                 b.RemoveFromClassList("quiz-answer--correct");
                 b.RemoveFromClassList("quiz-answer--wrong");
-                if (a.isCorrect) b.AddToClassList("quiz-answer--correct");
+                if (a.isCorrect)
+                {
+                    b.AddToClassList("quiz-answer--correct");
+                }
                 else if (q.kind != QuizKind.Multiple)
                 {
                     // для single/truefalse подсветим неправильные клики
-                    if (qState.isCorrect == false)
+                    if (!qState.isCorrect)
                     {
                         b.AddToClassList("quiz-answer--wrong");
                     }
@@ -216,11 +270,15 @@ namespace NeoCource.Editor.Quizzes
             }
         }
 
-        private static void OnAnswerClicked(QuizSettings settings, string lessonPath, QuizQuestion q, QuizQuestionState qState, QuizAnswer ans, VisualElement block, Action onStateChanged)
+        private static void OnAnswerClicked(QuizSettings settings, string lessonPath, QuizQuestion q,
+            QuizQuestionState qState, QuizAnswer ans, VisualElement block, Action onStateChanged)
         {
             try
             {
-                if (qState.isCompleted) return;
+                if (qState.isCompleted)
+                {
+                    return;
+                }
 
                 qState.attemptsUsed = Math.Max(0, qState.attemptsUsed) + 1;
 
@@ -242,17 +300,23 @@ namespace NeoCource.Editor.Quizzes
                 {
                     qState.isCompleted = true;
                     qState.isCorrect = true;
-                    if (settings.enableDebugLogging) Debug.Log($"[Quiz] OK: {q.id}");
+                    if (settings.enableDebugLogging)
+                    {
+                        Debug.Log($"[Quiz] OK: {q.id}");
+                    }
                 }
                 else if (qState.attemptsUsed >= Math.Max(1, settings.maxAttemptsPerQuestion))
                 {
                     qState.isCompleted = true;
                     qState.isCorrect = false;
-                    if (settings.enableDebugLogging) Debug.Log($"[Quiz] FAIL (exhausted): {q.id}");
+                    if (settings.enableDebugLogging)
+                    {
+                        Debug.Log($"[Quiz] FAIL (exhausted): {q.id}");
+                    }
                 }
 
                 // Обновить UI и сохранить
-                var buttons = block.Query<Button>(className: "quiz-answer").ToList();
+                List<Button> buttons = block.Query<Button>(className: "quiz-answer").ToList();
                 UpdateAfterStateChange(settings, lessonPath, qState, block, buttons, onStateChanged);
             }
             catch (Exception ex)
@@ -263,12 +327,17 @@ namespace NeoCource.Editor.Quizzes
 
         private static string ComposeResultText(QuizSettings settings, QuizQuestionState s)
         {
-            if (s == null) return string.Empty;
+            if (s == null)
+            {
+                return string.Empty;
+            }
+
             if (!s.isCompleted)
             {
                 int left = Math.Max(0, settings.maxAttemptsPerQuestion - s.attemptsUsed);
-                return left > 0 ? ($"Осталось попыток: {left}") : string.Empty;
+                return left > 0 ? $"Осталось попыток: {left}" : string.Empty;
             }
+
             return s.isCorrect ? "Верно" : "Неверно";
         }
 
@@ -283,5 +352,3 @@ namespace NeoCource.Editor.Quizzes
         }
     }
 }
-
-

@@ -8,14 +8,14 @@ using Markdig.Renderers;
 namespace Markdig.Extensions.ListExtras
 {
     /// <summary>
-    /// Extension for adding new type of list items (a., A., i., I.)
+    ///     Extension for adding new type of list items (a., A., i., I.)
     /// </summary>
     /// <seealso cref="IMarkdownExtension" />
     public class ListExtraExtension : IMarkdownExtension
     {
         public void Setup(MarkdownPipelineBuilder pipeline)
         {
-            var parser = pipeline.BlockParsers.Find<ListBlockParser>();
+            ListBlockParser? parser = pipeline.BlockParsers.Find<ListBlockParser>();
             if (parser != null)
             {
                 parser.ItemParsers.AddIfNotAlready<ListExtraItemParser>();
