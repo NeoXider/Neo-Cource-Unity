@@ -1,61 +1,30 @@
-📚 Спецификация интерактивного курса в Unity Editor
-🎯 Цель
-Сделать плагин для Unity Editor, который позволит проходить учебные курсы прямо внутри редактора Unity, с:
+# LessonRule
 
-Теорией (текст, картинки, видео)
+Краткая памятка по актуальной структуре курсов для `AlgoNeoCourse`.
 
-Интерактивными заданиями
+## Что используется сейчас
 
-Автоматической проверкой
+- курсы описываются отдельными JSON-файлами;
+- обычно это `course1.json`, `course2.json` или любой `courseN.json`;
+- один урок — это один `.md` файл, указанный в поле `file`;
+- уроки могут храниться по структуре `lessons1/`, `lessons2/` и далее;
+- прогресс курса и квизов сохраняется локально автоматически.
 
-Возможностью выбора всех уроков или отдельных
+## Минимальный пример файла курса
 
-Модульным хранением контента на GitHub (Markdown + изображения)
-
-Гибким расширением без изменения кода
-
-🏗 Архитектура
-Основные модули плагина:
-
-CourseManager — загружает список уроков (course.json) с GitHub.
-
-LessonLoader — подгружает Markdown-файл урока.
-
-Markdown Renderer — преобразует Markdown в UI Toolkit интерфейс.
-
-TaskChecker — выполняет автоматическую проверку заданий.
-
-ProgressTracker — сохраняет, какие уроки и задания пройдены.
-
-UI Panel — список уроков с чекбоксами + контентная панель.
-
-📂 Хранение на GitHub
-Структура репозитория:
-
-perl
-Копировать
-Редактировать
-my-unity-course/
-│
-├── lessons/
-│   ├── lesson01.md
-│   ├── lesson02.md
-│   └── lesson03.md
-│
-├── images/
-│   ├── rigidbody.png
-│   └── gravity.gif
-│
-└── course.json
-Пример course.json
-json
-Копировать
-Редактировать
+```json
 {
   "title": "Unity Basics",
   "description": "Базовый курс по Unity",
   "lessons": [
-    { "id": "lesson01", "title": "Введение", "file": "lessons/lesson01.md" },
-    { "id": "lesson02", "title": "Rigidbody", "file": "lessons/lesson02.md" }
+    { "id": "l2m2y1", "title": "Введение", "file": "lessons2/m2/y1.md" },
+    { "id": "l2m2y2", "title": "Rigidbody", "file": "lessons2/m2/y2.md" }
   ]
 }
+```
+
+## Где смотреть полную документацию
+
+- `README.md`
+- `Assets/_AlgoNeoCourse/Docs/README.md`
+- `Assets/_AlgoNeoCourse/Docs/CourseMarkdownSpec.md`

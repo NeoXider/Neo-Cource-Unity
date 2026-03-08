@@ -1,6 +1,6 @@
 # AlgoNeoCourse
 
-Версия пакета: `1.4.0`
+Версия пакета: `1.4.1`
 
 ![AlgoNeoCourse screenshot 1](https://github.com/user-attachments/assets/d54299b1-1739-4d7b-a2ef-6a9565eb723b)
 ![AlgoNeoCourse screenshot 2](https://github.com/user-attachments/assets/2f195a94-42c2-43b1-bb11-3b2c0d116c7d)
@@ -9,25 +9,28 @@
 
 ## О проекте
 
-`AlgoNeoCourse` это editor-пакет для Unity, который показывает учебные уроки прямо в `Unity Editor`:
+`AlgoNeoCourse` — это Unity Editor пакет для интерактивных учебных курсов прямо внутри редактора.
 
-- Markdown-слайды с навигацией по урокам.
-- Встроенные `check`-проверки.
-- Мини-квизы `single`, `multiple`, `truefalse`.
-- Локальное JSON-сохранение прогресса.
-- Поддержка медиа, ссылок и GIF → MP4 конвертации.
+Пакет умеет:
+
+- показывать уроки из Markdown;
+- переключать слайды в окне курса;
+- выполнять `check`-проверки;
+- запускать квизы `single`, `multiple`, `truefalse`;
+- сохранять локальный прогресс в JSON;
+- работать с изображениями, видео и GIF -> MP4.
 
 Репозиторий: [Neo-Cource-Unity](https://github.com/NeoXider/Neo-Cource-Unity)
 
-Подробная спецификация уроков: `Assets/_AlgoNeoCourse/Docs/CourseMarkdownSpec.md`
+Главная спецификация уроков: `Assets/_AlgoNeoCourse/Docs/CourseMarkdownSpec.md`
 
 ## Установка
 
-Рекомендуемый способ установки: через `Package Manager` по `Git URL`.
+Рекомендуемый способ: через UPM по Git URL.
 
 1. Откройте `Window -> Package Manager`.
 2. Нажмите `+ -> Add package from git URL...`.
-3. Укажите Git URL пакета:
+3. Укажите:
 
 ```text
 https://github.com/NeoXider/Neo-Cource-Unity.git?path=Assets/_AlgoNeoCourse
@@ -43,79 +46,101 @@ https://github.com/NeoXider/Neo-Cource-Unity.git?path=Assets/_AlgoNeoCourse
 }
 ```
 
-Пакет включает:
+## Зависимости
 
-- встроенный `MarkdownRenderer`;
-- собственную editor-сборку через `asmdef`;
-- зависимость от `com.unity.nuget.newtonsoft-json`.
-
-Если `Newtonsoft.Json` не подтянулся автоматически, установите его вручную:
+Единственная внешняя зависимость:
 
 ```text
 com.unity.nuget.newtonsoft-json
 ```
 
+`MarkdownRenderer` уже встроен в пакет и отдельно ставить его не нужно.
+
 ## Быстрый старт
 
-1. Откройте окно курса: `Tools -> AlgoNeoCourse -> Open Course Window`.
-2. Откройте настройки курса: `Tools -> AlgoNeoCourse -> Settings -> Open Course Settings`.
-3. Загрузите `course.json`.
-4. Скачайте выбранные уроки.
-5. Переключайтесь по слайдам и проходите квизы.
+1. Откройте `Tools -> AlgoNeoCourse -> Settings -> Open Course Settings`.
+2. Укажите `repositoryBaseUrl`, если нужен свой источник курса.
+3. Выберите JSON курса:
+   - `Course1`
+   - `Course2`
+   - `Custom`
+4. Нажмите `Загрузить список уроков`.
+5. Скачайте нужные уроки.
+6. Откройте `Tools -> AlgoNeoCourse -> Open Course Window`.
 
-## Что умеет окно курса
+## Окно курса
 
-- список уроков и навигация по слайдам;
+В окне курса доступны:
+
+- выпадающий список уроков;
+- навигация по слайдам;
 - перезагрузка текущего урока;
-- открытие текущего `.md` в проводнике;
-- debug-меню `Docs` с примерами из `Docs/Examples`;
-- локальный сброс прогресса прямо из окна.
+- открытие текущего `.md` файла;
+- сброс локального прогресса;
+- меню `Docs` с примерами из `Docs/Examples`.
 
 Горячие клавиши:
 
-- `Left` / `Right` — переключение слайдов;
-- `R` — перезагрузка урока;
-- `O` — показать текущий `.md` в проводнике.
+- `Left` / `Right` — предыдущий и следующий слайд;
+- `R` — перезагрузить урок;
+- `O` — показать текущий `.md` файл.
 
 ## Локальное сохранение
 
-Прогресс курса сохраняется автоматически в локальный JSON:
+Плагин автоматически сохраняет:
 
-- сохраняется последний открытый урок;
-- сохраняется текущий слайд;
-- сохраняется состояние всех квизов по всем урокам;
-- предыдущие квизы не нужно проходить заново после перезапуска Unity.
+- последний открытый урок;
+- текущий слайд;
+- состояние квизов по всем урокам.
 
-Файл прогресса по умолчанию:
+Уже пройденные квизы не нужно проходить заново после перезапуска Unity.
 
-```text
-Assets/_AlgoNeoCourse/Progress/course-progress.json
-```
+Основные пользовательские папки:
 
-Сброс прогресса:
+- `Assets/_AlgoNeoCourse/Downloaded`
+- `Assets/_AlgoNeoCourse/Progress`
+- `Assets/_AlgoNeoCourse/VideoCache`
 
-- кнопка сброса в тулбаре окна курса;
-- `Tools -> AlgoNeoCourse -> Settings -> Reset Course Progress`;
-- кнопка `Очистить сохранения` в `Quiz Settings`.
+Это сделано специально, чтобы локальные данные оставались в `Assets`, а не внутри read-only UPM-пакета.
 
 ## Настройки
 
-Основные настройки доступны через:
+Основные окна настроек:
 
 - `Tools -> AlgoNeoCourse -> Settings -> Open Course Settings`
 - `Tools -> AlgoNeoCourse -> Settings -> Open Quiz Settings`
 - `Tools -> AlgoNeoCourse -> Settings -> Open Validation Settings`
 
-Наиболее важные параметры `Quiz Settings`:
+Что важно в `Course Settings`:
+
+- `repositoryBaseUrl`
+- выбор курса `Course1` / `Course2` / `Custom`
+- папка загрузки уроков
+- GIF -> MP4 конвертация
+- путь к `ffmpeg`
+
+Что важно в `Quiz Settings`:
 
 - `maxAttemptsPerQuestion`
 - `randomizeAnswersOnCourseOpen`
 - `guardSlideNavigation`
 - `stateJsonFolder`
 
-## Как писать уроки
+## Как устроены курсы
 
-Один урок это один `.md` файл, который перечислен в `course.json`.
+Каждый курс описывается отдельным JSON-файлом:
+
+- `course1.json`
+- `course2.json`
+- или любой другой `courseN.json` для режима `Custom`
+
+Каждый урок — это отдельный `.md` файл, указанный в поле `file`.
+
+Пример записи урока:
+
+```json
+{ "id": "l2m2y1", "title": "Основы синтаксиса C#", "file": "lessons2/m2/y1.md" }
+```
 
 Разделитель слайдов:
 
@@ -123,14 +148,28 @@ Assets/_AlgoNeoCourse/Progress/course-progress.json
 ---
 ```
 
+## Поддерживаемые возможности Markdown
+
+Поддерживаются:
+
+- обычные заголовки и текст;
+- fenced code blocks;
+- `quiz`;
+- `check`;
+- ссылки `unity://open` и `unity://check`;
+- изображения и видео.
+
 Поддерживаемые пути к медиа:
 
-- абсолютные URL: `http://`, `https://`;
+- `http://` и `https://`;
 - относительные пути от текущего `.md`;
-- проектные пути: `Assets/...`, `Packages/...`;
-- поиск по имени файла: `![](logo.png)`.
+- `Assets/...`;
+- `Packages/...`;
+- поиск по имени файла.
 
-Пример `check`-блока:
+## Примеры
+
+Пример `check`:
 
 ````md
 ```check
@@ -144,7 +183,7 @@ rules:
 ```
 ````
 
-Пример квиза:
+Пример `quiz`:
 
 ````md
 ```quiz
@@ -160,64 +199,35 @@ answers:
 ```
 ````
 
-## Мини-шаблоны
+## GIF и видео
 
-Шаблон урока:
+Важно:
 
-````md
-# Введение
-Коротко о целях.
-
----
-
-## Теория
-![](images/intro.png)
-
----
-
-## Вопрос
-```quiz
-id: q-1
-kind: truefalse
-text: Метод Update вызывается один раз за кадр.
-answers:
-  - text: True
-    correct: true
-  - text: False
-```
-````
-
-Шаблон открытой проверки:
-
-````md
-```check
-rules:
-  - object_exists: "Player"
-  - component_exists: { object: "Player", type: "Rigidbody" }
-```
-````
-
-## Зависимости и примечания
-
-- `MarkdownRenderer` уже встроен в пакет и не требует отдельной установки.
-- `Newtonsoft.Json` это единственная внешняя зависимость.
-- Для GIF → MP4 нужен `ffmpeg.exe`, если вы хотите использовать авто-конвертацию.
+- GIF как анимация не воспроизводится напрямую;
+- лучше сразу использовать `.mp4`;
+- при включённой авто-конвертации пакет может преобразовывать GIF в MP4;
+- для авто-конвертации используется `ffmpeg`.
 
 ## FAQ
 
-- `Относительные пути к медиа не работают`
+### Относительные пути к медиа не работают
+
 Проверьте, что путь задан относительно папки текущего `.md`.
 
-- `Горячие клавиши не работают`
-Кликните в тело окна курса, чтобы оно получило фокус. Переход вперёд может блокироваться незавершёнными вопросами.
+### Горячие клавиши не работают
 
-- `GIF не анимируется`
-Используйте `.mp4` или настройте путь к `ffmpeg`.
+Кликните в тело окна курса, чтобы оно получило фокус. Переход вперёд может быть заблокирован незавершёнными квизами.
 
-- `Появляется сообщение про MarkdownRenderer`
+### GIF не анимируется
+
+Это ожидаемо. Используйте `.mp4` или включите GIF -> MP4 конвертацию.
+
+### Появляется сообщение про MarkdownRenderer
+
 В актуальной версии пакет использует встроенный `MarkdownRenderer`; отдельная установка не требуется.
 
-## Материалы
+## Документация
 
-- релизы и исходники: [Neo-Cource-Unity](https://github.com/NeoXider/Neo-Cource-Unity)
-- примеры уроков: `Assets/_AlgoNeoCourse/Docs/Examples`
+- `Assets/_AlgoNeoCourse/Docs/README.md`
+- `Assets/_AlgoNeoCourse/Docs/CourseMarkdownSpec.md`
+- `Assets/_AlgoNeoCourse/Docs/Examples`

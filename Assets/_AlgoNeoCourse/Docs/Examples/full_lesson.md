@@ -1,20 +1,20 @@
-# Полный пример урока (3 слайда)
+# Полный пример урока
 
-# Введение
-Это первый слайд урока. Перейдите далее.
+## Введение
 
-[▶](unity://slide?dir=next)
+Это стартовый слайд урока.
 
 ---
 
 ## Теория
-Картинка и видео:
 
-[◀](unity://slide?dir=prev) [▶](unity://slide?dir=next)
+Картинка:
 
-![](images/intro.png)
+![intro image](images/intro.png)
 
-![](https://www.example.com/intro.mp4)
+Видео:
+
+![intro video](https://www.example.com/intro.mp4)
 
 ```quiz
 id: sc-hello
@@ -28,13 +28,29 @@ answers:
   - text: internal
 ```
 
+---
+
+## Пояснение
+
+`private` ограничивает доступ к полю текущим классом.
 
 ---
 
 ## Практика и проверка
+
 Добавьте `Rigidbody` на объект `Player`, затем выполните проверку:
 
 [Проверить](unity://check?type=component-present&target=Player&component=Rigidbody)
+
+```check
+rules:
+  - object_exists: "Player"
+  - component_exists: { object: "Player", type: "Rigidbody" }
+```
+
+---
+
+## Дополнительный вопрос
 
 ```quiz
 id: mc-unity-components
@@ -49,3 +65,10 @@ answers:
   - text: SceneManager
 ```
 
+---
+
+## Итоги
+
+- Урок состоит из отдельных слайдов;
+- теория может включать медиа и квизы;
+- практика может использовать `check`.

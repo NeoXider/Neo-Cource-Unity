@@ -1,0 +1,23 @@
+{
+  "lastLessonPath": "Assets/_AlgoNeoCourse/Downloaded\\l2m4y1-y1.md",
+  "lastSlideIndex": 6,
+  "lessonStates": {
+    "D:/GIT/Neo-Cource-Unity/Assets/_AlgoNeoCourse/Downloaded/l2m2y1-y1.md": {
+      "lessonPath": "Assets/_AlgoNeoCourse/Downloaded\\l2m2y1-y1.md",
+      "questionIdToState": {
+        "l2m2y1-q-what-is-csharp": {
+          "questionId": "l2m2y1-q-what-is-csharp",
+          "attemptsUsed": 0,
+          "isCompleted": false,
+          "isCorrect": false,
+          "shuffledOrder": [
+            1,
+            0,
+            2
+          ],
+          "selectedAnswerIds": []
+        }
+      }
+    }
+  }
+}
