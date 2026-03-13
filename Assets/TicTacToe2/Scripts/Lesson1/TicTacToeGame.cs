@@ -39,7 +39,7 @@ namespace TicTacToe2.Lesson1
 
         public void UpdateCell(int cellIndex)
         {
-            у[cellIndex].SetSymbol(xSymbol);
+            boardCells[cellIndex].SetSymbol(xSymbol);
         }
     }
 }

@@ -5,14 +5,14 @@ namespace TicTacToeV1
 {
 public class TicTacToeGame : MonoBehaviour
 {
-    public List<BoardCell> boardCells = new List<BoardCell>();
+    public BoardCell[] boardCells;
+    public int[] board = new int[9];
     public TicTacToeUI ui;
     public TicTacToeBot bot;
     public string xSymbol = "X";
     public string oSymbol = "O";
     public bool autoAssignCellIndexes = true;
 
-    public readonly int[] board = new int[9];
     public int currentPlayer = 1;
     public bool isGameOver;
     public bool playWithBot;
@@ -85,7 +85,7 @@ public class TicTacToeGame : MonoBehaviour
 
     public void PrepareBoardCells()
     {
-        for (int i = 0; i < boardCells.Count; i++)
+        for (int i = 0; i < boardCells.Length; i++)
         {
             BoardCell cell = boardCells[i];
 

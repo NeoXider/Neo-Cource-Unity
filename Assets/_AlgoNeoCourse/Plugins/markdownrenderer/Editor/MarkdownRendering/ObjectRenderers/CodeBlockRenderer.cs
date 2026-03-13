@@ -4,6 +4,8 @@ using System.Text;
 using Markdig.Renderers;
 using Markdig.Renderers.Html;
 using Markdig.Syntax;
+using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace UIMarkdownRenderer.ObjectRenderers
 {
@@ -54,22 +56,44 @@ namespace UIMarkdownRenderer.ObjectRenderers
                 }
             }
 
-            renderer.StartBlock(classes);
-
-            renderer.StartNewText();
+            VisualElement block = renderer.StartBlock(classes);
 
             string rawCode = GetRawCode(obj);
+            string[] lines = rawCode.Replace("\r\n", "\n").Split('\n');
+
             if (string.Equals(firstLanguageToken, "csharp", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(firstLanguageToken, "cs", StringComparison.OrdinalIgnoreCase))
             {
-                renderer.WriteText(HighlightCSharp(rawCode));
+                RenderCodeLines(block, lines, true);
             }
             else
             {
-                renderer.WriteText(EscapeRichText(rawCode));
+                RenderCodeLines(block, lines, false);
             }
 
             renderer.FinishBlock();
+        }
+
+        private static void RenderCodeLines(VisualElement block, string[] lines, bool highlightCSharp)
+        {
+            foreach (string rawLine in lines)
+            {
+                int indentLevel = CountIndent(rawLine);
+                string trimmedLine = rawLine.Length > indentLevel ? rawLine[indentLevel..] : string.Empty;
+
+                Label lineLabel = new();
+                lineLabel.enableRichText = true;
+                lineLabel.style.unityTextAlign = TextAnchor.UpperLeft;
+                lineLabel.style.marginLeft = indentLevel * 5;
+                lineLabel.style.whiteSpace = WhiteSpace.Normal;
+
+                string renderedText = highlightCSharp
+                    ? HighlightCSharp(trimmedLine)
+                    : EscapeRichText(trimmedLine);
+
+                lineLabel.text = string.IsNullOrEmpty(renderedText) ? " " : renderedText;
+                block.Add(lineLabel);
+            }
         }
 
         private static string GetRawCode(CodeBlock obj)
@@ -230,6 +254,30 @@ namespace UIMarkdownRenderer.ObjectRenderers
                 .Replace("&", "&amp;")
                 .Replace("<", "&lt;")
                 .Replace(">", "&gt;");
+        }
+
+        private static int CountIndent(string line)
+        {
+            int indent = 0;
+
+            foreach (char symbol in line)
+            {
+                if (symbol == ' ')
+                {
+                    indent++;
+                    continue;
+                }
+
+                if (symbol == '\t')
+                {
+                    indent += 4;
+                    continue;
+                }
+
+                break;
+            }
+
+            return indent;
         }
     }
 }

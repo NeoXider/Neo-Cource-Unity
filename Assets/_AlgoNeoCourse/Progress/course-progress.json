@@ -1,6 +1,6 @@
 {
-  "lastLessonPath": "Assets/_AlgoNeoCourse/Downloaded\\l2m2y1-y1.md",
-  "lastSlideIndex": 18,
+  "lastLessonPath": "Assets/_AlgoNeoCourse/Downloaded\\l2m3y4-y4.md",
+  "lastSlideIndex": 21,
   "lessonStates": {
     "D:/GIT/Neo-Cource-Unity/Assets/_AlgoNeoCourse/Downloaded/l2m4y1-y1.md": {
       "lessonPath": "Assets/_AlgoNeoCourse/Downloaded\\l2m4y1-y1.md",
@@ -314,6 +314,216 @@
           ],
           "selectedAnswerIds": [
             "a0"
+          ]
+        }
+      }
+    },
+    "D:/GIT/Neo-Cource-Unity/Assets/_AlgoNeoCourse/Downloaded/l2m6y3-y3.md": {
+      "lessonPath": "Assets/_AlgoNeoCourse/Downloaded\\l2m6y3-y3.md",
+      "questionIdToState": {
+        "l2m6y3-q-gamemanager-role": {
+          "questionId": "l2m6y3-q-gamemanager-role",
+          "attemptsUsed": 1,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            0,
+            1,
+            2
+          ],
+          "selectedAnswerIds": [
+            "a0"
+          ]
+        },
+        "l2m6y3-q-addscore": {
+          "questionId": "l2m6y3-q-addscore",
+          "attemptsUsed": 2,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            2,
+            1,
+            0
+          ],
+          "selectedAnswerIds": [
+            "a0"
+          ]
+        },
+        "l2m6y3-q-unityevent": {
+          "questionId": "l2m6y3-q-unityevent",
+          "attemptsUsed": 0,
+          "isCompleted": false,
+          "isCorrect": false,
+          "shuffledOrder": [
+            1,
+            0,
+            2
+          ],
+          "selectedAnswerIds": []
+        }
+      }
+    },
+    "D:/GIT/Neo-Cource-Unity/Assets/_AlgoNeoCourse/Downloaded/l2m4y5-y5.md": {
+      "lessonPath": "Assets/_AlgoNeoCourse/Downloaded\\l2m4y5-y5.md",
+      "questionIdToState": {
+        "l2m4y5-q-status-text": {
+          "questionId": "l2m4y5-q-status-text",
+          "attemptsUsed": 1,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            1,
+            2,
+            0
+          ],
+          "selectedAnswerIds": [
+            "a0"
+          ]
+        },
+        "l2m4y5-q-two-modes": {
+          "questionId": "l2m4y5-q-two-modes",
+          "attemptsUsed": 2,
+          "isCompleted": true,
+          "isCorrect": false,
+          "shuffledOrder": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "selectedAnswerIds": [
+            "a3",
+            "a1"
+          ]
+        },
+        "l2m4y5-q-reuse-logic": {
+          "questionId": "l2m4y5-q-reuse-logic",
+          "attemptsUsed": 1,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            1,
+            0
+          ],
+          "selectedAnswerIds": [
+            "a0"
+          ]
+        },
+        "l2m4y5-q-update-status": {
+          "questionId": "l2m4y5-q-update-status",
+          "attemptsUsed": 1,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            1,
+            0,
+            2
+          ],
+          "selectedAnswerIds": [
+            "a0"
+          ]
+        },
+        "l2m4y5-q-polish": {
+          "questionId": "l2m4y5-q-polish",
+          "attemptsUsed": 2,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            2,
+            0,
+            1
+          ],
+          "selectedAnswerIds": [
+            "a0"
+          ]
+        }
+      }
+    },
+    "D:/GIT/Neo-Cource-Unity/Assets/_AlgoNeoCourse/Downloaded/l2m3y4-y4.md": {
+      "lessonPath": "Assets/_AlgoNeoCourse/Downloaded\\l2m3y4-y4.md",
+      "questionIdToState": {
+        "l2m3y4-q-isgameover-meaning": {
+          "questionId": "l2m3y4-q-isgameover-meaning",
+          "attemptsUsed": 1,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            2,
+            0,
+            1
+          ],
+          "selectedAnswerIds": [
+            "a0"
+          ]
+        },
+        "l2m3y4-q-game-flow": {
+          "questionId": "l2m3y4-q-game-flow",
+          "attemptsUsed": 1,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            1,
+            2,
+            0
+          ],
+          "selectedAnswerIds": [
+            "a0"
+          ]
+        },
+        "l2m3y4-p1-q-raycast-purpose": {
+          "questionId": "l2m3y4-p1-q-raycast-purpose",
+          "attemptsUsed": 2,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            2,
+            1,
+            0
+          ],
+          "selectedAnswerIds": [
+            "a0"
+          ]
+        },
+        "l2m3y4-p1-q-and-vs-or": {
+          "questionId": "l2m3y4-p1-q-and-vs-or",
+          "attemptsUsed": 2,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            0,
+            1,
+            2
+          ],
+          "selectedAnswerIds": [
+            "a1"
+          ]
+        },
+        "l2m3y4-q-restart-api": {
+          "questionId": "l2m3y4-q-restart-api",
+          "attemptsUsed": 2,
+          "isCompleted": true,
+          "isCorrect": false,
+          "shuffledOrder": [
+            0,
+            2,
+            1
+          ],
+          "selectedAnswerIds": [
+            "a2"
+          ]
+        },
+        "l2m3y4-q-ui-text-type": {
+          "questionId": "l2m3y4-q-ui-text-type",
+          "attemptsUsed": 2,
+          "isCompleted": true,
+          "isCorrect": false,
+          "shuffledOrder": [
+            0,
+            2,
+            1
+          ],
+          "selectedAnswerIds": [
+            "a1"
           ]
         }
       }

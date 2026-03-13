@@ -33,7 +33,7 @@ namespace TicTacToe2.Lesson3
                 return;
             }
 
-            if (cellIndex < 0 || cellIndex >= board.Length)
+            if (!IsCellIndexValid(cellIndex))
             {
                 return;
             }
@@ -44,6 +44,11 @@ namespace TicTacToe2.Lesson3
             }
 
             MakeMove(cellIndex);
+        }
+
+        public bool IsCellIndexValid(int cellIndex)
+        {
+            return cellIndex >= 0 && cellIndex < board.Length;
         }
 
         public void MakeMove(int cellIndex)
