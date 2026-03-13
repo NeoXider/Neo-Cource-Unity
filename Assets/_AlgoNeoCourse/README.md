@@ -1,6 +1,6 @@
 # AlgoNeo Course
 
-Version: `1.4.1`
+Version: `1.4.3`
 
 `AlgoNeo Course` is a Unity Editor package for interactive Markdown-based learning directly inside the editor.
 

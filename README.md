@@ -1,6 +1,6 @@
 # AlgoNeoCourse
 
-Версия пакета: `1.4.2`
+Версия пакета: `1.4.3`
 
 <img width="917" height="735" alt="image" src="https://github.com/user-attachments/assets/5a53acc7-5a97-4c3d-9b05-25a20f114970" />
 
