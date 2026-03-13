@@ -7,9 +7,25 @@ namespace UIMarkdownRenderer.ObjectRenderers
     {
         protected override void Write(UIMarkdownRenderer renderer, EmphasisInline obj)
         {
-            renderer.WriteText(obj.DelimiterCount == 2 ? "<b>" : "<i>");
+            if (obj.DelimiterCount == 2)
+            {
+                renderer.WriteText("<color=#FF9F1C><b>");
+            }
+            else
+            {
+                renderer.WriteText("<i>");
+            }
+
             renderer.WriteChildren(obj);
-            renderer.WriteText(obj.DelimiterCount == 2 ? "</b>" : "</i>");
+
+            if (obj.DelimiterCount == 2)
+            {
+                renderer.WriteText("</b></color>");
+            }
+            else
+            {
+                renderer.WriteText("</i>");
+            }
         }
     }
 }

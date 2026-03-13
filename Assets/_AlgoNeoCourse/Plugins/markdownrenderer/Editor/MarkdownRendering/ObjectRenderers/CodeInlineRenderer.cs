@@ -7,7 +7,9 @@ namespace UIMarkdownRenderer.ObjectRenderers
     {
         protected override void Write(UIMarkdownRenderer renderer, CodeInline obj)
         {
+            renderer.WriteText("<color=#B388FF>");
             renderer.WriteText(obj.Content);
+            renderer.WriteText("</color>");
         }
     }
 }

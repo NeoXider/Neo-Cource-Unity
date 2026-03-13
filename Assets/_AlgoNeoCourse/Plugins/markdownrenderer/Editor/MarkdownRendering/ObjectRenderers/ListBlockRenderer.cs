@@ -26,10 +26,10 @@ namespace UIMarkdownRenderer.ObjectRenderers
             renderer.IndentLevel++;
             for (int i = 0; i < obj.Count; i++)
             {
-                renderer.WriteText("<indent=" + renderer.IndentLevel * 12 + "px>");
+                string indent = new(' ', (renderer.IndentLevel - 1) * 2);
+                renderer.WriteText(indent);
                 renderer.WriteText(obj.IsOrdered ? i + 1 + ". " : "\u2022 ");
                 renderer.WriteChildren(obj[i] as ListItemBlock);
-                renderer.WriteText("</indent>");
             }
 
             renderer.LockTextCreation = lockValue;

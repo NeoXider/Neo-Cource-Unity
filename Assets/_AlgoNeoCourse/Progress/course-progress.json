@@ -1,21 +1,320 @@
 {
-  "lastLessonPath": "Assets/_AlgoNeoCourse/Downloaded\\l2m4y1-y1.md",
-  "lastSlideIndex": 6,
+  "lastLessonPath": "Assets/_AlgoNeoCourse/Downloaded\\l2m2y1-y1.md",
+  "lastSlideIndex": 18,
   "lessonStates": {
-    "D:/GIT/Neo-Cource-Unity/Assets/_AlgoNeoCourse/Downloaded/l2m2y1-y1.md": {
-      "lessonPath": "Assets/_AlgoNeoCourse/Downloaded\\l2m2y1-y1.md",
+    "D:/GIT/Neo-Cource-Unity/Assets/_AlgoNeoCourse/Downloaded/l2m4y1-y1.md": {
+      "lessonPath": "Assets/_AlgoNeoCourse/Downloaded\\l2m4y1-y1.md",
       "questionIdToState": {
-        "l2m2y1-q-what-is-csharp": {
-          "questionId": "l2m2y1-q-what-is-csharp",
-          "attemptsUsed": 0,
-          "isCompleted": false,
-          "isCorrect": false,
+        "l2m4y1-q-what-is-array": {
+          "questionId": "l2m4y1-q-what-is-array",
+          "attemptsUsed": 1,
+          "isCompleted": true,
+          "isCorrect": true,
           "shuffledOrder": [
             1,
             0,
             2
           ],
-          "selectedAnswerIds": []
+          "selectedAnswerIds": [
+            "a0"
+          ]
+        },
+        "l2m4y1-q-cell-index": {
+          "questionId": "l2m4y1-q-cell-index",
+          "attemptsUsed": 1,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            0,
+            1,
+            2
+          ],
+          "selectedAnswerIds": [
+            "a0"
+          ]
+        },
+        "l2m4y1-q-why-not-separate-variables": {
+          "questionId": "l2m4y1-q-why-not-separate-variables",
+          "attemptsUsed": 1,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            1,
+            2,
+            0
+          ],
+          "selectedAnswerIds": [
+            "a0"
+          ]
+        },
+        "l2m4y1-q-what-cell-sends": {
+          "questionId": "l2m4y1-q-what-cell-sends",
+          "attemptsUsed": 1,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            2,
+            1,
+            0
+          ],
+          "selectedAnswerIds": [
+            "a0"
+          ]
+        },
+        "l2m4y1-q-first-lesson-focus": {
+          "questionId": "l2m4y1-q-first-lesson-focus",
+          "attemptsUsed": 1,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            1,
+            0,
+            2
+          ],
+          "selectedAnswerIds": [
+            "a0"
+          ]
+        }
+      }
+    },
+    "D:/GIT/Neo-Cource-Unity/Assets/_AlgoNeoCourse/Downloaded/l2m4y2-y2.md": {
+      "lessonPath": "Assets/_AlgoNeoCourse/Downloaded\\l2m4y2-y2.md",
+      "questionIdToState": {
+        "l2m4y2-q-empty-cell": {
+          "questionId": "l2m4y2-q-empty-cell",
+          "attemptsUsed": 1,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            2,
+            0,
+            1
+          ],
+          "selectedAnswerIds": [
+            "a0"
+          ]
+        },
+        "l2m4y2-q-current-player": {
+          "questionId": "l2m4y2-q-current-player",
+          "attemptsUsed": 1,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            0,
+            1
+          ],
+          "selectedAnswerIds": [
+            "a0"
+          ]
+        },
+        "l2m4y2-q-why-board-not-text": {
+          "questionId": "l2m4y2-q-why-board-not-text",
+          "attemptsUsed": 1,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            1,
+            3,
+            2,
+            0
+          ],
+          "selectedAnswerIds": [
+            "a0",
+            "a1"
+          ]
+        },
+        "l2m4y2-q-early-return": {
+          "questionId": "l2m4y2-q-early-return",
+          "attemptsUsed": 1,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            1,
+            0
+          ],
+          "selectedAnswerIds": [
+            "a0"
+          ]
+        },
+        "l2m4y2-q-switch-player": {
+          "questionId": "l2m4y2-q-switch-player",
+          "attemptsUsed": 1,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            2,
+            1,
+            0
+          ],
+          "selectedAnswerIds": [
+            "a0"
+          ]
+        }
+      }
+    },
+    "D:/GIT/Neo-Cource-Unity/Assets/_AlgoNeoCourse/Downloaded/l2m4y3-y3.md": {
+      "lessonPath": "Assets/_AlgoNeoCourse/Downloaded\\l2m4y3-y3.md",
+      "questionIdToState": {
+        "l2m4y3-q-why-list": {
+          "questionId": "l2m4y3-q-why-list",
+          "attemptsUsed": 1,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            1,
+            2,
+            0
+          ],
+          "selectedAnswerIds": [
+            "a0"
+          ]
+        },
+        "l2m4y3-q-list-vs-array": {
+          "questionId": "l2m4y3-q-list-vs-array",
+          "attemptsUsed": 2,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            2,
+            1,
+            0,
+            3
+          ],
+          "selectedAnswerIds": [
+            "a0",
+            "a1"
+          ]
+        },
+        "l2m4y3-q-foreach-why": {
+          "questionId": "l2m4y3-q-foreach-why",
+          "attemptsUsed": 1,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            0,
+            1,
+            2
+          ],
+          "selectedAnswerIds": [
+            "a0"
+          ]
+        },
+        "l2m4y3-q-reset-board": {
+          "questionId": "l2m4y3-q-reset-board",
+          "attemptsUsed": 1,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            1,
+            0
+          ],
+          "selectedAnswerIds": [
+            "a0"
+          ]
+        },
+        "l2m4y3-q-bool-method": {
+          "questionId": "l2m4y3-q-bool-method",
+          "attemptsUsed": 1,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            0,
+            1
+          ],
+          "selectedAnswerIds": [
+            "a0"
+          ]
+        },
+        "l2m4y3-q-draw": {
+          "questionId": "l2m4y3-q-draw",
+          "attemptsUsed": 2,
+          "isCompleted": true,
+          "isCorrect": false,
+          "shuffledOrder": [
+            1,
+            2,
+            3,
+            0
+          ],
+          "selectedAnswerIds": [
+            "a1",
+            "a3"
+          ]
+        }
+      }
+    },
+    "D:/GIT/Neo-Cource-Unity/Assets/_AlgoNeoCourse/Downloaded/l2m2y1-y1.md": {
+      "lessonPath": "Assets/_AlgoNeoCourse/Downloaded\\l2m2y1-y1.md",
+      "questionIdToState": {
+        "l2m2y1-q-what-is-csharp": {
+          "questionId": "l2m2y1-q-what-is-csharp",
+          "attemptsUsed": 1,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            1,
+            0,
+            2
+          ],
+          "selectedAnswerIds": [
+            "a0"
+          ]
+        },
+        "l2m2y1-q-what-is-script": {
+          "questionId": "l2m2y1-q-what-is-script",
+          "attemptsUsed": 2,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            0,
+            1,
+            2
+          ],
+          "selectedAnswerIds": [
+            "a0"
+          ]
+        },
+        "start-method": {
+          "questionId": "start-method",
+          "attemptsUsed": 1,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            2,
+            0,
+            1
+          ],
+          "selectedAnswerIds": [
+            "a1"
+          ]
+        },
+        "debug-log-purpose": {
+          "questionId": "debug-log-purpose",
+          "attemptsUsed": 1,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            2,
+            0,
+            1
+          ],
+          "selectedAnswerIds": [
+            "a1"
+          ]
+        },
+        "code-comment": {
+          "questionId": "code-comment",
+          "attemptsUsed": 1,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            1,
+            0,
+            2
+          ],
+          "selectedAnswerIds": [
+            "a0"
+          ]
         }
       }
     }
