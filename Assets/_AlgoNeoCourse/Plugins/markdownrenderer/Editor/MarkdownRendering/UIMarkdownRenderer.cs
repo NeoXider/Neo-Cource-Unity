@@ -47,6 +47,11 @@ namespace UIMarkdownRenderer
         public bool LockTextCreation { get; set; } = false;
         public int IndentLevel { get; set; } = 0;
 
+        /// <summary>
+        ///     Current text <see cref="Label" /> (e.g. list line when <see cref="LockTextCreation" /> is true).
+        /// </summary>
+        internal Label CurrentBlockTextLabel => m_CurrentBlockText;
+
         public string FileFolder { get; private set; }
 
         private readonly bool m_IncludeScrollView;
