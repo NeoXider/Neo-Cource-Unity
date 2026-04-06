@@ -61,6 +61,11 @@ namespace UIMarkdownRenderer.ObjectRenderers
             string rawCode = GetRawCode(obj);
             string[] lines = rawCode.Replace("\r\n", "\n").Split('\n');
 
+            if (block == null)
+            {
+                return;
+            }
+
             if (string.Equals(firstLanguageToken, "csharp", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(firstLanguageToken, "cs", StringComparison.OrdinalIgnoreCase))
             {
