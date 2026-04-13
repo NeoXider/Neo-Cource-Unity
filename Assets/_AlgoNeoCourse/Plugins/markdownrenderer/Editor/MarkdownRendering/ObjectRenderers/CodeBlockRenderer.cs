@@ -255,10 +255,7 @@ namespace UIMarkdownRenderer.ObjectRenderers
 
         private static string EscapeRichText(string text)
         {
-            return text
-                .Replace("&", "&amp;")
-                .Replace("<", "&lt;")
-                .Replace(">", "&gt;");
+            return text.Replace("<", "<\u200B");
         }
 
         private static int CountIndent(string line)
