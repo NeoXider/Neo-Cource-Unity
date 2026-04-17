@@ -1,6 +1,6 @@
 {
-  "lastLessonPath": "Assets/_AlgoNeoCourse/Downloaded\\l2m3y4-y4.md",
-  "lastSlideIndex": 21,
+  "lastLessonPath": "Assets/_AlgoNeoCourse/Downloaded\\l2m3y1-y1.md",
+  "lastSlideIndex": 38,
   "lessonStates": {
     "D:/GIT/Neo-Cource-Unity/Assets/_AlgoNeoCourse/Downloaded/l2m4y1-y1.md": {
       "lessonPath": "Assets/_AlgoNeoCourse/Downloaded\\l2m4y1-y1.md",
@@ -524,6 +524,303 @@
           ],
           "selectedAnswerIds": [
             "a1"
+          ]
+        }
+      }
+    },
+    "D:/GIT/Neo-Cource-Unity/Assets/_AlgoNeoCourse/Downloaded/README.md": {
+      "lessonPath": "Assets/_AlgoNeoCourse/Downloaded\\README.md",
+      "questionIdToState": {
+        "sc-hello": {
+          "questionId": "sc-hello",
+          "attemptsUsed": 1,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            1,
+            0,
+            3,
+            2
+          ],
+          "selectedAnswerIds": [
+            "a0"
+          ]
+        }
+      }
+    },
+    "D:/GIT/Neo-Cource-Unity/Assets/_AlgoNeoCourse/Downloaded/l2m6y1-y1.md": {
+      "lessonPath": "Assets/_AlgoNeoCourse/Downloaded\\l2m6y1-y1.md",
+      "questionIdToState": {
+        "l2m6y1-q-getaxis": {
+          "questionId": "l2m6y1-q-getaxis",
+          "attemptsUsed": 1,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            1,
+            2,
+            0
+          ],
+          "selectedAnswerIds": [
+            "a0"
+          ]
+        },
+        "l2m6y1-q-clamp": {
+          "questionId": "l2m6y1-q-clamp",
+          "attemptsUsed": 1,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            1,
+            0,
+            2
+          ],
+          "selectedAnswerIds": [
+            "a0"
+          ]
+        }
+      }
+    },
+    "D:/GIT/Neo-Cource-Unity/Assets/_AlgoNeoCourse/Downloaded/l2m2y3-y3.md": {
+      "lessonPath": "Assets/_AlgoNeoCourse/Downloaded\\l2m2y3-y3.md",
+      "questionIdToState": {
+        "mod-remainder": {
+          "questionId": "mod-remainder",
+          "attemptsUsed": 2,
+          "isCompleted": true,
+          "isCorrect": false,
+          "shuffledOrder": [
+            0,
+            1,
+            2
+          ],
+          "selectedAnswerIds": [
+            "a1"
+          ]
+        },
+        "int-division-trap": {
+          "questionId": "int-division-trap",
+          "attemptsUsed": 2,
+          "isCompleted": true,
+          "isCorrect": false,
+          "shuffledOrder": [
+            0,
+            1,
+            2
+          ],
+          "selectedAnswerIds": [
+            "a0"
+          ]
+        },
+        "priority-sample": {
+          "questionId": "priority-sample",
+          "attemptsUsed": 1,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            2,
+            0,
+            1
+          ],
+          "selectedAnswerIds": [
+            "a1"
+          ]
+        },
+        "postfix-inc": {
+          "questionId": "postfix-inc",
+          "attemptsUsed": 0,
+          "isCompleted": false,
+          "isCorrect": false,
+          "shuffledOrder": [
+            2,
+            1,
+            0
+          ],
+          "selectedAnswerIds": []
+        }
+      }
+    },
+    "D:/GIT/Neo-Cource-Unity/Assets/_AlgoNeoCourse/Downloaded/l2m2y5-y5.md": {
+      "lessonPath": "Assets/_AlgoNeoCourse/Downloaded\\l2m2y5-y5.md",
+      "questionIdToState": {
+        "l2m2y5-q-what-is-lifecycle": {
+          "questionId": "l2m2y5-q-what-is-lifecycle",
+          "attemptsUsed": 0,
+          "isCompleted": false,
+          "isCorrect": false,
+          "shuffledOrder": [
+            1,
+            2,
+            0
+          ],
+          "selectedAnswerIds": []
+        }
+      }
+    },
+    "D:/GIT/Neo-Cource-Unity/Assets/_AlgoNeoCourse/Downloaded/l2m3y2-y2.md": {
+      "lessonPath": "Assets/_AlgoNeoCourse/Downloaded\\l2m3y2-y2.md",
+      "questionIdToState": {
+        "l2m3y2-q-elseif-order": {
+          "questionId": "l2m3y2-q-elseif-order",
+          "attemptsUsed": 0,
+          "isCompleted": false,
+          "isCorrect": false,
+          "shuffledOrder": [
+            1,
+            2,
+            0
+          ],
+          "selectedAnswerIds": []
+        }
+      }
+    },
+    "D:/GIT/Neo-Cource-Unity/Assets/_AlgoNeoCourse/Downloaded/l2m3y1-y1.md": {
+      "lessonPath": "Assets/_AlgoNeoCourse/Downloaded\\l2m3y1-y1.md",
+      "questionIdToState": {
+        "l2m3y1-q-equals": {
+          "questionId": "l2m3y1-q-equals",
+          "attemptsUsed": 1,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            2,
+            0,
+            1
+          ],
+          "selectedAnswerIds": [
+            "a1"
+          ]
+        },
+        "l2m3y1-q-not-equals": {
+          "questionId": "l2m3y1-q-not-equals",
+          "attemptsUsed": 1,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            1,
+            2,
+            0
+          ],
+          "selectedAnswerIds": [
+            "a0"
+          ]
+        },
+        "l2m3y1-q-priority": {
+          "questionId": "l2m3y1-q-priority",
+          "attemptsUsed": 1,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            0,
+            1
+          ],
+          "selectedAnswerIds": [
+            "a0"
+          ]
+        },
+        "l2m3y1-q-number-compare-ops": {
+          "questionId": "l2m3y1-q-number-compare-ops",
+          "attemptsUsed": 1,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            1,
+            2,
+            3,
+            0,
+            4,
+            5
+          ],
+          "selectedAnswerIds": [
+            "a1",
+            "a2",
+            "a3",
+            "a0",
+            "a4",
+            "a5"
+          ]
+        },
+        "l2m3y1-q-string-compare-ops": {
+          "questionId": "l2m3y1-q-string-compare-ops",
+          "attemptsUsed": 2,
+          "isCompleted": true,
+          "isCorrect": false,
+          "shuffledOrder": [
+            0,
+            2,
+            1
+          ],
+          "selectedAnswerIds": [
+            "a2"
+          ]
+        },
+        "l2m3y1-q-else-meaning": {
+          "questionId": "l2m3y1-q-else-meaning",
+          "attemptsUsed": 2,
+          "isCompleted": true,
+          "isCorrect": false,
+          "shuffledOrder": [
+            2,
+            1,
+            0
+          ],
+          "selectedAnswerIds": [
+            "a1"
+          ]
+        },
+        "l2m3y1-q-if-example-output": {
+          "questionId": "l2m3y1-q-if-example-output",
+          "attemptsUsed": 1,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            0,
+            2,
+            1
+          ],
+          "selectedAnswerIds": [
+            "a1"
+          ]
+        },
+        "l2m3y1-q-if-condition-compare": {
+          "questionId": "l2m3y1-q-if-condition-compare",
+          "attemptsUsed": 2,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            1,
+            0
+          ],
+          "selectedAnswerIds": [
+            "a0"
+          ]
+        },
+        "l2m3y1-q-input-where": {
+          "questionId": "l2m3y1-q-input-where",
+          "attemptsUsed": 2,
+          "isCompleted": true,
+          "isCorrect": false,
+          "shuffledOrder": [
+            1,
+            0,
+            2
+          ],
+          "selectedAnswerIds": [
+            "a1"
+          ]
+        },
+        "l2m3y1-q-getkeydown-meaning": {
+          "questionId": "l2m3y1-q-getkeydown-meaning",
+          "attemptsUsed": 2,
+          "isCompleted": true,
+          "isCorrect": true,
+          "shuffledOrder": [
+            0,
+            1,
+            2
+          ],
+          "selectedAnswerIds": [
+            "a0"
           ]
         }
       }
