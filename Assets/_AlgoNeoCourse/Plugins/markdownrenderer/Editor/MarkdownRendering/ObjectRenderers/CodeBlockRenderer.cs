@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Text;
 using Markdig.Renderers;
 using Markdig.Renderers.Html;
@@ -118,7 +119,9 @@ namespace UIMarkdownRenderer.ObjectRenderers
                 }
             }
 
-            return builder.ToString();
+            // Decode HTML entities that may have been introduced by the
+            // Markdig pipeline or server transport (e.g. &amp; → &, &lt; → <).
+            return WebUtility.HtmlDecode(builder.ToString());
         }
 
         private static string HighlightCSharp(string code)
@@ -255,7 +258,9 @@ namespace UIMarkdownRenderer.ObjectRenderers
 
         private static string EscapeRichText(string text)
         {
-            return text.Replace("<", "<\u200B");
+            // Escape '&' first to prevent Unity TextCore from interpreting HTML entities,
+            // then escape '<' to prevent rich-text tag interpretation.
+            return text.Replace("&", "&\u200B").Replace("<", "<\u200B");
         }
 
         private static int CountIndent(string line)
