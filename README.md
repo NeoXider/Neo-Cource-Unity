@@ -1,6 +1,6 @@
 # AlgoNeoCourse
 
-Версия пакета: `1.4.3`
+Версия пакета: `1.5.1`
 
 <img width="917" height="735" alt="image" src="https://github.com/user-attachments/assets/5a53acc7-5a97-4c3d-9b05-25a20f114970" />
 
@@ -227,6 +227,13 @@ answers:
 ### Появляется сообщение про MarkdownRenderer
 
 В актуальной версии пакет использует встроенный `MarkdownRenderer`; отдельная установка не требуется.
+
+### Ошибка CS0619 про `AssetDatabase.GetAssetPath(int)` (Unity 6.3+)
+
+В Unity 6.3 `int`-based `InstanceID` API стали ошибкой. Исправлено в `1.5.1`:
+`MarkdownViewer.HandleDblClick` использует `EntityId` под `#if UNITY_6000_3_OR_NEWER`
+с fallback на `int` для старых версий Unity. Других `GetAssetPath(int)` / `OnOpenAsset(int)`
+использований в пакете нет.
 
 ## Документация
 

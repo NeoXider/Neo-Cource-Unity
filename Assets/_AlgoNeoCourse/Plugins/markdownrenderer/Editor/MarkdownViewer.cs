@@ -50,9 +50,15 @@ namespace UIMarkdownRenderer
         }
 
         [OnOpenAsset(0)]
+#if UNITY_6000_3_OR_NEWER
+        public static bool HandleDblClick(EntityId entityId, int line)
+        {
+            string path = AssetDatabase.GetAssetPath(entityId);
+#else
         public static bool HandleDblClick(int instanceID, int line)
         {
             string path = AssetDatabase.GetAssetPath(instanceID);
+#endif
 
             if (Path.GetExtension(path) == ".md")
             {
