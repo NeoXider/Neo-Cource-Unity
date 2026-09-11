@@ -53,6 +53,9 @@ namespace NeoCource.Editor
             prevBtn.SetEnabled(currentSlideIndex > 0);
             nextBtn.SetEnabled(currentSlideIndex < slides.Count - 1);
 
+            // Дальняя точка для «Продолжить» — только вперёд (откат назад её не сдвигает).
+            UpdateFarthestSession();
+
             // Обновляем состояние слайдов урока для полосы прогресса курса.
             try
             {
@@ -269,13 +272,11 @@ namespace NeoCource.Editor
             }
         }
 
+        // check-блоки — основной механизм практических проверок: кнопка «Проверить»
+        // подставляется всегда (раньше — только в debug-режиме). Авторские unity://check-ссылки
+        // удалены в 1.6.1, транспорт unity://check остался внутренним для этих кнопок.
         private string InjectCheckBlocksIfDebug(string markdown)
         {
-            if (!ValidationSettings.Instance.DebugRenderCheckBlocks)
-            {
-                return markdown;
-            }
-
             string pattern = @"```check\n([\s\S]*?)\n```";
             Regex regex = new(pattern, RegexOptions.Multiline);
             return regex.Replace(markdown, match =>
@@ -460,6 +461,20 @@ namespace NeoCource.Editor
                     if (clickedElement != null && resultMessage != null)
                     {
                         CheckResultPresenter.Show(clickedElement, resultMessage, checkOk);
+                    }
+
+                    // Персистим результат практической проверки для прогресса урока.
+                    // Только если проверка реально выполнилась (message == null — отключена/неизвестна).
+                    if (resultMessage != null)
+                    {
+                        try
+                        {
+                            QuizStateStore.SaveCheckResult(
+                                currentLessonFilePath, QuizStateStore.CheckIdForLink(link), checkOk);
+                        }
+                        catch
+                        {
+                        }
                     }
 
                     return;

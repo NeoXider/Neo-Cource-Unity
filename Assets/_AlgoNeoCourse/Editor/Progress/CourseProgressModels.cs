@@ -9,6 +9,13 @@ namespace NeoCource.Editor.Progress
     {
         public string lastLessonPath;
         public int lastSlideIndex;
+
+        // Дальняя точка прогресса (монотонно, только вперёд): для кнопки «Продолжить».
+        // lastSession едет за каждым ShowSlide (в т.ч. назад), farthest — только вперёд
+        // по порядку уроков, поэтому «Продолжить» возвращает именно к максимуму.
+        public string farthestLessonPath = string.Empty;
+        public int farthestSlideIndex;
+
         public Dictionary<string, LessonQuizState> lessonStates = new();
 
         // Опциональные поля под будущий бэкенд (userId/deviceId/метки).

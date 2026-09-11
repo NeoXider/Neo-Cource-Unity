@@ -82,7 +82,7 @@ namespace NeoCource.Editor.Settings
             }
         }
 
-        [MenuItem("Tools/AlgoNeoCourse/Settings/Open Validation Settings")]
+        [MenuItem("Tools/AlgoNeoCourse/Settings/Open Validation Settings", priority = 37)]
         private static void OpenViaMenu()
         {
             Selection.activeObject = instance;
@@ -107,7 +107,7 @@ namespace NeoCource.Editor.Settings
             Save(true);
         }
 
-        [MenuItem("Tools/AlgoNeoCourse/Settings/Reset Validation Settings")]
+        [MenuItem("Tools/AlgoNeoCourse/Settings/Reset Validation Settings", priority = 40)]
         private static void ResetViaMenu()
         {
             EnsureAssetExists();

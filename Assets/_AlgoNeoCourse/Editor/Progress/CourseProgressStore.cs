@@ -104,6 +104,38 @@ namespace NeoCource.Editor.Progress
             return true;
         }
 
+        // Дальняя точка: только вперёд, вызывается из CourseWindow после ShowSlide.
+        public static void SaveFarthestSession(string lessonPath, int slideIndex)
+        {
+            CourseProgressData data = GetData();
+            string normalized = string.IsNullOrWhiteSpace(lessonPath)
+                ? string.Empty
+                : lessonPath.Replace('\\', '/');
+            if (string.IsNullOrEmpty(normalized) || !IsPathInsideProject(normalized))
+            {
+                return;
+            }
+
+            data.farthestLessonPath = normalized;
+            data.farthestSlideIndex = Math.Max(0, slideIndex);
+            data.updatedAtUnixMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            SaveToDisk();
+        }
+
+        public static bool TryGetFarthestSession(out string lessonPath, out int slideIndex)
+        {
+            CourseProgressData data = GetData();
+            lessonPath = data.farthestLessonPath ?? string.Empty;
+            slideIndex = Math.Max(0, data.farthestSlideIndex);
+            if (string.IsNullOrWhiteSpace(lessonPath) || !IsPathInsideProject(lessonPath))
+            {
+                lessonPath = string.Empty;
+                return false;
+            }
+
+            return true;
+        }
+
         public static void SaveToDisk()
         {
             try

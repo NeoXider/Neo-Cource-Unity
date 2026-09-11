@@ -55,15 +55,20 @@ namespace NeoCource.Editor
             });
             toolbar.Add(lessonDropdown);
 
-            toolbar.Add(new ToolbarSpacer());
-
             Texture2D settingsIcon = (Texture2D)(EditorGUIUtility.IconContent("d__Popup@2x").image ??
-                                                 EditorGUIUtility.IconContent("SettingsIcon").image ??
-                                                 EditorGUIUtility.IconContent("_Popup").image);
+                                                  EditorGUIUtility.IconContent("SettingsIcon").image ??
+                                                  EditorGUIUtility.IconContent("_Popup").image);
             ToolbarButton settingsBtn = CreateIconButton(settingsIcon, "Открыть Course Settings",
                 () => Selection.activeObject = CourseSettings.instance);
             settingsBtn.AddToClassList("settings");
             toolbar.Add(settingsBtn);
+
+            rootVisualElement.Add(toolbar);
+
+            // Ряд 2: навигация по слайдам и служебные кнопки.
+            Toolbar navBar = new Toolbar();
+            navBar.AddToClassList("algo-course-toolbar");
+            navBar.AddToClassList("algo-course-navbar");
 
             prevBtn = new ToolbarButton(() => ShowSlide(currentSlideIndex - 1)) { text = "<" };
             // Кнопка вперёд уважает guard квизов: при незавершённых вопросах переход блокируется.
@@ -86,29 +91,30 @@ namespace NeoCource.Editor
             prevBtn.AddToClassList("prev");
             nextBtn.AddToClassList("algo-course-nav-button");
             nextBtn.AddToClassList("next");
-            prevBtn.tooltip = "Предыдущий";
-            nextBtn.tooltip = "Следующий";
+            prevBtn.tooltip = "Предыдущий слайд (←)";
+            nextBtn.tooltip = "Следующий слайд (→)";
             prevBtn.style.unityFontStyleAndWeight = FontStyle.Bold;
             nextBtn.style.unityFontStyleAndWeight = FontStyle.Bold;
             prevBtn.style.color = new StyleColor(new Color(0.65f, 0.75f, 1f));
             nextBtn.style.color = new StyleColor(new Color(0.6f, 1f, 0.6f));
             nextBtn.style.minWidth = 60;
             // Кнопка возврата к сохранённой позиции (состояние обновляет UpdateContinueButton).
-            continueBtn = new ToolbarButton(() => RestoreLastSession()) { text = "▶ Продолжить" };
+            continueBtn = new ToolbarButton(() => GoToFarthestSession()) { text = "▶ Продолжить" };
             continueBtn.tooltip = "Продолжить с сохранённой позиции";
+            continueBtn.AddToClassList("algo-course-continue");
             slideIndicator = new Label("—/—") { style = { unityTextAlign = TextAnchor.MiddleCenter, minWidth = 60 } };
             slideIndicator.AddToClassList("algo-course-slide-indicator");
 
-            toolbar.Add(prevBtn);
-            toolbar.Add(slideIndicator);
-            toolbar.Add(nextBtn);
-            toolbar.Add(continueBtn);
+            navBar.Add(prevBtn);
+            navBar.Add(slideIndicator);
+            navBar.Add(nextBtn);
+            navBar.Add(continueBtn);
 
-            toolbar.Add(new ToolbarSpacer());
+            navBar.Add(new ToolbarSpacer());
 
             Texture2D refreshTex = (Texture2D)(EditorGUIUtility.IconContent("d_Refresh").image ??
                                                EditorGUIUtility.IconContent("Refresh").image);
-            reloadBtn = CreateIconButton(refreshTex, "Обновить уроки", DoRefreshLessonsAndCurrent);
+            reloadBtn = CreateIconButton(refreshTex, "Обновить уроки (R)", DoRefreshLessonsAndCurrent);
             reloadBtn.AddToClassList("reload");
             reloadBtn.style.color = new StyleColor(new Color(0.2f, 0.8f, 0.8f));
 
@@ -134,11 +140,11 @@ namespace NeoCource.Editor
             img.style.marginTop = 2;
             img.style.marginBottom = 2;
             openInExplorerBtn.Add(img);
-            openInExplorerBtn.tooltip = "Показать файл";
+            openInExplorerBtn.tooltip = "Показать файл урока (O)";
 
-            toolbar.Add(reloadBtn);
-            toolbar.Add(resetProgressBtn);
-            toolbar.Add(openInExplorerBtn);
+            navBar.Add(reloadBtn);
+            navBar.Add(resetProgressBtn);
+            navBar.Add(openInExplorerBtn);
 
             // Полоса общего прогресса курса — отдельным рядом под тулбаром:
             // контейнер-колонка: сам бар + подпись под ним.
@@ -149,12 +155,13 @@ namespace NeoCource.Editor
             courseProgressFill = new VisualElement();
             courseProgressFill.AddToClassList("algo-course-progress-fill");
             progressBar.Add(courseProgressFill);
-            courseProgressLabel = new Label("0% · 0/0 уроков");
+            courseProgressLabel = new Label("нет урока");
             courseProgressLabel.AddToClassList("algo-course-progress-label");
             progressWrap.Add(progressBar);
             progressWrap.Add(courseProgressLabel);
 
             rootVisualElement.Add(toolbar);
+            rootVisualElement.Add(navBar);
             rootVisualElement.Add(progressWrap);
             RegisterToolbarHotkeys();
         }
@@ -216,7 +223,7 @@ namespace NeoCource.Editor
             }, TrickleDown.TrickleDown);
         }
 
-        // Общий прогресс курса: средний процент по всем доступным урокам.
+        // Прогресс ТЕКУЩЕГО урока: полоса + слайд + квизы. Дублируем % в тултип дропдауна.
         private void UpdateCourseProgressUI()
         {
             try
@@ -226,35 +233,41 @@ namespace NeoCource.Editor
                     return;
                 }
 
-                if (availableLessons == null || availableLessons.Count == 0)
+                if (slides == null || slides.Count == 0 || string.IsNullOrEmpty(currentLessonFilePath))
                 {
                     courseProgressFill.style.width = Length.Percent(0);
-                    courseProgressLabel.text = "0% · 0/0 уроков";
+                    courseProgressLabel.text = "нет урока";
                     return;
                 }
 
-                int sum = 0;
-                int completedCount = 0;
-                foreach ((string title, string filePath, string id) lesson in availableLessons)
-                {
-                    int pct = GetLessonPercent(lesson.filePath, out int done, out int total);
-                    sum += pct;
-                    if (pct >= 100)
-                    {
-                        completedCount++;
-                    }
-                }
+                int pct = GetLessonPercent(currentLessonFilePath,
+                    out int done, out int total, out int checksDone, out int checksTotal);
+                courseProgressFill.style.width = Length.Percent(pct);
+                // Цвет по заполнению: оранжевый -> жёлтый -> зелёный, 100% — синий.
+                courseProgressFill.style.backgroundColor = pct >= 100
+                    ? new Color(0.25f, 0.55f, 1f)
+                    : pct >= 67
+                        ? new Color(0.3f, 0.75f, 0.4f)
+                        : pct >= 34
+                            ? new Color(0.95f, 0.8f, 0.3f)
+                            : new Color(1f, 0.6f, 0.2f);
 
-                int overall = Mathf.Clamp(Mathf.RoundToInt(sum / (float)availableLessons.Count), 0, 100);
-                courseProgressFill.style.width = Length.Percent(overall);
-                courseProgressLabel.text = $"{overall}% · {completedCount}/{availableLessons.Count} уроков";
+                string slidePart = $"слайд {currentSlideIndex + 1}/{slides.Count}";
+                string quizPart = total > 0 ? $" · квизы {done}/{total}" : string.Empty;
+                string checkPart = checksTotal > 0 ? $" · проверки {checksDone}/{checksTotal}" : string.Empty;
+                courseProgressLabel.text = slidePart + quizPart + checkPart;
+
+                if (lessonDropdown != null)
+                {
+                    lessonDropdown.tooltip = currentLessonTitle + quizPart + checkPart;
+                }
             }
             catch
             {
             }
         }
 
-        // Кнопка «Продолжить» активна, только если есть сохранённая позиция.
+        // Кнопка «Продолжить» активна, только если дальняя точка отличается от текущей.
         private void UpdateContinueButton()
         {
             try
@@ -264,8 +277,19 @@ namespace NeoCource.Editor
                     return;
                 }
 
-                bool has = CourseProgressStore.TryGetLastSession(out string p, out int s) &&
-                    !string.IsNullOrEmpty(p);
+                bool has = false;
+                if (CourseProgressStore.TryGetFarthestSession(out string farPath, out int farSlide) &&
+                    !string.IsNullOrEmpty(farPath))
+                {
+                    has = !IsAlreadyOnSession(NormalizeSessionPath(farPath), farSlide);
+                }
+
+                if (!has)
+                {
+                    has = CourseProgressStore.TryGetLastSession(out string lastPath, out _) &&
+                          !string.IsNullOrEmpty(lastPath);
+                }
+
                 continueBtn.SetEnabled(has);
             }
             catch

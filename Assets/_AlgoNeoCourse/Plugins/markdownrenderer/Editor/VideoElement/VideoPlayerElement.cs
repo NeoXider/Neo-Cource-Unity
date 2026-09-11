@@ -511,7 +511,7 @@ public partial class VideoPlayerElement : VisualElement
     {
         if (source.targetTexture != null)
         {
-            Object.DestroyImmediate(source.targetTexture);
+            UnityEngine.Object.DestroyImmediate(source.targetTexture);
         }
 
         source.targetTexture = new RenderTexture((int)source.width, (int)source.height, 32);

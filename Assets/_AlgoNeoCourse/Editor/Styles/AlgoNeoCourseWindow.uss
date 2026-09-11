@@ -3,35 +3,112 @@
 }
 
 .algo-course-toolbar {
-    min-height: 38px;
+    min-height: 30px;
     padding-left: 8px;
     padding-right: 8px;
-    padding-top: 5px;
-    padding-bottom: 5px;
-    border-bottom-width: 1px;
-    border-bottom-color: rgba(94, 133, 194, 0.28);
+    padding-top: 3px;
+    padding-bottom: 3px;
     background-color: rgba(24, 29, 39, 0.98);
 }
 
-.algo-course-dropdown {
-    min-width: 280px;
+.algo-course-navbar {
     min-height: 28px;
+    padding-top: 2px;
+    padding-bottom: 4px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(94, 133, 194, 0.28);
+    background-color: rgba(21, 26, 35, 0.98);
+}
+
+.algo-course-dropdown {
+    flex-grow: 1;
+    min-width: 120px;
+    min-height: 24px;
     margin-right: 6px;
     border-radius: 6px;
     border-width: 1px;
     border-color: rgba(96, 127, 176, 0.4);
     background-color: rgba(34, 42, 56, 1);
     color: rgb(231, 238, 247);
+    font-size: 12px;
+}
+
+.algo-course-navbar {
+    min-height: 34px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    background-color: rgba(21, 26, 35, 0.98);
+}
+
+.algo-course-continue {
+    min-height: 24px;
+    margin-left: 6px;
+    padding-left: 10px;
+    padding-right: 10px;
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: rgba(106, 176, 255, 0.55);
+    background-color: rgba(38, 66, 102, 0.9);
+    color: rgb(220, 236, 255);
+    font-size: 12px;
+}
+
+.algo-course-continue:hover {
+    background-color: rgba(52, 88, 134, 1);
+    border-color: rgba(140, 200, 255, 0.8);
+}
+
+.algo-course-continue:disabled {
+    opacity: 0.4;
+}
+
+.algo-course-empty-box {
+    align-items: center;
+    padding-top: 20px;
+    padding-bottom: 24px;
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+.algo-course-empty-title {
+    font-size: 16px;
+    -unity-font-style: bold;
+    color: rgb(170, 255, 150);
+    margin-bottom: 6px;
+}
+
+.algo-course-empty-desc {
+    font-size: 12px;
+    color: rgb(170, 180, 195);
+    white-space: normal;
+    -unity-text-align: middle-center;
+    margin-bottom: 12px;
+}
+
+.algo-course-empty-button {
+    min-height: 26px;
+    padding-left: 14px;
+    padding-right: 14px;
+    border-radius: 7px;
+    border-width: 1px;
+    border-color: rgba(106, 176, 255, 0.55);
+    background-color: rgba(38, 66, 102, 0.9);
+    color: rgb(220, 236, 255);
+    font-size: 12px;
+}
+
+.algo-course-empty-button:hover {
+    background-color: rgba(52, 88, 134, 1);
 }
 
 .algo-course-icon-button,
 .algo-course-nav-button,
 .algo-course-docs-menu {
-    min-height: 28px;
-    min-width: 28px;
-    margin-left: 3px;
-    margin-right: 3px;
-    border-radius: 7px;
+    min-height: 24px;
+    min-width: 26px;
+    margin-left: 2px;
+    margin-right: 2px;
+    border-radius: 6px;
     border-width: 1px;
     border-color: rgba(100, 127, 171, 0.25);
     background-color: rgba(35, 42, 56, 0.96);
@@ -45,15 +122,15 @@
 }
 
 .algo-course-nav-button {
-    min-width: 32px;
-    max-width: 32px;
-    min-height: 30px;
+    min-width: 30px;
+    max-width: 30px;
+    min-height: 24px;
     padding-left: 0;
     padding-right: 0;
     padding-top: 0;
     padding-bottom: 1px;
     -unity-font-style: bold;
-    font-size: 14px;
+    font-size: 13px;
     -unity-text-align: middle-center;
 }
 
@@ -78,14 +155,15 @@
 }
 
 .algo-course-slide-indicator {
-    min-width: 62px;
-    margin-left: 6px;
-    margin-right: 6px;
-    padding-top: 5px;
-    padding-bottom: 5px;
-    border-radius: 7px;
+    min-width: 56px;
+    margin-left: 4px;
+    margin-right: 4px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    border-radius: 6px;
     background-color: rgba(14, 18, 25, 0.95);
     color: rgb(207, 220, 235);
+    font-size: 12px;
     -unity-text-align: middle-center;
     -unity-font-style: bold;
 }
@@ -100,28 +178,29 @@
 }
 
 .algo-course-docs-menu {
+    min-height: 24px;
     padding-left: 8px;
     padding-right: 8px;
 }
 
 .algo-course-progress-wrap {
     flex-direction: column;
-    margin: 2px 8px 4px 8px;
+    margin: 1px 8px 3px 8px;
 }
 
 .algo-course-progress {
-    height: 8px;
+    height: 6px;
     background-color: #2a2d33;
-    border-radius: 4px;
+    border-radius: 3px;
     flex-direction: row;
 }
 
 .algo-course-progress-fill {
     height: 100%;
     width: 0%;
-    background-color: #6ab0ff;
-    border-radius: 4px;
-    transition-property: width;
+    background-color: #ff9933;
+    border-radius: 3px;
+    transition-property: width, background-color;
     transition-duration: 0.3s;
 }
 

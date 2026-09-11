@@ -4,6 +4,7 @@ using System.Linq;
 using NeoCource.Editor.Settings;
 using UnityEngine;
 using UnityEngine.UIElements;
+using UnityEngine.UIElements.Experimental;
 
 namespace NeoCource.Editor.Quizzes
 {
@@ -327,14 +328,14 @@ namespace NeoCource.Editor.Quizzes
                 Button captured = t;
                 captured.AddToClassList("quiz-answer--just-correct");
                 captured.schedule.Execute(() => captured.RemoveFromClassList("quiz-answer--just-correct"))
-                    .Delay(700);
+                    .StartingIn(700);
             }
 
             Label resultLabel = block?.Q<Label>(className: "quiz-result");
             if (resultLabel != null)
             {
                 resultLabel.AddToClassList("quiz-result--pop");
-                resultLabel.schedule.Execute(() => resultLabel.RemoveFromClassList("quiz-result--pop")).Delay(700);
+                resultLabel.schedule.Execute(() => resultLabel.RemoveFromClassList("quiz-result--pop")).StartingIn(700);
             }
         }
 

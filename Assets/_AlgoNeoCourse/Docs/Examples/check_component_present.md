@@ -2,11 +2,11 @@
 
 Добавьте компонент `Rigidbody` на объект `Player` и нажмите проверку:
 
-Прямая команда:
-``` (пробел что бы не заменялась)
-unity ://check?type=component-present&target=Player&component=Rigidbody
+```check
+rules:
+  - component_exists:
+      object: "Player"
+      type: "Rigidbody"
 ```
-[▶ Проверить](unity://check?type=component-present&target=Player&component=Rigidbody)
 
-> Стабильная проверка из реестра (`component-present`). Работает и с типами Unity (`Rigidbody`), и с полными именами (`Namespace.CustomComponent, AssemblyName`).
-
+> Проверка `component_exists` работает и с типами Unity (`Rigidbody`), и с полными именами (`Namespace.CustomComponent, AssemblyName`). Кнопка «Проверить» подставляется автоматически.

@@ -1,10 +1,19 @@
-# Скрытая сложная проверка (через ссылку)
+# Сложная проверка сцены одним блоком
 
-> Одна команда проверяет, что в сцене есть `Player` и на нём набор компонентов.
+> Один блок проверяет, что в сцене есть `Player` и на нём набор компонентов:
 
-Прямая команда (пробел специально — чтобы не автозаменялось):
+```check
+rules:
+  - object_exists: "Player"
+  - component_exists:
+      object: "Player"
+      type: "Rigidbody"
+  - component_exists:
+      object: "Player"
+      type: "BoxCollider"
+  - component_exists:
+      object: "Player"
+      type: "MeshRenderer"
 ```
-unity ://check?type=scene-all&target=Player&components=Rigidbody,BoxCollider,MeshRenderer
-```
 
-[▶ Проверить](unity://check?type=scene-all&target=Player&components=Rigidbody,BoxCollider,MeshRenderer)
+Кнопка «Проверить» подставляется автоматически.

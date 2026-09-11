@@ -35,6 +35,7 @@ namespace NeoCource.Editor
         private ToolbarButton continueBtn;
         private VisualElement courseProgressFill;
         private Label courseProgressLabel;
+        private VisualElement emptyStateBox;
         private ToolbarButton nextBtn;
         private ToolbarButton openInExplorerBtn;
         private ToolbarButton prevBtn;
@@ -56,6 +57,9 @@ namespace NeoCource.Editor
 
         public void CreateGUI()
         {
+            // Заголовок слетает на имя типа после перезагрузки домена —
+            // выставляем при каждом создании GUI, а не только в Open().
+            titleContent = new GUIContent(WindowTitle);
             try
             {
                 // Защита от двойной подписки при повторном создании GUI.
@@ -90,7 +94,7 @@ namespace NeoCource.Editor
             };
         }
 
-        [MenuItem("Tools/AlgoNeoCourse/Open Course Window")]
+        [MenuItem("Tools/AlgoNeoCourse/Open Course Window", priority = 1)]
         public static void Open()
         {
             CourseWindow wnd = GetWindow<CourseWindow>(false, WindowTitle, true);

@@ -133,6 +133,8 @@ namespace NeoCource.Editor.Settings
                 EditorUtility.ClearProgressBar();
                 AssetDatabase.Refresh();
                 CancelDownloads();
+                // Автообновление открытых окон курса: скачанные уроки появляются сами.
+                EditorApplication.delayCall += RefreshOpenCourseWindows;
             }
         }
 
@@ -148,6 +150,30 @@ namespace NeoCource.Editor.Settings
             finally
             {
                 currentDownloadCts = null;
+            }
+        }
+
+        private static void RefreshOpenCourseWindows()
+        {
+            try
+            {
+                foreach (CourseWindow wnd in Resources.FindObjectsOfTypeAll<CourseWindow>())
+                {
+                    try
+                    {
+                        if (wnd != null)
+                        {
+                            wnd.RefreshLessonsList();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogWarning("CourseSettings: автообновление окна курса — " + ex.Message);
+                    }
+                }
+            }
+            catch
+            {
             }
         }
 

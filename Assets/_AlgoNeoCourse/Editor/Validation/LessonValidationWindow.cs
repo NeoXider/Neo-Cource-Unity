@@ -18,7 +18,7 @@ namespace NeoCource.Editor.Validation
         private Label m_SummaryLabel;
         private ScrollView m_IssuesView;
 
-        [MenuItem("Tools/AlgoNeoCourse/Validate Lessons")]
+        [MenuItem("Tools/AlgoNeoCourse/Validate Lessons", priority = 12)]
         public static void Open()
         {
             LessonValidationWindow win = GetWindow<LessonValidationWindow>("Валидация уроков");
@@ -89,6 +89,11 @@ namespace NeoCource.Editor.Validation
                 Label row = new(
                     $"[{issue.severity}] {issue.lessonTitle} · слайд {issue.slideIndex} · {issue.rule}: {issue.message}");
                 row.style.whiteSpace = WhiteSpace.Normal;
+                row.style.marginBottom = 2;
+                row.style.paddingLeft = 6;
+                row.style.paddingRight = 6;
+                row.style.paddingTop = 3;
+                row.style.paddingBottom = 3;
                 row.style.color = issue.severity == "error"
                     ? new Color(1f, 0.45f, 0.45f)
                     : new Color(1f, 0.85f, 0.4f);

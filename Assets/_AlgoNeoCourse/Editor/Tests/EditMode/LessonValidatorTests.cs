@@ -69,13 +69,14 @@ namespace NeoCource.Editor.Tests
         }
 
         [Test]
-        public void Unknown_Kind_And_Removed_Slide_Link_Are_Errors()
+        public void Unknown_Kind_And_Removed_Links_Are_Errors()
         {
             string path = WriteTempLesson("algo_kind_test.md",
-                "```quiz\nid: q1\nkind: matching\ntext: Q?\nanswers:\n  - text: A\n    correct: true\n```\n---\n[Next](unity://slide?dir=next)\n");
+                "```quiz\nid: q1\nkind: matching\ntext: Q?\nanswers:\n  - text: A\n    correct: true\n```\n---\n[Next](unity://slide?dir=next)\n[Go](unity://check?type=object-exists&target=P)\n");
             List<ValidationIssue> issues = LessonValidator.ValidateLessonFile(path, "kind");
             Assert.IsTrue(issues.Any(i => i.rule == "quiz-unknown-kind"));
             Assert.IsTrue(issues.Any(i => i.rule == "unity-slide-removed"));
+            Assert.IsTrue(issues.Any(i => i.rule == "unity-check-removed"));
         }
 
         [Test]

@@ -12,7 +12,7 @@ namespace NeoCource.Editor.Progress
     // Ручной перенос прогресса между машинами/проектами через JSON.
     public static class ProgressTransferMenu
     {
-        [MenuItem("Tools/AlgoNeoCourse/Progress/Export JSON...")]
+        [MenuItem("Tools/AlgoNeoCourse/Progress/Export JSON...", priority = 23)]
         public static void ExportJson()
         {
             try
@@ -43,7 +43,7 @@ namespace NeoCource.Editor.Progress
             }
         }
 
-        [MenuItem("Tools/AlgoNeoCourse/Progress/Import JSON...")]
+        [MenuItem("Tools/AlgoNeoCourse/Progress/Import JSON...", priority = 24)]
         public static void ImportJson()
         {
             try

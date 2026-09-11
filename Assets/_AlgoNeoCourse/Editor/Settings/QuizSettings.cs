@@ -108,13 +108,13 @@ namespace NeoCource.Editor.Settings
 
     public static class QuizSettingsMenu
     {
-        [MenuItem("Tools/AlgoNeoCourse/Settings/Open Quiz Settings")]
+        [MenuItem("Tools/AlgoNeoCourse/Settings/Open Quiz Settings", priority = 36)]
         public static void Open()
         {
             Selection.activeObject = QuizSettings.instance;
         }
 
-        [MenuItem("Tools/AlgoNeoCourse/Settings/Reset Course Progress")]
+        [MenuItem("Tools/AlgoNeoCourse/Settings/Reset Course Progress", priority = 38)]
         public static void ResetProgress()
         {
             if (!EditorUtility.DisplayDialog("AlgoNeoCourse",

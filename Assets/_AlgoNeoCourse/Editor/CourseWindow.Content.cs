@@ -97,6 +97,7 @@ namespace NeoCource.Editor
                 slides = SplitSlides(text);
                 SeedMarkdownContext(assetPath);
                 ShowSlide(0);
+                ClearEmptyState();
             }
             catch (Exception ex)
             {
@@ -105,8 +106,7 @@ namespace NeoCource.Editor
         }
 
         private void BuildContent()
-        {
-            contentRoot = new ScrollView(ScrollViewMode.Vertical);
+        {            contentRoot = new ScrollView(ScrollViewMode.Vertical);
             contentRoot.style.flexGrow = 1f;
             contentRoot.AddToClassList("algo-course-content");
 
@@ -126,6 +126,63 @@ namespace NeoCource.Editor
 
             contentRoot.Add(mdRenderer.RootElement);
             rootVisualElement.Add(contentRoot);
+        }
+
+        private void ShowEmptyState()
+        {
+            ClearEmptyState();
+            if (contentRoot == null)
+            {
+                return;
+            }
+
+            try
+            {
+                emptyStateBox = new VisualElement();
+                emptyStateBox.AddToClassList("algo-course-empty-box");
+
+                Label title = new("Нет загруженных уроков");
+                title.AddToClassList("algo-course-empty-title");
+                emptyStateBox.Add(title);
+
+                Label desc = new("Загрузите список и скачайте уроки в Course Settings — окно подхватит их автоматически.");
+                desc.AddToClassList("algo-course-empty-desc");
+                emptyStateBox.Add(desc);
+
+                ToolbarButton openSettings = new(() =>
+                {
+                    try
+                    {
+                        Selection.activeObject = CourseSettings.instance;
+                    }
+                    catch
+                    {
+                    }
+                })
+                { text = "Открыть Course Settings" };
+                openSettings.AddToClassList("algo-course-empty-button");
+                emptyStateBox.Add(openSettings);
+
+                contentRoot.Add(emptyStateBox);
+            }
+            catch
+            {
+            }
+        }
+
+        private void ClearEmptyState()
+        {
+            try
+            {
+                if (emptyStateBox != null)
+                {
+                    emptyStateBox.RemoveFromHierarchy();
+                    emptyStateBox = null;
+                }
+            }
+            catch
+            {
+            }
         }
 
         private void EnsureRichTextOnAllLabels()

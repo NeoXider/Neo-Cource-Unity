@@ -405,28 +405,29 @@ namespace NeoCource.Editor.Validation
                 if (string.Equals(action, "slide", StringComparison.OrdinalIgnoreCase))
                 {
                     issues.Add(Error(lessonPath, lessonTitle, slideIndex, "unity-slide-removed",
-                        "Ссылка unity://slide удалена в 1.5.3."));
+                        "Ссылка unity://slide удалена в 1.6.0."));
                     continue;
                 }
 
-                if (!string.Equals(action, "check", StringComparison.OrdinalIgnoreCase) &&
-                    !string.Equals(action, "open", StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(action, "check", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Авторские unity://check-ссылки удалены в 1.6.1: пишите ```check-блоки,
+                    // кнопка «Проверить» подставится сама. (unity://check остался лишь
+                    // внутренним транспортом этих кнопок.)
+                    issues.Add(Error(lessonPath, lessonTitle, slideIndex, "unity-check-removed",
+                        "Ссылка unity://check удалена в 1.6.1 — используйте ```check-блок."));
+                    continue;
+                }
+
+                if (!string.Equals(action, "open", StringComparison.OrdinalIgnoreCase))
                 {
                     issues.Add(Error(lessonPath, lessonTitle, slideIndex, "unity-unknown-action",
-                        $"Неизвестный action unity-ссылки: '{action}' (нужен check|open)."));
+                        $"Неизвестный action unity-ссылки: '{action}' (нужен open)."));
                     continue;
-                }
-
-                Dictionary<string, string> args = ParseQuery(query);
-                if (string.Equals(action, "check", StringComparison.OrdinalIgnoreCase) &&
-                    !args.ContainsKey("type"))
-                {
-                    issues.Add(Error(lessonPath, lessonTitle, slideIndex, "unity-check-no-type",
-                        "unity://check без type=."));
                 }
 
                 if (string.Equals(action, "open", StringComparison.OrdinalIgnoreCase) &&
-                    !args.ContainsKey("path"))
+                    !ParseQuery(query).ContainsKey("path"))
                 {
                     issues.Add(Error(lessonPath, lessonTitle, slideIndex, "unity-open-no-path",
                         "unity://open без path=."));

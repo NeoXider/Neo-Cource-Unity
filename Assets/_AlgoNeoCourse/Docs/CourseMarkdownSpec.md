@@ -147,20 +147,20 @@ rules:
 - `filename`
 - `contains`
 
-Для отладки:
-
-```text
-Project Settings -> AlgoNeoCourse -> Validation -> Debug Render Check Blocks
-```
+Кнопка «Проверить» подставляется под блоком автоматически. После проверки кнопка
+красится в зелёный (успех) или красный (неуспех), результат идёт в прогресс урока.
 
 ## 7. Unity-ссылки
 
-Поддерживаются ссылки вида:
+Авторская ссылка осталась одна:
 
 ```md
 [Открыть префаб](unity://open?path=Assets/Prefabs/Player.prefab)
-[Проверить](unity://check?type=component-present&target=Player&component=Rigidbody)
 ```
+
+`unity://slide` удалены в 1.6.0, авторские `unity://check` — в 1.6.1
+(пишите ```check-блоки; `unity://check` остался лишь внутренним транспортом кнопок).
+Валидатор (`Tools -> AlgoNeoCourse -> Validate Lessons`) подсвечивает удалённые ссылки ошибкой.
 
 ## 8. Окно курса
 

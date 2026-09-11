@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEngine.UIElements;
+using UnityEngine.UIElements.Experimental;
 
 namespace NeoCource.Editor.UI
 {
@@ -72,6 +73,16 @@ namespace NeoCource.Editor.UI
 
             _resultByRoot[root] = resultLabel;
 
+            // Сама кнопка «Проверить» красится в зелёный/красный по итогу.
+            if (success.HasValue && anchor is Button checkButton)
+            {
+                checkButton.RemoveFromClassList("check-button--success");
+                checkButton.RemoveFromClassList("check-button--fail");
+                checkButton.AddToClassList(success.Value
+                    ? "check-button--success"
+                    : "check-button--fail");
+            }
+
             // Анимация появления через transition opacity из USS: стартуем с 0, кадр спустя — показываем.
             // Без загруженного USS инлайн-прозрачность всё равно доводит элемент до видимого состояния.
             resultLabel.style.opacity = 0;
@@ -79,14 +90,14 @@ namespace NeoCource.Editor.UI
             {
                 resultLabel.AddToClassList("check-result--show");
                 resultLabel.style.opacity = 1;
-            }).Delay(30);
+            }).StartingIn(30);
 
             // При неуспехе — класс «толчка», снимаем через расписание.
             if (success == false)
             {
                 resultLabel.AddToClassList("check-result--fail-shake");
                 resultLabel.schedule.Execute(() => resultLabel.RemoveFromClassList("check-result--fail-shake"))
-                    .Delay(500);
+                    .StartingIn(500);
             }
         }
     }

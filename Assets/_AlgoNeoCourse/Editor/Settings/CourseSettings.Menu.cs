@@ -6,7 +6,7 @@ namespace NeoCource.Editor.Settings
 {
     public static class CourseSettingsMenu
     {
-        [MenuItem("Tools/AlgoNeoCourse/Settings/Open Course Settings")]
+        [MenuItem("Tools/AlgoNeoCourse/Settings/Open Course Settings", priority = 35)]
         public static void Open()
         {
             CourseSettings instance = CourseSettings.instance;
@@ -25,7 +25,7 @@ namespace NeoCource.Editor.Settings
             }
         }
 
-        [MenuItem("Tools/AlgoNeoCourse/Settings/Reset Course Settings")]
+        [MenuItem("Tools/AlgoNeoCourse/Settings/Reset Course Settings", priority = 39)]
         public static void Reset()
         {
             CourseSettings.EnsureAssetExists();

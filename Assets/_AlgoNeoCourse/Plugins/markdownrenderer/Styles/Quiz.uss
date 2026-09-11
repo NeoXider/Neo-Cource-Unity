@@ -124,6 +124,23 @@
     background-color: rgba(255, 190, 90, 1.0);
 }
 
+/* Состояние кнопки после проверки: зелёная — успех, красная — неуспех */
+.check-button--success {
+    background-color: rgba(46, 125, 50, 0.95);
+    border-color: rgba(105, 240, 174, 1.0);
+    color: rgb(255, 255, 255);
+    transition-property: background-color, border-color;
+    transition-duration: 0.3s;
+}
+
+.check-button--fail {
+    background-color: rgba(142, 36, 36, 0.95);
+    border-color: rgba(255, 138, 128, 1.0);
+    color: rgb(255, 255, 255);
+    transition-property: background-color, border-color;
+    transition-duration: 0.3s;
+}
+
 /* Результат проверки блока check */
 .check-result-label {
     margin-top: 6px;

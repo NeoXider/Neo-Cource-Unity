@@ -81,6 +81,45 @@ namespace NeoCource.Editor.Tests
         }
 
         [Test]
+        public void GetLessonPercent_Counts_Checks_Without_Touching_Disk()
+        {
+            string path = Path.Combine(Path.GetTempPath(), "algo_percent_checks_test.md");
+            try
+            {
+                File.WriteAllText(path,
+                    "# T\n```check\nrules:\n  - object_exists: \"Player\"\n```\n---\nSecond\n");
+                int pct = CourseWindow.GetLessonPercent(path,
+                    out int quizDone, out int quizTotal, out int checksDone, out int checksTotal);
+                Assert.AreEqual(0, quizTotal);
+                Assert.AreEqual(1, checksTotal);
+                Assert.AreEqual(0, checksDone);
+                Assert.AreEqual(0, pct);
+            }
+            finally
+            {
+                try
+                {
+                    File.Delete(path);
+                }
+                catch
+                {
+                }
+            }
+        }
+
+        [Test]
+        public void CollectCheckIds_Counts_Check_Blocks()
+        {
+            Type t = typeof(CourseWindow);
+            MethodInfo mi = t.GetMethod("CollectCheckIds", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.IsNotNull(mi, "CollectCheckIds method not found");
+
+            string md = "# T\n```check\nrules:\n  - object_exists: \"Player\"\n```\n---\nNo checks here\n";
+            var ids = (System.Collections.Generic.HashSet<string>)mi.Invoke(null, new object[] { md });
+            Assert.AreEqual(1, ids.Count);
+        }
+
+        [Test]
         public void PreprocessMediaLinks_ResolvesRelativeToMdFolder()
         {
             // Arrange: create a temp image under Assets so that project-relative path can be built
@@ -94,7 +133,20 @@ namespace NeoCource.Editor.Tests
             string imgFull = Path.Combine(tempDir, "pic.png");
             if (!File.Exists(imgFull))
             {
-                File.WriteAllBytes(imgFull, new byte[] { 0 });
+                // Валидный PNG 1x1 (прозрачный): мусорные байты роняли бы импорт
+                // при AssetDatabase.Refresh() с ошибкой "File could not be read".
+                File.WriteAllBytes(imgFull, new byte[]
+                {
+                    0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+                    0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+                    0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+                    0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4,
+                    0x89, 0x00, 0x00, 0x00, 0x0A, 0x49, 0x44, 0x41,
+                    0x54, 0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00,
+                    0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00,
+                    0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE,
+                    0x42, 0x60, 0x82
+                });
             }
 
             string mdDir = Path.Combine(assetsPath, "_AlgoNeoCourse/TempTestMedia");

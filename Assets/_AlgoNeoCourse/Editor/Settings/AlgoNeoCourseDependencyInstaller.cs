@@ -15,13 +15,13 @@ namespace NeoCource.Editor
             EditorApplication.delayCall += () => EnsureEmbeddedMarkdownRenderer(false);
         }
 
-        [MenuItem("Tools/AlgoNeoCourse/Dependencies/Validate Embedded Markdown", priority = 10)]
+        [MenuItem("Tools/AlgoNeoCourse/Dependencies/Validate Embedded Markdown", priority = 46)]
         private static void ValidateEmbeddedMarkdown()
         {
             EnsureEmbeddedMarkdownRenderer(true);
         }
 
-        [MenuItem("Tools/AlgoNeoCourse/Dependencies/Apply Embedded Markdown Fix", priority = 11)]
+        [MenuItem("Tools/AlgoNeoCourse/Dependencies/Apply Embedded Markdown Fix", priority = 47)]
         private static void ApplyEmbeddedMarkdownFix()
         {
             if (EnsureMarkdownRendererPatched())

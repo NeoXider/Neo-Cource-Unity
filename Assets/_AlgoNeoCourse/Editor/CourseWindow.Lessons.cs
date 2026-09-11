@@ -13,8 +13,11 @@ namespace NeoCource.Editor
 {
     public partial class CourseWindow
     {
-        private void RefreshLessonsList()
+        // Публичный: дёргается из CourseSettings после скачивания уроков,
+        // чтобы окно презентации обновлялось само, без ручной кнопки.
+        public void RefreshLessonsList()
         {
+            ClearEmptyState();
             if (CourseSettings.instance == null)
             {
                 Debug.LogWarning("CourseWindow: CourseSettings недоступен — обновление списка уроков пропущено.");
@@ -84,20 +87,13 @@ namespace NeoCource.Editor
             });
 
             List<(string title, string filePath, string id)> filteredList = availableLessons.ToList();
-            // Порядок titles обязан совпадать с filteredList: префикс прогресса порядок не меняет.
-            List<string> titles = filteredList.Select(l =>
-            {
-                int pct = GetLessonPercent(l.filePath, out int done, out int total);
-                if (pct >= 100)
-                {
-                    return "✓ " + l.title;
-                }
-
-                return pct > 0 ? pct + "%  " + l.title : l.title;
-            }).ToList();
+            // Названия — чистые, без префиксов: PopupField группирует по "/" в названии,
+            // и любой префикс плодит дубли групп при смене процента. Прогресс — в баре и тултипе.
+            List<string> titles = filteredList.Select(l => l.title).ToList();
             if (titles.Count == 0)
             {
-                titles.Add("Нет загруженных уроков — скачайте их в CourseSettings");
+                // Коротко и без обрезки: лимит дропдауна режет длинные строки.
+                titles.Add("Нет загруженных уроков");
             }
 
             CourseProgressStore.TryGetLastSession(out string savedPath, out int savedSlide);
@@ -158,6 +154,7 @@ namespace NeoCource.Editor
                 currentSlideIndex = 0;
                 slideIndicator.text = "—/—";
                 mdRenderer.SetMarkdown("# Нет уроков\n\nСначала загрузите список и скачайте уроки в CourseSettings.");
+                ShowEmptyState();
             }
 
             // Обновляем общий прогресс курса и кнопку «Продолжить».
@@ -165,12 +162,21 @@ namespace NeoCource.Editor
             UpdateContinueButton();
         }
 
-        // Процент прохождения урока: 50% слайды + 50% квизы (без квизов — 100% слайды).
+        // Процент прохождения урока: среднее по present-частям (слайды + квизы + проверки).
         // completedQuizzes/totalQuizzes отдаём для тултипа дропдауна.
         public static int GetLessonPercent(string lessonFilePath, out int completedQuizzes, out int totalQuizzes)
         {
+            return GetLessonPercent(lessonFilePath, out completedQuizzes, out totalQuizzes,
+                out _, out _);
+        }
+
+        public static int GetLessonPercent(string lessonFilePath, out int completedQuizzes, out int totalQuizzes,
+            out int completedChecks, out int totalChecks)
+        {
             completedQuizzes = 0;
             totalQuizzes = 0;
+            completedChecks = 0;
+            totalChecks = 0;
             try
             {
                 if (string.IsNullOrEmpty(lessonFilePath) || !File.Exists(lessonFilePath))
@@ -194,20 +200,19 @@ namespace NeoCource.Editor
                 totalQuizzes = questions.Count;
                 LessonQuizState state = QuizStateStore.GetLessonState(lessonFilePath, false);
 
-                // Урок ни разу не открывали — прогресс слайдов равен нулю.
-                float slidePart = 0f;
+                // Пройденных слайдов: урок ни разу не открывали — ноль.
+                int slidesDone = 0;
                 if (state != null && slidesTotal > 0)
                 {
-                    int reached = Math.Min(state.maxSlideReached, slidesTotal - 1);
-                    slidePart = (reached + 1) / (float)slidesTotal;
+                    slidesDone = Math.Min(state.maxSlideReached, slidesTotal - 1) + 1;
                 }
 
-                if (totalQuizzes == 0)
+                if (totalQuizzes == 0 && slidesTotal == 0)
                 {
-                    return Mathf.Clamp(Mathf.RoundToInt(100f * slidePart), 0, 100);
+                    return 0;
                 }
 
-                if (state?.questionIdToState != null)
+                if (totalQuizzes > 0 && state?.questionIdToState != null)
                 {
                     foreach (QuizQuestion q in questions)
                     {
@@ -219,19 +224,147 @@ namespace NeoCource.Editor
                     }
                 }
 
-                float quizPart = completedQuizzes / (float)totalQuizzes;
-                return Mathf.Clamp(Mathf.RoundToInt(50f * slidePart + 50f * quizPart), 0, 100);
+                HashSet<string> checkIds = CollectCheckIds(text);
+                totalChecks = checkIds.Count;
+                if (totalChecks > 0 && state?.checkIdToPassed != null)
+                {
+                    foreach (string id in checkIds)
+                    {
+                        if (state.checkIdToPassed.TryGetValue(id, out bool ok) && ok)
+                        {
+                            completedChecks++;
+                        }
+                    }
+                }
+
+                // Доля от ВСЕХ элементов урока (слайды + квизы + проверки):
+                // 25/27 даёт почти полный бар, а не 67% как при среднем частей.
+                int totalItems = slidesTotal + totalQuizzes + totalChecks;
+                if (totalItems <= 0)
+                {
+                    return 0;
+                }
+
+                int doneItems = slidesDone + completedQuizzes + completedChecks;
+                return Mathf.Clamp(Mathf.RoundToInt(100f * doneItems / totalItems), 0, 100);
             }
             catch
             {
                 completedQuizzes = 0;
                 totalQuizzes = 0;
+                completedChecks = 0;
+                totalChecks = 0;
                 return 0;
             }
         }
 
-        private bool IsAlreadyOnSession(string lastPath, int lastSlide)
+        // Все id практических проверок урока: ```check-блоки (кнопки инжектятся всегда,
+        // см. InjectCheckBlocksIfDebug). unity://check-ссылки авторского написания удалены
+        // в 1.6.1 и здесь не учитываются.
+        private static HashSet<string> CollectCheckIds(string lessonText)
         {
+            HashSet<string> ids = new(StringComparer.Ordinal);
+            if (string.IsNullOrEmpty(lessonText))
+            {
+                return ids;
+            }
+
+            try
+            {
+                foreach (Match m in Regex.Matches(lessonText, @"```check\s*\n([\s\S]*?)\n```"))
+                {
+                    string encoded;
+                    try
+                    {
+                        encoded = Uri.EscapeDataString(m.Groups[1].Value);
+                    }
+                    catch
+                    {
+                        continue;
+                    }
+
+                    ids.Add(QuizStateStore.CheckIdForLink(
+                        "unity://check?type=from-block&dialog=auto&__raw_block__=" + encoded));
+                }
+            }
+            catch
+            {
+            }
+
+            return ids;
+        }
+
+        // Дальняя точка прогресса: движется только вперёд по порядку уроков.
+        // Откат на пару слайдов назад и обзор других уроков её не сдвигают,
+        // поэтому «Продолжить» всегда ведёт к максимуму, а не к последнему автосейву.
+        // Только in-memory: на диск запишет ближайший SaveLastSession/SaveToDisk.
+        private void UpdateFarthestSession()
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(currentLessonFilePath) || slides == null || slides.Count == 0)
+                {
+                    return;
+                }
+
+                CourseProgressData data = CourseProgressStore.GetData();
+                string current = NormalizeSessionPath(currentLessonFilePath);
+                string far = NormalizeSessionPath(data.farthestLessonPath);
+
+                bool advance = false;
+                if (string.IsNullOrEmpty(far))
+                {
+                    advance = true;
+                }
+                else
+                {
+                    int curIdx = IndexInAvailableLessons(current);
+                    int farIdx = IndexInAvailableLessons(far);
+                    if (curIdx >= 0 && farIdx >= 0)
+                    {
+                        advance = curIdx > farIdx ||
+                                  (curIdx == farIdx && currentSlideIndex > data.farthestSlideIndex);
+                    }
+                    else if (string.Equals(current, far, StringComparison.OrdinalIgnoreCase))
+                    {
+                        advance = currentSlideIndex > data.farthestSlideIndex;
+                    }
+                    // farthest вне текущего списка — не трогаем.
+                }
+
+                if (advance)
+                {
+                    data.farthestLessonPath = current;
+                    data.farthestSlideIndex = currentSlideIndex;
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        private int IndexInAvailableLessons(string normalizedPath)
+        {
+            try
+            {
+                string full = Path.GetFullPath(normalizedPath);
+                for (int i = 0; i < availableLessons.Count; i++)
+                {
+                    if (string.Equals(Path.GetFullPath(availableLessons[i].filePath), full,
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        return i;
+                    }
+                }
+            }
+            catch
+            {
+            }
+
+            return -1;
+        }
+
+        private bool IsAlreadyOnSession(string lastPath, int lastSlide)        {
             try
             {
                 string currentNormalized = NormalizeSessionPath(currentLessonFilePath);
@@ -293,6 +426,7 @@ namespace NeoCource.Editor
 
         private void LoadLesson((string title, string filePath, string id) lesson)
         {
+            ClearEmptyState();
             if (mdRenderer == null)
             {
                 BuildContent();
@@ -415,6 +549,39 @@ namespace NeoCource.Editor
                 return;
             }
 
+            GoToSession(lastPath, lastSlide);
+        }
+
+        // Кнопка «▶ Продолжить»: ведёт к дальней достигнутой точке, а не к последнему
+        // автосейву (автосейв едет и за откатом назад, farthest — только вперёд).
+        private void GoToFarthestSession()
+        {
+            if (mdRenderer == null)
+            {
+                BuildContent();
+            }
+
+            if (CourseProgressStore.TryGetFarthestSession(out string farPath, out int farSlide) &&
+                !string.IsNullOrEmpty(NormalizeSessionPath(farPath)))
+            {
+                farPath = NormalizeSessionPath(farPath);
+                if (File.Exists(farPath) && !IsAlreadyOnSession(farPath, farSlide))
+                {
+                    GoToSession(farPath, farSlide);
+                    return;
+                }
+
+                if (IsAlreadyOnSession(farPath, farSlide))
+                {
+                    return;
+                }
+            }
+
+            RestoreLastSession();
+        }
+
+        private void GoToSession(string lastPath, int lastSlide)
+        {
             if (availableLessons == null || availableLessons.Count == 0)
             {
                 try
@@ -442,6 +609,7 @@ namespace NeoCource.Editor
                 {
                     try
                     {
+                        ClearEmptyState();
                         currentLessonTitle = Path.GetFileNameWithoutExtension(lastPath);
                         currentLessonFilePath = lastPath;
                         slides = SplitSlides(File.ReadAllText(lastPath));

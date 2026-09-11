@@ -38,9 +38,7 @@ answers:
 
 ## Практика и проверка
 
-Добавьте `Rigidbody` на объект `Player`, затем выполните проверку:
-
-[Проверить](unity://check?type=component-present&target=Player&component=Rigidbody)
+Добавьте `Rigidbody` на объект `Player`, затем выполните проверку кнопкой под блоком:
 
 ```check
 rules:

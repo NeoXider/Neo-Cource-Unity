@@ -44,6 +44,10 @@ namespace NeoCource.Editor.Quizzes
         public string lessonPath;
         public Dictionary<string, QuizQuestionState> questionIdToState = new();
 
+        // Практические проверки (unity://check): checkId -> последний результат.
+        // checkId детерминирован содержимым ссылки, переживает перезапуски.
+        public Dictionary<string, bool> checkIdToPassed = new();
+
         // Задел под прогресс/синк (опциональные, старые сейвы читаются без них):
         public string lessonId = string.Empty; // стабильный id из course.json, не путь
         public int lastSlideIndex;
