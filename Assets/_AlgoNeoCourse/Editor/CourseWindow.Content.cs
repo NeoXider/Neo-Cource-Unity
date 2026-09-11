@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using NeoCource.Editor.Infrastructure;
 using NeoCource.Editor.Settings;
@@ -62,7 +63,10 @@ namespace NeoCource.Editor
                 return;
             }
 
-            string[] files = Directory.GetFiles(root, "*.md", SearchOption.TopDirectoryOnly);
+            // Регистронезависимый фильтр расширения (.md/.MD для Linux).
+            string[] files = Directory.GetFiles(root, "*", SearchOption.TopDirectoryOnly)
+                .Where(f => string.Equals(Path.GetExtension(f), ".md", StringComparison.OrdinalIgnoreCase))
+                .ToArray();
             if (files.Length == 0)
             {
                 docsMenu.menu.AppendAction("Нет примеров", _ => { }, DropdownMenuAction.Status.Disabled);

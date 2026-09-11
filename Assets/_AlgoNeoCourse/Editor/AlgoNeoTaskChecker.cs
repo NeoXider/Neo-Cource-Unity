@@ -12,6 +12,12 @@ namespace NeoCource.Editor
     {
         public static string Execute(Dictionary<string, string> args)
         {
+            return Execute(args, out _);
+        }
+
+        public static string Execute(Dictionary<string, string> args, out bool success)
+        {
+            success = false;
             if (args == null || !args.TryGetValue("type", out string type) || string.IsNullOrEmpty(type))
             {
                 EditorUtility.DisplayDialog("Проверка задания", "Параметры проверки не заданы", "Ок");
@@ -48,6 +54,7 @@ namespace NeoCource.Editor
 
             DisplayResult(result.title, result.message, result.success, args);
 
+            success = result.success;
             return result.message;
         }
 

@@ -9,6 +9,18 @@ namespace NeoCource.Editor
 {
     internal static class AlgoNeoYamlChecker
     {
+        // Безопасное значение после ПЕРВОГО двоеточия (пути вида C:\ и contains с ':' иначе режутся).
+        private static string ValueAfterColon(string line)
+        {
+            if (string.IsNullOrEmpty(line))
+            {
+                return string.Empty;
+            }
+
+            int c = line.IndexOf(':');
+            return c < 0 ? string.Empty : line.Substring(c + 1).Trim().Trim('"');
+        }
+
         public static (bool ok, string message) Evaluate(string raw)
         {
             if (string.IsNullOrEmpty(raw))
@@ -65,7 +77,7 @@ namespace NeoCource.Editor
                 string trimmed = line.Trim();
                 if (trimmed.StartsWith("- object_exists:", StringComparison.OrdinalIgnoreCase))
                 {
-                    string name = trimmed.Split(':')[1].Trim().Trim('"');
+                    string name = ValueAfterColon(trimmed);
                     GameObject go = GameObject.Find(name);
                     bool ok = go != null;
                     sceneOk &= ok;
@@ -104,12 +116,12 @@ namespace NeoCource.Editor
 
                         if (tj.StartsWith("object:", StringComparison.OrdinalIgnoreCase))
                         {
-                            on = tj.Split(':')[1].Trim().Trim('"');
+                            on = ValueAfterColon(tj);
                         }
 
                         if (tj.StartsWith("type:", StringComparison.OrdinalIgnoreCase))
                         {
-                            ct = tj.Split(':')[1].Trim().Trim('"');
+                            ct = ValueAfterColon(tj);
                         }
                     }
 
@@ -172,13 +184,13 @@ namespace NeoCource.Editor
             string filename = lines.Select(l => l.Trim())
                 .Where(l => l.StartsWith("- filename:", StringComparison.OrdinalIgnoreCase) ||
                             l.StartsWith("filename:", StringComparison.OrdinalIgnoreCase))
-                .Select(l => l.Split(':')[1].Trim().Trim('"'))
+                .Select(l => ValueAfterColon(l))
                 .FirstOrDefault();
 
             List<string> containsTerms = lines.Select(l => l.Trim())
                 .Where(l => l.StartsWith("- contains:", StringComparison.OrdinalIgnoreCase) ||
                             l.StartsWith("contains:", StringComparison.OrdinalIgnoreCase))
-                .Select(l => l.Split(':')[1].Trim().Trim('"'))
+                .Select(l => ValueAfterColon(l))
                 .Where(s => !string.IsNullOrEmpty(s))
                 .ToList();
 

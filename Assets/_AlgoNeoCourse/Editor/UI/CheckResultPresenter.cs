@@ -1,19 +1,50 @@
-﻿using UnityEngine.UIElements;
+﻿using System.Collections.Generic;
+using UnityEngine.UIElements;
 
 namespace NeoCource.Editor.UI
 {
     internal static class CheckResultPresenter
     {
-        private static VisualElement _currentResultElement;
+        // Один результат на корень визуального дерева — разные окна не затирают друг друга.
+        private static readonly Dictionary<VisualElement, Label> _resultByRoot = new();
 
         public static void Show(VisualElement anchor, string message)
         {
-            if (_currentResultElement != null && _currentResultElement.parent != null)
+            ShowInternal(anchor, message, null);
+        }
+
+        // Перегрузка с явным статусом: успех — анимация появления, неуспех — «толчок».
+        public static void Show(VisualElement anchor, string message, bool success)
+        {
+            ShowInternal(anchor, message, success);
+        }
+
+        private static void ShowInternal(VisualElement anchor, string message, bool? success)
+        {
+            if (anchor == null)
             {
-                _currentResultElement.RemoveFromHierarchy();
+                return;
             }
 
-            if (anchor == null || anchor.parent == null)
+            // Ключ — самый верхний родитель (корень окна), чтобы окна не затирали друг друга.
+            VisualElement root = anchor;
+            while (root.parent != null)
+            {
+                root = root.parent;
+            }
+
+            // Удаляем предыдущий результат только в том же корне.
+            if (_resultByRoot.TryGetValue(root, out Label prev))
+            {
+                if (prev != null && prev.parent != null)
+                {
+                    prev.RemoveFromHierarchy();
+                }
+
+                _resultByRoot.Remove(root);
+            }
+
+            if (anchor.parent == null)
             {
                 return;
             }
@@ -39,7 +70,24 @@ namespace NeoCource.Editor.UI
                 parent.Insert(parent.IndexOf(anchor) + 1, resultLabel);
             }
 
-            _currentResultElement = resultLabel;
+            _resultByRoot[root] = resultLabel;
+
+            // Анимация появления через transition opacity из USS: стартуем с 0, кадр спустя — показываем.
+            // Без загруженного USS инлайн-прозрачность всё равно доводит элемент до видимого состояния.
+            resultLabel.style.opacity = 0;
+            resultLabel.schedule.Execute(() =>
+            {
+                resultLabel.AddToClassList("check-result--show");
+                resultLabel.style.opacity = 1;
+            }).Delay(30);
+
+            // При неуспехе — класс «толчка», снимаем через расписание.
+            if (success == false)
+            {
+                resultLabel.AddToClassList("check-result--fail-shake");
+                resultLabel.schedule.Execute(() => resultLabel.RemoveFromClassList("check-result--fail-shake"))
+                    .Delay(500);
+            }
         }
     }
 }

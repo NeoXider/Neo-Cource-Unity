@@ -12,37 +12,35 @@ namespace NeoCource.Editor.Settings
     {
         private async Task CheckJsonExistsAsync(string url)
         {
-            using (HttpClient client = new())
+            // Общий клиент с Timeout 20s (см. GetHttpClient): без таймаута проверка могла висеть бесконечно.
+            try
             {
-                try
+                if (enableDebugLogging)
                 {
-                    if (enableDebugLogging)
-                    {
-                        Debug.Log($"Проверка ссылки: {url}");
-                    }
+                    Debug.Log($"Проверка ссылки: {url}");
+                }
 
-                    HttpResponseMessage response = await client.GetAsync(url);
-                    if (response.IsSuccessStatusCode)
+                HttpResponseMessage response = await GetHttpClient().GetAsync(url);
+                if (response.IsSuccessStatusCode)
+                {
+                    string json = await response.Content.ReadAsStringAsync();
+                    if (!string.IsNullOrWhiteSpace(json))
                     {
-                        string json = await response.Content.ReadAsStringAsync();
-                        if (!string.IsNullOrWhiteSpace(json))
-                        {
-                            Debug.Log($"✅ Файл найден и загружен: {url}");
-                        }
-                        else
-                        {
-                            Debug.LogError($"⚠ Файл пустой: {url}");
-                        }
+                        Debug.Log($"✅ Файл найден и загружен: {url}");
                     }
                     else
                     {
-                        Debug.LogError($"❌ Ошибка загрузки: {response.StatusCode} — {url}");
+                        Debug.LogError($"⚠ Файл пустой: {url}");
                     }
                 }
-                catch (Exception ex)
+                else
                 {
-                    Debug.LogError($"❌ Ошибка: {ex.Message}");
+                    Debug.LogError($"❌ Ошибка загрузки: {response.StatusCode} — {url}");
                 }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"❌ Ошибка: {ex.Message}");
             }
         }
 

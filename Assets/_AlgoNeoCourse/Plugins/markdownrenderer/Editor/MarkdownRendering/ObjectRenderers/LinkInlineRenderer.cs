@@ -29,9 +29,15 @@ namespace UIMarkdownRenderer.ObjectRenderers
             else
             {
                 link = renderer.ResolveLink(link);
-                if (!link.StartsWith("http"))
+                if (link.StartsWith("http", StringComparison.OrdinalIgnoreCase) ||
+                    link.StartsWith("file://", StringComparison.OrdinalIgnoreCase))
                 {
-                    link = "file://" + Path.Combine(renderer.FileFolder, link);
+                    // Абсолютная ссылка — используем как есть, повторно не комбинируем.
+                }
+                else
+                {
+                    // Относительная ссылка — доклеиваем папку текущего файла.
+                    link = "file://" + Path.Combine(renderer.FileFolder ?? ".", link);
                 }
 
                 string[] videoFilesTypes =
@@ -39,14 +45,23 @@ namespace UIMarkdownRenderer.ObjectRenderers
 
                 VisualElement resultingElement = null;
 
+                // Расширение сравниваем без учёта регистра: ".MP4" — тоже видео.
                 string ext = Path.GetExtension(link);
 
-                if (videoFilesTypes.Contains(ext))
+                if (videoFilesTypes.Contains(ext, StringComparer.OrdinalIgnoreCase))
                 {
                     // video
                     VideoPlayerElement vidPlayer = renderer.AddVideoPlayer();
-                    vidPlayer.SetVideoUrl(link, false);
-                    resultingElement = vidPlayer;
+                    if (vidPlayer == null)
+                    {
+                        // Плеер недоступен (нет префаба) — fallback на обычную картинку.
+                        resultingElement = renderer.AddImage();
+                    }
+                    else
+                    {
+                        vidPlayer.SetVideoUrl(link, false);
+                        resultingElement = vidPlayer;
+                    }
                 }
                 else
                 {
@@ -60,7 +75,25 @@ namespace UIMarkdownRenderer.ObjectRenderers
                         return;
                     }
 
-                    UnityWebRequest uwr = new(link, UnityWebRequest.kHttpVerbGET);
+                    UnityWebRequest uwr;
+                    UnityWebRequestAsyncOperation asyncOp;
+                    try
+                    {
+                        // Мусор в ссылке (пробелы, "C:\") не должен ронять рендер всего слайда.
+                        uwr = new UnityWebRequest(link, UnityWebRequest.kHttpVerbGET);
+                        uwr.downloadHandler = new DownloadHandlerTexture();
+                        uwr.SetRequestHeader("User-Agent", RequestUserAgent);
+                        uwr.SetRequestHeader("Accept", "image/*,*/*;q=0.8");
+                        asyncOp = uwr.SendWebRequest();
+                    }
+                    catch (Exception ex)
+                    {
+                        imgElem.tooltip = "bad link";
+                        Debug.LogWarning($"Markdown image bad link '{link}': {ex.Message}");
+                        resultingElement = imgElem;
+                        ApplyAttributes(obj, resultingElement);
+                        return;
+                    }
                     imgElem.RegisterCallback<GeometryChangedEvent>(evt =>
                     {
                         if (imgElem.image != null)
@@ -80,11 +113,6 @@ namespace UIMarkdownRenderer.ObjectRenderers
                             }
                         }
                     });
-
-                    uwr.downloadHandler = new DownloadHandlerTexture();
-                    uwr.SetRequestHeader("User-Agent", RequestUserAgent);
-                    uwr.SetRequestHeader("Accept", "image/*,*/*;q=0.8");
-                    UnityWebRequestAsyncOperation asyncOp = uwr.SendWebRequest();
 
                     asyncOp.completed += operation =>
                     {

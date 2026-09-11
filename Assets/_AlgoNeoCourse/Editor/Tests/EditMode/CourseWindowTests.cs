@@ -31,6 +31,56 @@ namespace NeoCource.Editor.Tests
         }
 
         [Test]
+        public void SplitSlides_Ignores_TripleDash_Inside_Fence()
+        {
+            Type t = typeof(CourseWindow);
+            MethodInfo mi = GetPrivateMethod(t, "SplitSlides");
+            Assert.IsNotNull(mi, "SplitSlides method not found");
+
+            string md = "Slide A\n```csharp\n---\n```\n---\nSlide B";
+            List<string> slides = (List<string>)mi.Invoke(null, new object[] { md });
+            Assert.AreEqual(2, slides.Count);
+            StringAssert.Contains("---", slides[0]);
+            Assert.AreEqual("Slide B", slides[1]);
+        }
+
+        [Test]
+        public void GetLessonPercent_Untouched_Lesson_Is_Zero()
+        {
+            string path = Path.Combine(Path.GetTempPath(), "algo_percent_test.md");
+            try
+            {
+                File.WriteAllText(path,
+                    "# T\n---\n```quiz\nid: q1\nkind: single\ntext: Q?\nanswers:\n  - text: A\n    correct: true\n  - text: B\n```\n");
+                int pct = CourseWindow.GetLessonPercent(path, out int done, out int total);
+                Assert.AreEqual(1, total);
+                Assert.AreEqual(0, done);
+                Assert.AreEqual(0, pct);
+            }
+            finally
+            {
+                try
+                {
+                    File.Delete(path);
+                }
+                catch
+                {
+                }
+            }
+        }
+
+        [Test]
+        public void GetLessonPercent_Missing_File_Is_Zero()
+        {
+            int pct = CourseWindow.GetLessonPercent(
+                Path.Combine(Path.GetTempPath(), "algo_no_such_percent_xyz.md"),
+                out int done, out int total);
+            Assert.AreEqual(0, pct);
+            Assert.AreEqual(0, done);
+            Assert.AreEqual(0, total);
+        }
+
+        [Test]
         public void PreprocessMediaLinks_ResolvesRelativeToMdFolder()
         {
             // Arrange: create a temp image under Assets so that project-relative path can be built

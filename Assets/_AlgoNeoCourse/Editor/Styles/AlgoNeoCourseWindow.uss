@@ -103,3 +103,31 @@
     padding-left: 8px;
     padding-right: 8px;
 }
+
+.algo-course-progress-wrap {
+    flex-direction: column;
+    margin: 2px 8px 4px 8px;
+}
+
+.algo-course-progress {
+    height: 8px;
+    background-color: #2a2d33;
+    border-radius: 4px;
+    flex-direction: row;
+}
+
+.algo-course-progress-fill {
+    height: 100%;
+    width: 0%;
+    background-color: #6ab0ff;
+    border-radius: 4px;
+    transition-property: width;
+    transition-duration: 0.3s;
+}
+
+.algo-course-progress-label {
+    font-size: 10px;
+    color: #9aa0aa;
+    margin-left: 8px;
+    margin-bottom: 2px;
+}

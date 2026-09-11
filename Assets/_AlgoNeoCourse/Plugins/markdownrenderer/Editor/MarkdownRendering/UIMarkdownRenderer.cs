@@ -139,8 +139,15 @@ namespace UIMarkdownRenderer
             }
             else if (link.StartsWith(".") || link.StartsWith(".."))
             {
-                link = "/" + link;
-                link = FileFolder + link;
+                try
+                {
+                    // Резолвим "./" и "../" относительно папки текущего файла.
+                    link = Path.GetFullPath(Path.Combine(FileFolder ?? ".", link));
+                }
+                catch
+                {
+                    return link;
+                }
             }
             else if (link.StartsWith("Packages") || link.StartsWith("Assets"))
             {
@@ -159,7 +166,7 @@ namespace UIMarkdownRenderer
 
         public void SendCommand(Command cmd)
         {
-            m_CommandHandler.Invoke(cmd);
+            m_CommandHandler?.Invoke(cmd);
         }
 
         private void DefaultCommandHandler(Command cmd)
@@ -304,6 +311,33 @@ namespace UIMarkdownRenderer
 
         public void OpenFile(string filePath)
         {
+            if (string.IsNullOrEmpty(filePath))
+            {
+                throw new ArgumentException("Путь к markdown-файлу пуст.", nameof(filePath));
+            }
+
+            if (!File.Exists(filePath))
+            {
+                // Не роняем вьювер/инспектор: показываем заглушку вместо исключения наружу.
+                Debug.LogWarning($"[Markdown] Файл не найден: {filePath}");
+                string knownFolder = m_LocalFilePath;
+                if (string.IsNullOrEmpty(knownFolder))
+                {
+                    try
+                    {
+                        knownFolder = Path.GetDirectoryName(filePath) ?? string.Empty;
+                    }
+                    catch
+                    {
+                        knownFolder = string.Empty;
+                    }
+                }
+
+                FileFolder = knownFolder ?? string.Empty;
+                SetMarkdown("# Файл не найден\n\n" + filePath);
+                return;
+            }
+
             m_LocalFilePath = Path.GetDirectoryName(filePath);
             FileFolder = Path.GetFullPath(m_LocalFilePath);
 
@@ -351,12 +385,26 @@ namespace UIMarkdownRenderer
 
         public void AddCustomUSS(string path)
         {
-            if (path.StartsWith("."))
+            if (string.IsNullOrEmpty(m_LocalFilePath))
             {
-                path = m_LocalFilePath + path.Remove(0, 1);
+                return;
             }
 
-            StyleSheet stylesheet = AssetDatabase.LoadAssetAtPath<StyleSheet>(path);
+            if (path.StartsWith("."))
+            {
+                path = Path.Combine(m_LocalFilePath, path.Substring(1).TrimStart('/', '\\'));
+            }
+
+            StyleSheet stylesheet = null;
+            try
+            {
+                stylesheet = AssetDatabase.LoadAssetAtPath<StyleSheet>(path);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[Markdown] Не удалось загрузить USS '{path}': {ex.Message}");
+                return;
+            }
 
             if (stylesheet == null)
             {
@@ -412,8 +460,23 @@ namespace UIMarkdownRenderer
         {
             FinishBlock();
 
-            VideoPlayerElement newPlayer = s_VideoPlayerElementPrefab.Instantiate().Q<VideoPlayerElement>();
-            newPlayer.styleSheets.Add(s_VideoPlayerStyleSheet);
+            if (s_VideoPlayerElementPrefab == null)
+            {
+                Debug.LogError("[Markdown] VideoPlayer UXML missing: " + AlgoNeoPackageAssetLocator.VideoPlayerUxmlAssetPath);
+                return null;
+            }
+
+            VideoPlayerElement newPlayer = s_VideoPlayerElementPrefab.Instantiate()?.Q<VideoPlayerElement>();
+            if (newPlayer == null)
+            {
+                Debug.LogError("[Markdown] VideoPlayer prefab has no VideoPlayerElement.");
+                return null;
+            }
+
+            if (s_VideoPlayerStyleSheet != null)
+            {
+                newPlayer.styleSheets.Add(s_VideoPlayerStyleSheet);
+            }
 
             m_BlockStack.Peek().Add(newPlayer);
             StartBlock();

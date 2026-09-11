@@ -41,7 +41,7 @@ namespace UIMarkdownRenderer
             {
                 string path = AssetDatabase.GetAssetPath(txtAsset);
 
-                if (Path.GetExtension(path) == ".md")
+                if (string.Equals(Path.GetExtension(path), ".md", StringComparison.OrdinalIgnoreCase))
                 {
                     m_Path = path;
                     Setup();
@@ -60,7 +60,7 @@ namespace UIMarkdownRenderer
             string path = AssetDatabase.GetAssetPath(instanceID);
 #endif
 
-            if (Path.GetExtension(path) == ".md")
+            if (string.Equals(Path.GetExtension(path), ".md", StringComparison.OrdinalIgnoreCase))
             {
                 Open(path);
                 return true;
@@ -169,12 +169,15 @@ namespace UIMarkdownRenderer
 
                 renderer.SendCommand(cmd);
             }
-            else if (link.EndsWith(".md") || link.EndsWith(".txt"))
+            else if (link.EndsWith(".md", StringComparison.OrdinalIgnoreCase) ||
+                     link.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
             {
                 //this is a link to an external MD or text file so we open it with the viewer instead of using Application.OpenURL
                 if (!Path.IsPathRooted(link))
                 {
-                    link = Path.Combine(Path.GetDirectoryName(renderer.FileFolder), link);
+                    // FileFolder УЖЕ папка (см. UIMarkdownRenderer.OpenFile),
+                    // поэтому комбинируем напрямую без лишнего GetDirectoryName.
+                    link = Path.Combine(renderer.FileFolder, link);
                 }
 
                 Open(link);

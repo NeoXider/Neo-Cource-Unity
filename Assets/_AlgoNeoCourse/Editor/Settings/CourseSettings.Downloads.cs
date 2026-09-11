@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using NeoCource.Editor.Infrastructure;
 using UnityEditor;
 using UnityEngine;
 
@@ -31,9 +32,11 @@ namespace NeoCource.Editor.Settings
             }
 
             string targetFolder = GetDownloadFolderPath();
-            if (!Directory.Exists(targetFolder))
+            // IO работаем с абсолютным путём; в логах и Refresh ниже остаётся asset-путь.
+            string targetFolderAbs = AlgoNeoPackageAssetLocator.ToAbsolutePath(targetFolder);
+            if (!Directory.Exists(targetFolderAbs))
             {
-                Directory.CreateDirectory(targetFolder);
+                Directory.CreateDirectory(targetFolderAbs);
             }
 
             try
@@ -54,9 +57,10 @@ namespace NeoCource.Editor.Settings
                         continue;
                     }
 
-                    string url = repositoryBaseUrl.TrimEnd('/') + "/" + remoteRel;
-                    string localPath = Path.Combine(targetFolder,
-                        SanitizeFileName(selection.id + "-" + Path.GetFileName(remoteRel)));
+                    string url = BuildLessonUrl(repositoryBaseUrl, remoteRel);
+                    // Имя файла не меняем: {id}-{file}.
+                    string fileName = SanitizeFileName(selection.id + "-" + Path.GetFileName(remoteRel));
+                    string localPath = Path.Combine(targetFolderAbs, fileName);
 
                     if (EditorUtility.DisplayCancelableProgressBar(
                             "Загрузка уроков",
@@ -89,7 +93,8 @@ namespace NeoCource.Editor.Settings
                             {
                                 string markdown = await response.Content.ReadAsStringAsync();
                                 File.WriteAllText(localPath, markdown);
-                                Debug.Log($"Сохранено: {localPath}");
+                                // В лог — asset-путь с '/'.
+                                Debug.Log($"Сохранено: {targetFolder.Replace('\\', '/').TrimEnd('/') + "/" + fileName}");
                             }
 
                             break;
@@ -154,7 +159,7 @@ namespace NeoCource.Editor.Settings
         public void DeleteDownloadedFiles()
         {
             string targetFolder = GetDownloadFolderPath();
-            if (!Directory.Exists(targetFolder))
+            if (!Directory.Exists(AlgoNeoPackageAssetLocator.ToAbsolutePath(targetFolder)))
             {
                 Debug.Log("CourseSettings: загруженных файлов не найдено.");
                 return;
@@ -174,6 +179,12 @@ namespace NeoCource.Editor.Settings
             {
                 AssetDatabase.Refresh();
             }
+        }
+
+        private static string BuildLessonUrl(string baseUrl, string remoteRel)
+        {
+            // Каждый сегмент пути escape'им отдельно, чтобы пробелы и юникод не ломали URL.
+            return baseUrl.TrimEnd('/') + "/" + string.Join("/", remoteRel.Split('/').Select(Uri.EscapeDataString));
         }
 
         private static string SanitizeFileName(string fileName)

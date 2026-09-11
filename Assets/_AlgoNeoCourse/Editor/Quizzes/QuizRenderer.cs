@@ -63,7 +63,7 @@ namespace NeoCource.Editor.Quizzes
                     // Перемешивание один раз, если включено
                     if (settings.randomizeAnswersOnCourseOpen)
                     {
-                        int seed = (lessonPath + "|" + q.id).GetHashCode();
+                        int seed = QuizUtils.StableSeed(lessonPath + "|" + q.id);
                         QuizUtils.Shuffle(qState.shuffledOrder, seed);
                     }
 
@@ -82,7 +82,7 @@ namespace NeoCource.Editor.Quizzes
                     qState.shuffledOrder = Enumerable.Range(0, q.answers.Count).ToList();
                     if (settings.randomizeAnswersOnCourseOpen)
                     {
-                        int seed = (lessonPath + "|" + q.id).GetHashCode();
+                        int seed = QuizUtils.StableSeed(lessonPath + "|" + q.id);
                         QuizUtils.Shuffle(qState.shuffledOrder, seed);
                     }
                 }
@@ -155,6 +155,12 @@ namespace NeoCource.Editor.Quizzes
                         }
 
                         UpdateAfterStateChange(settings, lessonPath, qState, block, answerButtons, onStateChanged);
+
+                        // Эффект верного ответа (только при успехе, классы — no-op без USS).
+                        if (correct)
+                        {
+                            PlayCorrectEffect(block, answerButtons);
+                        }
                     }) { text = "Проверить" };
                     checkBtn.style.marginBottom = 6;
                     checkBtn.SetEnabled(qState.selectedAnswerIds.Count > 0 && !qState.isCompleted);
@@ -293,6 +299,45 @@ namespace NeoCource.Editor.Quizzes
             onStateChanged?.Invoke();
         }
 
+        // Эффект верного ответа: короткий «поп» кнопки и строки результата.
+        // Только USS-классы + расписание, без внешних ассетов; без загруженного USS классы — no-op.
+        // Существующую подсветку (quiz-answer--correct/--wrong) не трогает.
+        private static void PlayCorrectEffect(VisualElement block, List<Button> answerButtons,
+            Button correctButton = null)
+        {
+            List<Button> targets = new();
+            if (correctButton != null)
+            {
+                targets.Add(correctButton);
+            }
+            else if (answerButtons != null)
+            {
+                // Кнопка не передана (multiple) — подсвечиваем все верные.
+                foreach (Button b in answerButtons)
+                {
+                    if (b != null && b.ClassListContains("quiz-answer--correct"))
+                    {
+                        targets.Add(b);
+                    }
+                }
+            }
+
+            foreach (Button t in targets)
+            {
+                Button captured = t;
+                captured.AddToClassList("quiz-answer--just-correct");
+                captured.schedule.Execute(() => captured.RemoveFromClassList("quiz-answer--just-correct"))
+                    .Delay(700);
+            }
+
+            Label resultLabel = block?.Q<Label>(className: "quiz-result");
+            if (resultLabel != null)
+            {
+                resultLabel.AddToClassList("quiz-result--pop");
+                resultLabel.schedule.Execute(() => resultLabel.RemoveFromClassList("quiz-result--pop")).Delay(700);
+            }
+        }
+
         private static void HighlightAnswersAfterComplete(QuizQuestion q, QuizQuestionState qState,
             List<Button> buttons, Dictionary<Button, QuizAnswer> map)
         {
@@ -368,6 +413,14 @@ namespace NeoCource.Editor.Quizzes
                 // Обновить UI и сохранить
                 List<Button> buttons = block.Query<Button>(className: "quiz-answer").ToList();
                 UpdateAfterStateChange(settings, lessonPath, qState, block, buttons, onStateChanged);
+
+                // Эффект верного ответа (только при успехе, классы — no-op без USS).
+                if (isCorrectNow)
+                {
+                    Button clickedButton =
+                        buttons.FirstOrDefault(b => ReferenceEquals(b.userData as QuizAnswer, ans));
+                    PlayCorrectEffect(block, buttons, clickedButton);
+                }
             }
             catch (Exception ex)
             {

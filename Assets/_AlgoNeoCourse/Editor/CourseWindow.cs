@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using NeoCource.Editor.GifSupport;
 using NeoCource.Editor.Quizzes;
 using NeoCource.Editor.Settings;
 using UnityEditor;
@@ -31,6 +32,9 @@ namespace NeoCource.Editor
         private PopupField<string> lessonGroupDropdown;
         private PopupField<string> lessonModuleDropdown;
         private UIMarkdownRenderer.UIMarkdownRenderer mdRenderer;
+        private ToolbarButton continueBtn;
+        private VisualElement courseProgressFill;
+        private Label courseProgressLabel;
         private ToolbarButton nextBtn;
         private ToolbarButton openInExplorerBtn;
         private ToolbarButton prevBtn;
@@ -52,6 +56,16 @@ namespace NeoCource.Editor
 
         public void CreateGUI()
         {
+            try
+            {
+                // Защита от двойной подписки при повторном создании GUI.
+                GifConverter.ConversionFinished -= OnGifConversionFinished;
+                GifConverter.ConversionFinished += OnGifConversionFinished;
+            }
+            catch
+            {
+            }
+
             rootVisualElement.style.flexDirection = FlexDirection.Column;
             rootVisualElement.AddToClassList("algo-course-window");
             LoadWindowStyles();
@@ -104,6 +118,35 @@ namespace NeoCource.Editor
                     };
                 }
             };
+        }
+
+        // GIF-конвертация асинхронна: по завершении перерисовываем слайд и прогресс.
+        private void OnGifConversionFinished()
+        {
+            try
+            {
+                if (this == null)
+                {
+                    return;
+                }
+
+                ShowSlide(currentSlideIndex);
+                UpdateCourseProgressUI();
+            }
+            catch
+            {
+            }
+        }
+
+        private void OnDestroy()
+        {
+            try
+            {
+                GifConverter.ConversionFinished -= OnGifConversionFinished;
+            }
+            catch
+            {
+            }
         }
     }
 }

@@ -5,7 +5,6 @@ Entry point for the package documentation inside `Assets/_AlgoNeoCourse/Docs`.
 ## Read this first
 
 - `CourseMarkdownSpec.md` — current lesson format and course JSON structure
-- `Examples/slide_navigation.md` — slide navigation examples
 - `Examples/full_lesson.md` — a small end-to-end lesson sample
 - `Examples/quiz_single.md` — single choice quiz example
 - `Examples/quiz_multiple_truefalse.md` — multiple choice and true/false examples
@@ -15,7 +14,6 @@ Entry point for the package documentation inside `Assets/_AlgoNeoCourse/Docs`.
 - how lesson Markdown is structured
 - how `quiz` and `check` blocks work
 - how media paths are resolved
-- how slide navigation links work
 - how the package behaves with local JSON progress and GIF conversion
 
 ## Important current facts

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using NeoCource.Editor.Progress;
 using NeoCource.Editor.Settings;
 using UnityEditor;
 using UnityEditor.UIElements;
@@ -65,7 +66,22 @@ namespace NeoCource.Editor
             toolbar.Add(settingsBtn);
 
             prevBtn = new ToolbarButton(() => ShowSlide(currentSlideIndex - 1)) { text = "<" };
-            nextBtn = new ToolbarButton(() => ShowSlide(currentSlideIndex + 1)) { text = ">" };
+            // Кнопка вперёд уважает guard квизов: при незавершённых вопросах переход блокируется.
+            nextBtn = new ToolbarButton(() =>
+            {
+                if (!CanGoNextSlide())
+                {
+                    if (QuizSettings.instance != null && QuizSettings.instance.enableDebugLogging)
+                    {
+                        Debug.Log("[Quiz] Навигация вперёд заблокирована");
+                    }
+
+                    return;
+                }
+
+                ShowSlide(currentSlideIndex + 1);
+            })
+            { text = ">" };
             prevBtn.AddToClassList("algo-course-nav-button");
             prevBtn.AddToClassList("prev");
             nextBtn.AddToClassList("algo-course-nav-button");
@@ -77,12 +93,16 @@ namespace NeoCource.Editor
             prevBtn.style.color = new StyleColor(new Color(0.65f, 0.75f, 1f));
             nextBtn.style.color = new StyleColor(new Color(0.6f, 1f, 0.6f));
             nextBtn.style.minWidth = 60;
+            // Кнопка возврата к сохранённой позиции (состояние обновляет UpdateContinueButton).
+            continueBtn = new ToolbarButton(() => RestoreLastSession()) { text = "▶ Продолжить" };
+            continueBtn.tooltip = "Продолжить с сохранённой позиции";
             slideIndicator = new Label("—/—") { style = { unityTextAlign = TextAnchor.MiddleCenter, minWidth = 60 } };
             slideIndicator.AddToClassList("algo-course-slide-indicator");
 
             toolbar.Add(prevBtn);
             toolbar.Add(slideIndicator);
             toolbar.Add(nextBtn);
+            toolbar.Add(continueBtn);
 
             toolbar.Add(new ToolbarSpacer());
 
@@ -120,7 +140,22 @@ namespace NeoCource.Editor
             toolbar.Add(resetProgressBtn);
             toolbar.Add(openInExplorerBtn);
 
+            // Полоса общего прогресса курса — отдельным рядом под тулбаром:
+            // контейнер-колонка: сам бар + подпись под ним.
+            VisualElement progressWrap = new VisualElement();
+            progressWrap.AddToClassList("algo-course-progress-wrap");
+            VisualElement progressBar = new VisualElement();
+            progressBar.AddToClassList("algo-course-progress");
+            courseProgressFill = new VisualElement();
+            courseProgressFill.AddToClassList("algo-course-progress-fill");
+            progressBar.Add(courseProgressFill);
+            courseProgressLabel = new Label("0% · 0/0 уроков");
+            courseProgressLabel.AddToClassList("algo-course-progress-label");
+            progressWrap.Add(progressBar);
+            progressWrap.Add(courseProgressLabel);
+
             rootVisualElement.Add(toolbar);
+            rootVisualElement.Add(progressWrap);
             RegisterToolbarHotkeys();
         }
 
@@ -130,6 +165,18 @@ namespace NeoCource.Editor
             {
                 try
                 {
+                    // Не перехватываем ввод, когда фокус в поле ввода или дропдауне уроков.
+                    if (evt.target is TextField)
+                    {
+                        return;
+                    }
+
+                    if (rootVisualElement.focusController?.focusedElement is TextField ||
+                        rootVisualElement.focusController?.focusedElement is PopupField<string>)
+                    {
+                        return;
+                    }
+
                     if (evt.keyCode == KeyCode.LeftArrow)
                     {
                         ShowSlide(currentSlideIndex - 1);
@@ -167,6 +214,63 @@ namespace NeoCource.Editor
                 {
                 }
             }, TrickleDown.TrickleDown);
+        }
+
+        // Общий прогресс курса: средний процент по всем доступным урокам.
+        private void UpdateCourseProgressUI()
+        {
+            try
+            {
+                if (courseProgressFill == null || courseProgressLabel == null)
+                {
+                    return;
+                }
+
+                if (availableLessons == null || availableLessons.Count == 0)
+                {
+                    courseProgressFill.style.width = Length.Percent(0);
+                    courseProgressLabel.text = "0% · 0/0 уроков";
+                    return;
+                }
+
+                int sum = 0;
+                int completedCount = 0;
+                foreach ((string title, string filePath, string id) lesson in availableLessons)
+                {
+                    int pct = GetLessonPercent(lesson.filePath, out int done, out int total);
+                    sum += pct;
+                    if (pct >= 100)
+                    {
+                        completedCount++;
+                    }
+                }
+
+                int overall = Mathf.Clamp(Mathf.RoundToInt(sum / (float)availableLessons.Count), 0, 100);
+                courseProgressFill.style.width = Length.Percent(overall);
+                courseProgressLabel.text = $"{overall}% · {completedCount}/{availableLessons.Count} уроков";
+            }
+            catch
+            {
+            }
+        }
+
+        // Кнопка «Продолжить» активна, только если есть сохранённая позиция.
+        private void UpdateContinueButton()
+        {
+            try
+            {
+                if (continueBtn == null)
+                {
+                    return;
+                }
+
+                bool has = CourseProgressStore.TryGetLastSession(out string p, out int s) &&
+                    !string.IsNullOrEmpty(p);
+                continueBtn.SetEnabled(has);
+            }
+            catch
+            {
+            }
         }
 
         private void EnsureHotkeysHook()

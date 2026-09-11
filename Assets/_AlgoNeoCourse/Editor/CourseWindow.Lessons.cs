@@ -15,6 +15,12 @@ namespace NeoCource.Editor
     {
         private void RefreshLessonsList()
         {
+            if (CourseSettings.instance == null)
+            {
+                Debug.LogWarning("CourseWindow: CourseSettings недоступен — обновление списка уроков пропущено.");
+                return;
+            }
+
             CourseSettings settings = CourseSettings.instance;
 
             availableLessons.Clear();
@@ -37,7 +43,10 @@ namespace NeoCource.Editor
                 {
                     HashSet<string> knownPaths = new(availableLessons.Select(l => Path.GetFullPath(l.filePath)),
                         StringComparer.OrdinalIgnoreCase);
-                    foreach (string markdownFile in Directory.GetFiles(folder, "*.md", SearchOption.TopDirectoryOnly))
+                    // Перечисляем все файлы и фильтруем регистронезависимо (.md/.MD для Linux).
+                    foreach (string markdownFile in Directory.GetFiles(folder, "*", SearchOption.TopDirectoryOnly)
+                                 .Where(f => string.Equals(Path.GetExtension(f), ".md",
+                                     StringComparison.OrdinalIgnoreCase)))
                     {
                         string full = Path.GetFullPath(markdownFile);
                         if (knownPaths.Contains(full))
@@ -75,7 +84,17 @@ namespace NeoCource.Editor
             });
 
             List<(string title, string filePath, string id)> filteredList = availableLessons.ToList();
-            List<string> titles = filteredList.Select(l => l.title).ToList();
+            // Порядок titles обязан совпадать с filteredList: префикс прогресса порядок не меняет.
+            List<string> titles = filteredList.Select(l =>
+            {
+                int pct = GetLessonPercent(l.filePath, out int done, out int total);
+                if (pct >= 100)
+                {
+                    return "✓ " + l.title;
+                }
+
+                return pct > 0 ? pct + "%  " + l.title : l.title;
+            }).ToList();
             if (titles.Count == 0)
             {
                 titles.Add("Нет загруженных уроков — скачайте их в CourseSettings");
@@ -140,6 +159,75 @@ namespace NeoCource.Editor
                 slideIndicator.text = "—/—";
                 mdRenderer.SetMarkdown("# Нет уроков\n\nСначала загрузите список и скачайте уроки в CourseSettings.");
             }
+
+            // Обновляем общий прогресс курса и кнопку «Продолжить».
+            UpdateCourseProgressUI();
+            UpdateContinueButton();
+        }
+
+        // Процент прохождения урока: 50% слайды + 50% квизы (без квизов — 100% слайды).
+        // completedQuizzes/totalQuizzes отдаём для тултипа дропдауна.
+        public static int GetLessonPercent(string lessonFilePath, out int completedQuizzes, out int totalQuizzes)
+        {
+            completedQuizzes = 0;
+            totalQuizzes = 0;
+            try
+            {
+                if (string.IsNullOrEmpty(lessonFilePath) || !File.Exists(lessonFilePath))
+                {
+                    return 0;
+                }
+
+                string text = File.ReadAllText(lessonFilePath);
+                int slidesTotal = SplitSlides(text).Count;
+
+                List<QuizQuestion> questions;
+                try
+                {
+                    questions = QuizParser.ParseQuestions(text) ?? new List<QuizQuestion>();
+                }
+                catch
+                {
+                    questions = new List<QuizQuestion>();
+                }
+
+                totalQuizzes = questions.Count;
+                LessonQuizState state = QuizStateStore.GetLessonState(lessonFilePath, false);
+
+                // Урок ни разу не открывали — прогресс слайдов равен нулю.
+                float slidePart = 0f;
+                if (state != null && slidesTotal > 0)
+                {
+                    int reached = Math.Min(state.maxSlideReached, slidesTotal - 1);
+                    slidePart = (reached + 1) / (float)slidesTotal;
+                }
+
+                if (totalQuizzes == 0)
+                {
+                    return Mathf.Clamp(Mathf.RoundToInt(100f * slidePart), 0, 100);
+                }
+
+                if (state?.questionIdToState != null)
+                {
+                    foreach (QuizQuestion q in questions)
+                    {
+                        if (q != null && state.questionIdToState.TryGetValue(q.id, out QuizQuestionState qs) &&
+                            qs != null && qs.isCompleted)
+                        {
+                            completedQuizzes++;
+                        }
+                    }
+                }
+
+                float quizPart = completedQuizzes / (float)totalQuizzes;
+                return Mathf.Clamp(Mathf.RoundToInt(50f * slidePart + 50f * quizPart), 0, 100);
+            }
+            catch
+            {
+                completedQuizzes = 0;
+                totalQuizzes = 0;
+                return 0;
+            }
         }
 
         private bool IsAlreadyOnSession(string lastPath, int lastSlide)
@@ -190,7 +278,9 @@ namespace NeoCource.Editor
                 }
             }
 
-            return Directory.GetFiles(folder, "*.md", SearchOption.TopDirectoryOnly)
+            // Регистронезависимый фильтр расширения (.md/.MD для Linux).
+            return Directory.GetFiles(folder, "*", SearchOption.TopDirectoryOnly)
+                .Where(path => string.Equals(Path.GetExtension(path), ".md", StringComparison.OrdinalIgnoreCase))
                 .FirstOrDefault(path =>
                 {
                     string fileName = Path.GetFileName(path);
@@ -232,9 +322,46 @@ namespace NeoCource.Editor
 
         private static List<string> SplitSlides(string md)
         {
-            List<string> parts = Regex.Split(md.Replace("\r\n", "\n"), @"^\n?\s*---\s*$", RegexOptions.Multiline)
-                .ToList();
-            return parts.Select(p => p.Trim()).Where(p => !string.IsNullOrEmpty(p)).ToList();
+            // Fence-aware нарезка: --- внутри ``` / ~~~ блоков — часть кода, а не граница слайда.
+            List<string> slides = new();
+            List<string> current = new();
+            bool inFence = false;
+            string fenceMarker = null;
+
+            string[] lines = (md ?? string.Empty).Replace("\r\n", "\n").Split('\n');
+            foreach (string raw in lines)
+            {
+                string trimmed = raw.Trim();
+                if (trimmed.StartsWith("```") || trimmed.StartsWith("~~~"))
+                {
+                    string marker = trimmed.StartsWith("```") ? "```" : "~~~";
+                    if (!inFence)
+                    {
+                        inFence = true;
+                        fenceMarker = marker;
+                    }
+                    else if (string.Equals(marker, fenceMarker, StringComparison.Ordinal))
+                    {
+                        inFence = false;
+                        fenceMarker = null;
+                    }
+
+                    current.Add(raw);
+                    continue;
+                }
+
+                if (!inFence && Regex.IsMatch(trimmed, @"^\s*---\s*$"))
+                {
+                    slides.Add(string.Join("\n", current));
+                    current.Clear();
+                    continue;
+                }
+
+                current.Add(raw);
+            }
+
+            slides.Add(string.Join("\n", current));
+            return slides.Select(p => p.Trim()).Where(p => !string.IsNullOrEmpty(p)).ToList();
         }
 
         private void SaveLastSession()

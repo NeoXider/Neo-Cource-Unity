@@ -64,5 +64,21 @@ namespace NeoCource.Editor.Tests
             state.questionIdToState["q2"] = new QuizQuestionState { questionId = "q2", isCompleted = true };
             Assert.IsFalse(QuizEngine.HasUnfinishedQuestions(new[] { q1, q2 }, state));
         }
+
+        [Test]
+        public void HasUnfinishedQuestions_NullState_Means_Unfinished()
+        {
+            // Состояния нет (сейв удалён) — вопросы считаются непройденными, guard блокирует Next.
+            var questions = new[] { new QuizQuestion { id = "q1", kind = QuizKind.Single } };
+            Assert.IsTrue(QuizEngine.HasUnfinishedQuestions(questions, null));
+            Assert.IsFalse(QuizEngine.HasUnfinishedQuestions(new QuizQuestion[0], null));
+        }
+
+        [Test]
+        public void HasUnfinishedQuestions_NullQuestions_Returns_False()
+        {
+            var state = new LessonQuizState { lessonPath = "lesson.md" };
+            Assert.IsFalse(QuizEngine.HasUnfinishedQuestions(null, state));
+        }
     }
 }

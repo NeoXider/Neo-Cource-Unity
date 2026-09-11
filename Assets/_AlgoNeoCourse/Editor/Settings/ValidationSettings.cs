@@ -44,6 +44,8 @@ namespace NeoCource.Editor.Settings
                 return true;
             }
 
+            // Список мог стать null после ручной правки ассета.
+            DisabledChecks ??= new List<string>();
             return !DisabledChecks.Any(k => string.Equals(k?.Trim(), key.Trim(), StringComparison.OrdinalIgnoreCase));
         }
 
@@ -54,6 +56,8 @@ namespace NeoCource.Editor.Settings
                 return;
             }
 
+            // Список мог стать null после ручной правки ассета.
+            DisabledChecks ??= new List<string>();
             if (!DisabledChecks.Any(k => string.Equals(k, key, StringComparison.OrdinalIgnoreCase)))
             {
                 DisabledChecks.Add(key);
@@ -68,6 +72,8 @@ namespace NeoCource.Editor.Settings
                 return;
             }
 
+            // Список мог стать null после ручной правки ассета.
+            DisabledChecks ??= new List<string>();
             int idx = DisabledChecks.FindIndex(k => string.Equals(k, key, StringComparison.OrdinalIgnoreCase));
             if (idx >= 0)
             {
@@ -90,6 +96,8 @@ namespace NeoCource.Editor.Settings
             LogVerbose = true;
             DebugRenderCheckBlocks = true;
             DebugBrowseDocsExamples = true;
+            // Список мог стать null после ручной правки ассета.
+            DisabledChecks ??= new List<string>();
             DisabledChecks.Clear();
             Save(true);
         }

@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using NeoCource.Editor.Settings;
 using UnityEditor;
 using UnityEngine;
@@ -133,17 +134,51 @@ namespace NeoCource.Editor.Utils
 
         public static string ReadAllTextWithRetries(string assetPath)
         {
-            string projectRoot = Path.GetDirectoryName(Application.dataPath);
+            // Guard: абсолютный путь за пределами проекта не читаем.
+            if (!string.IsNullOrEmpty(assetPath) && Path.IsPathRooted(assetPath))
+            {
+                string projectRoot = Path.GetFullPath(Path.GetDirectoryName(Application.dataPath));
+                string requested = Path.GetFullPath(assetPath);
+                string rootWithSep = projectRoot.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) +
+                                     Path.DirectorySeparatorChar;
+                bool inside = requested.StartsWith(rootWithSep, StringComparison.OrdinalIgnoreCase) ||
+                              string.Equals(requested, projectRoot, StringComparison.OrdinalIgnoreCase);
+                if (!inside)
+                {
+                    throw new IOException("Путь вне проекта: " + assetPath);
+                }
+            }
+
+            string root = Path.GetDirectoryName(Application.dataPath);
             string fullPath =
-                Path.GetFullPath(Path.Combine(projectRoot, assetPath.Replace('/', Path.DirectorySeparatorChar)));
-            try
+                Path.GetFullPath(Path.Combine(root, assetPath.Replace('/', Path.DirectorySeparatorChar)));
+
+            // Три попытки с нарастающей паузой; пробрасываем последнее исключение.
+            Exception lastError = null;
+            for (int attempt = 1; attempt <= 3; attempt++)
             {
-                return File.ReadAllText(fullPath, Encoding.UTF8);
+                try
+                {
+                    try
+                    {
+                        return File.ReadAllText(fullPath, Encoding.UTF8);
+                    }
+                    catch
+                    {
+                        return File.ReadAllText(fullPath);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    lastError = ex;
+                    if (attempt < 3)
+                    {
+                        Thread.Sleep(60 * attempt);
+                    }
+                }
             }
-            catch
-            {
-                return File.ReadAllText(fullPath);
-            }
+
+            throw lastError ?? new IOException("Не удалось прочитать файл: " + assetPath);
         }
 
         public static Type FindTypeByName(string name)

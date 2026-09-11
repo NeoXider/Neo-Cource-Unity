@@ -31,14 +31,24 @@ namespace UIMarkdownRenderer
             CreateCachedEditor(target, type, ref m_DefaultEditor);
 
             //TODO : handle also other extension? Potentially skip that and display every file as Markdown?
-            m_IsMDFile = Path.GetExtension(AssetDatabase.GetAssetPath(target)) == ".md";
+            m_IsMDFile = string.Equals(Path.GetExtension(AssetDatabase.GetAssetPath(target)), ".md",
+                StringComparison.OrdinalIgnoreCase);
         }
 
         public override VisualElement CreateInspectorGUI()
         {
             if (m_IsMDFile)
             {
-                m_Renderer.OpenFile(Path.GetFullPath(m_TargetPath));
+                // Удалённый .md ронял инспектор — открываем файл защищённо.
+                try
+                {
+                    m_Renderer.OpenFile(Path.GetFullPath(m_TargetPath));
+                }
+                catch (Exception ex)
+                {
+                    return new Label("Не удалось открыть .md: " + ex.Message);
+                }
+
                 return m_Renderer.RootElement;
             }
 

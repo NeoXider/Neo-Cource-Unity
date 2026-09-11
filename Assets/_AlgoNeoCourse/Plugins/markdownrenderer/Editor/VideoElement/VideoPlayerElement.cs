@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
@@ -81,15 +82,10 @@ public partial class VideoPlayerElement : VisualElement
     private void PreparePlayer()
     {
         //we try to get a player from the pool, if not available, we create a new one
-        if (s_VideoPlayerPool.TryDequeue(out VideoPlayer player))
+        s_VideoPlayerPool.TryDequeue(out VideoPlayer player);
+        if (player == null)
         {
-            m_PlaybackObject = player.gameObject;
-            m_VideoPlayer = player;
-
-            m_PlaySpeed = m_VideoPlayer.playbackSpeed;
-        }
-        else
-        {
+            // Пула нет или объект уничтожен после domain reload — создаём новый.
             m_PlaybackObject = new GameObject { hideFlags = HideFlags.HideAndDontSave };
 
             m_VideoPlayer = m_PlaybackObject.AddComponent<VideoPlayer>();
@@ -104,6 +100,13 @@ public partial class VideoPlayerElement : VisualElement
             //refresh the element so the original framerate of the video is preserved (otherwise Unity only update the
             //element only once per second or so)
             m_VideoPlayer.sendFrameReadyEvents = true;
+        }
+        else
+        {
+            m_PlaybackObject = player.gameObject;
+            m_VideoPlayer = player;
+
+            m_PlaySpeed = m_VideoPlayer.playbackSpeed;
         }
 
         m_VideoPlayer.isLooping = m_IsLooping;
@@ -136,6 +139,11 @@ public partial class VideoPlayerElement : VisualElement
 
     private void FreePlayer()
     {
+        if (m_VideoPlayer == null)
+        {
+            return;
+        }
+
         m_VideoPlayer.prepareCompleted -= PreparedHandler;
         m_VideoPlayer.frameReady -= FrameReadyHandler;
 
@@ -323,14 +331,34 @@ public partial class VideoPlayerElement : VisualElement
 
     private void OnDetachedFromPanel(DetachFromPanelEvent evt)
     {
-        // saving state to re apply if this is just detaching to reattach immediately somewhere
-        m_PreviousTime = m_VideoPlayer.time;
-        m_AutoStart = m_VideoPlayer.isPlaying;
+        try
+        {
+            if (m_VideoPlayer == null)
+            {
+                try
+                {
+                    EditorApplication.playModeStateChanged -= PlayModeChanged;
+                }
+                catch
+                {
+                }
 
-        m_VideoPlayer.Pause();
-        EditorApplication.playModeStateChanged -= PlayModeChanged;
+                return;
+            }
 
-        FreePlayer();
+            // saving state to re apply if this is just detaching to reattach immediately somewhere
+            m_PreviousTime = m_VideoPlayer.time;
+            m_AutoStart = m_VideoPlayer.isPlaying;
+
+            m_VideoPlayer.Pause();
+            EditorApplication.playModeStateChanged -= PlayModeChanged;
+
+            FreePlayer();
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"[Markdown] VideoPlayerElement.OnDetachedFromPanel: {ex.Message}");
+        }
     }
 
     private void OnErrorReceived(VideoPlayer source, string message)
@@ -347,6 +375,11 @@ public partial class VideoPlayerElement : VisualElement
 
     private void PlayButtonPushed()
     {
+        if (m_VideoPlayer == null)
+        {
+            return;
+        }
+
         if (m_VideoPlayer.isPlaying)
         {
             PlayerPause();
@@ -375,11 +408,21 @@ public partial class VideoPlayerElement : VisualElement
 
     private void AudioSliderChangeHandler(ChangeEvent<float> evt)
     {
+        if (m_VideoPlayer == null)
+        {
+            return;
+        }
+
         m_VideoPlayer.SetDirectAudioVolume(0, evt.newValue);
     }
 
     private void PlayTrackPressedHandler(MouseDownEvent evt)
     {
+        if (m_VideoPlayer == null)
+        {
+            return;
+        }
+
         m_PlayTrack.parent.CaptureMouse();
         evt.StopPropagation();
         m_IsScrubbing = true;
@@ -392,6 +435,11 @@ public partial class VideoPlayerElement : VisualElement
 
     private void PlayTrackMoveHandler(MouseMoveEvent evt)
     {
+        if (m_VideoPlayer == null)
+        {
+            return;
+        }
+
         if (!m_IsScrubbing)
         {
             return;
@@ -405,6 +453,11 @@ public partial class VideoPlayerElement : VisualElement
 
     private void PlayTrackReleasedHandler(MouseUpEvent evt)
     {
+        if (m_VideoPlayer == null)
+        {
+            return;
+        }
+
         m_IsScrubbing = false;
         m_PlayTrack.parent.ReleaseMouse();
         m_VideoPlayer.Play();
@@ -412,6 +465,11 @@ public partial class VideoPlayerElement : VisualElement
 
     private void PlayerPlay()
     {
+        if (m_VideoPlayer == null)
+        {
+            return;
+        }
+
         //A button in GameView can mute audio and direct audio respect that. So we need to save if it was disable
         //so we can disable it again when the video is stopped/destroyed
         m_AudioWasMuted = EditorUtility.audioMasterMute;
@@ -428,6 +486,11 @@ public partial class VideoPlayerElement : VisualElement
 
     private void PlayerPause()
     {
+        if (m_VideoPlayer == null)
+        {
+            return;
+        }
+
         //if we play then pause in between the player getting ready, the play when ready flag would be set and the player
         //would start playing when ready despite pausing. So always set the flag to false when pausing
         m_AutoStart = false;
@@ -476,7 +539,11 @@ public partial class VideoPlayerElement : VisualElement
 
     private void GeometryChangedHandler(GeometryChangedEvent evt)
     {
-        if (m_VideoPlayer.targetTexture != null)
+        if (m_VideoPlayer == null || m_VideoPlayer.targetTexture == null)
+        {
+            return;
+        }
+
         {
             RenderTexture texture = m_VideoPlayer.targetTexture;
             float aspectRatio = texture.width / (float)texture.height;
@@ -500,7 +567,7 @@ public partial class VideoPlayerElement : VisualElement
     /// <returns>The percent from 0 to 1 at which the player is at</returns>
     public float GetPlayPercent()
     {
-        if (m_VideoPlayer.length == 0)
+        if (m_VideoPlayer == null || m_VideoPlayer.length == 0)
         {
             return 0.0f;
         }
@@ -514,6 +581,11 @@ public partial class VideoPlayerElement : VisualElement
     /// <param name="percent">The percent of the current video from 0 to 1 to which to set the player</param>
     public void SetPlayPercent(float percent)
     {
+        if (m_VideoPlayer == null)
+        {
+            return;
+        }
+
         VideoPlayer player = m_VideoPlayer;
         player.time = percent * player.length;
     }

@@ -19,6 +19,15 @@ namespace NeoCource.Editor
     {
         private void ShowSlide(int index)
         {
+            // Закрываем откреплённое медиа: иначе оно переживает смену слайда.
+            try
+            {
+                MediaPopoutWindow.EnsureClosed();
+            }
+            catch
+            {
+            }
+
             try
             {
                 if (!string.IsNullOrEmpty(currentLessonFilePath))
@@ -43,6 +52,21 @@ namespace NeoCource.Editor
             slideIndicator.text = $"{currentSlideIndex + 1}/{slides.Count}";
             prevBtn.SetEnabled(currentSlideIndex > 0);
             nextBtn.SetEnabled(currentSlideIndex < slides.Count - 1);
+
+            // Обновляем состояние слайдов урока для полосы прогресса курса.
+            try
+            {
+                LessonQuizState st = QuizStateStore.GetLessonState(currentLessonFilePath);
+                if (st != null)
+                {
+                    st.slidesTotal = slides.Count;
+                    st.lastSlideIndex = currentSlideIndex;
+                    st.maxSlideReached = Math.Max(st.maxSlideReached, currentSlideIndex);
+                }
+            }
+            catch
+            {
+            }
 
             string markdown = slides[currentSlideIndex];
             markdown = InjectCheckBlocksIfDebug(markdown);
@@ -92,6 +116,8 @@ namespace NeoCource.Editor
             FixBrokenMarkdownLinks();
             UpdateSlideGuardState();
             SaveLastSession();
+            UpdateCourseProgressUI();
+            UpdateContinueButton();
             Repaint();
         }
 
@@ -337,6 +363,11 @@ namespace NeoCource.Editor
             }
 
             CourseSettings settings = CourseSettings.instance;
+            if (settings == null)
+            {
+                return markdown;
+            }
+
             if (!settings.autoConvertGifToMp4 || string.IsNullOrEmpty(settings.GetFfmpegAssetPath()))
             {
                 return markdown;
@@ -422,29 +453,35 @@ namespace NeoCource.Editor
             try
             {
                 (string action, Dictionary<string, string> args) = ParseUnityLink(link);
-                if (string.Equals(action, "slide", StringComparison.OrdinalIgnoreCase))
-                {
-                    int direction = args.TryGetValue("dir", out string value) && value == "next" ? 1 : -1;
-                    ShowSlide(currentSlideIndex + direction);
-                    return;
-                }
 
                 if (string.Equals(action, "check", StringComparison.OrdinalIgnoreCase))
                 {
-                    string resultMessage = AlgoNeoTaskChecker.Execute(args);
-                    if (clickedElement != null)
+                    string resultMessage = AlgoNeoTaskChecker.Execute(args, out bool checkOk);
+                    if (clickedElement != null && resultMessage != null)
                     {
-                        CheckResultPresenter.Show(clickedElement, resultMessage);
+                        CheckResultPresenter.Show(clickedElement, resultMessage, checkOk);
                     }
 
                     return;
                 }
 
-                if (string.Equals(action, "open", StringComparison.OrdinalIgnoreCase) &&
-                    args.TryGetValue("path", out string path))
+                if (string.Equals(action, "open", StringComparison.OrdinalIgnoreCase))
                 {
-                    AlgoNeoEditorUtils.OpenAssetOrPath(path);
+                    if (args.TryGetValue("path", out string path))
+                    {
+                        AlgoNeoEditorUtils.OpenAssetOrPath(path);
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"CourseWindow: unity://open без параметра path ({link})");
+                    }
+
+                    return;
                 }
+
+                // Неизвестные unity://-действия подсвечиваем предупреждением, а не игнорируем молча.
+                // Слайд-ссылки (unity://slide) удалены в 1.6.0: навигация только кнопками < > и стрелками.
+                Debug.LogWarning($"CourseWindow: неизвестное unity://-действие '{action}' ({link})");
             }
             catch (Exception ex)
             {
@@ -478,10 +515,20 @@ namespace NeoCource.Editor
                         continue;
                     }
 
-                    string[] kv = pair.Split('=');
-                    string key = Uri.UnescapeDataString(kv[0]);
-                    string value = kv.Length > 1 ? Uri.UnescapeDataString(kv[1]) : string.Empty;
-                    args[key] = value;
+                    try
+                    {
+                        // Делим по ПЕРВОМУ '=': значения могут содержать '=' (например base64).
+                        int eq = pair.IndexOf('=');
+                        string rawKey = eq < 0 ? pair : pair.Substring(0, eq);
+                        string rawValue = eq < 0 ? string.Empty : pair.Substring(eq + 1);
+                        string key = Uri.UnescapeDataString(rawKey);
+                        string value = Uri.UnescapeDataString(rawValue);
+                        args[key] = value;
+                    }
+                    catch
+                    {
+                        // Битый %-escape в одной паре не должен ронять всю ссылку.
+                    }
                 }
             }
 

@@ -43,5 +43,12 @@ namespace NeoCource.Editor.Quizzes
     {
         public string lessonPath;
         public Dictionary<string, QuizQuestionState> questionIdToState = new();
+
+        // Задел под прогресс/синк (опциональные, старые сейвы читаются без них):
+        public string lessonId = string.Empty; // стабильный id из course.json, не путь
+        public int lastSlideIndex;
+        public int maxSlideReached;
+        public int slidesTotal;
+        public long lastActivityAtUnixMs;
     }
 }

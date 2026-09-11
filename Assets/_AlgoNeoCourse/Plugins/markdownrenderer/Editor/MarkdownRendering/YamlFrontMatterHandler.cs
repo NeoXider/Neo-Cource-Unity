@@ -1,5 +1,6 @@
 using Markdig.Extensions.Yaml;
 using Markdig.Renderers;
+using UnityEngine;
 
 namespace UIMarkdownRenderer
 {
@@ -8,21 +9,37 @@ namespace UIMarkdownRenderer
     {
         protected override void Write(UIMarkdownRenderer renderer, YamlFrontMatterBlock obj)
         {
-            //we do not handle real YAML as for now we only support specific uss, so manually parse
-            foreach (object line in obj.Lines)
+            try
             {
-                string data = line.ToString();
-                if (string.IsNullOrEmpty(data))
+                //we do not handle real YAML as for now we only support specific uss, so manually parse
+                foreach (object line in obj.Lines)
                 {
-                    continue;
-                }
+                    string data = line.ToString();
+                    if (string.IsNullOrEmpty(data))
+                    {
+                        continue;
+                    }
 
-                string[] content = data.Split(':');
-                if (content[0].Trim() == "uss")
-                {
-                    string path = content[1].Trim();
-                    renderer.AddCustomUSS(path);
+                    // Безопасный разбор по ПЕРВОМУ двоеточию: строка без ':' (например "uss") раньше роняла весь слайд.
+                    int c = data.IndexOf(':');
+                    if (c < 0)
+                    {
+                        continue;
+                    }
+
+                    if (data.Substring(0, c).Trim() == "uss")
+                    {
+                        string path = data.Substring(c + 1).Trim();
+                        if (!string.IsNullOrEmpty(path))
+                        {
+                            renderer.AddCustomUSS(path);
+                        }
+                    }
                 }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning("YamlFrontMatterHandler: ошибка разбора front matter — " + ex.Message);
             }
         }
     }

@@ -1,8 +1,10 @@
+using System;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-internal class MediaPopoutWindow : EditorWindow
+// Public: окно вызывается из сборки AlgoNeoCourse.Editor (CourseWindow), internal здесь недоступен.
+public class MediaPopoutWindow : EditorWindow
 {
     private VisualElement m_OriginalContainer;
     private int m_OriginalPositionIndex;
@@ -11,15 +13,22 @@ internal class MediaPopoutWindow : EditorWindow
 
     private void OnDestroy()
     {
-        if (m_PopOutElement == null)
+        try
         {
-            return;
-        }
+            if (m_PopOutElement == null)
+            {
+                return;
+            }
 
-        m_PopOutElement.RemoveFromClassList("popout-media");
-        if (m_OriginalContainer != null)
+            m_PopOutElement.RemoveFromClassList("popout-media");
+            if (m_OriginalContainer != null)
+            {
+                m_OriginalContainer.Insert(m_OriginalPositionIndex, m_PopOutElement);
+            }
+        }
+        catch (Exception ex)
         {
-            m_OriginalContainer.Insert(m_OriginalPositionIndex, m_PopOutElement);
+            Debug.LogWarning($"[Markdown] MediaPopoutWindow.OnDestroy: не удалось вернуть элемент: {ex.Message}");
         }
     }
 
@@ -28,6 +37,8 @@ internal class MediaPopoutWindow : EditorWindow
         //needed to receive key event
         rootVisualElement.focusable = true;
         rootVisualElement.Focus();
+        // Отписываемся перед подпиской: фокус может приходить многократно, колбэк не должен множиться.
+        rootVisualElement.UnregisterCallback<KeyDownEvent>(OnKeyPressed);
         rootVisualElement.RegisterCallback<KeyDownEvent>(OnKeyPressed);
     }
 
@@ -48,6 +59,11 @@ internal class MediaPopoutWindow : EditorWindow
 
     public static void Popout(VisualElement element)
     {
+        if (element == null || element.parent == null)
+        {
+            return;
+        }
+
         MediaPopoutWindow win = CreateInstance<MediaPopoutWindow>();
         win.ShowUtility();
 

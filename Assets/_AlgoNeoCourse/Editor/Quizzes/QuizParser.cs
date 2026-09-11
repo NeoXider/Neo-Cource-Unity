@@ -11,9 +11,6 @@ namespace NeoCource.Editor.Quizzes
             "```quiz\\s*\\n([\\s\\S]*?)\\n```",
             RegexOptions.Multiline | RegexOptions.Compiled);
 
-        // локальное хранилище на время Replace — чтобы не трогать out-параметр внутри лямбды
-        [ThreadStatic] private static readonly List<QuizQuestion> _localQuestions = new();
-
         public static List<QuizQuestion> ParseQuestions(string markdown)
         {
             List<QuizQuestion> result = new();
@@ -194,6 +191,9 @@ namespace NeoCource.Editor.Quizzes
 
             HashSet<string> usedIds = new(StringComparer.OrdinalIgnoreCase);
 
+            // Локальный список: захватывается лямбдой (out-параметры в лямбдах запрещены, а локальные — можно).
+            List<QuizQuestion> collected = new();
+
             string result = QuizBlockRegex.Replace(markdown, match =>
             {
                 string body = match.Groups[1].Value;
@@ -219,14 +219,12 @@ namespace NeoCource.Editor.Quizzes
                 }
 
                 // ВАЖНО: не использовать out-параметр в лямбде — локальный список и копирование после Replace
-                _localQuestions.Add(q);
+                collected.Add(q);
                 return $"[[QUIZ:{q.id}]]";
             });
 
             // Перенесём локальные вопросы в out-параметр
-            // (объявление списка делаем наверху файла вне лямбды)
-            questions.AddRange(_localQuestions);
-            _localQuestions.Clear();
+            questions.AddRange(collected);
 
             return result;
         }

@@ -14,6 +14,12 @@ namespace NeoCource.Editor.Progress
     {
         private static CourseProgressData s_cachedData;
 
+        // Флаг одноразового предупреждения о чужом lastLessonPath.
+        private static bool s_ForeignPathWarned;
+
+        // Флаг coalesced-импорта: пока delayCall висит — новые не планируем.
+        private static bool s_ImportScheduled;
+
         public static CourseProgressData GetData()
         {
             if (s_cachedData == null)
@@ -55,10 +61,19 @@ namespace NeoCource.Editor.Progress
             CourseProgressData data = GetData();
             // Всегда прямые слеши: иначе один и тот же урок сохраняется то с '\', то с '/',
             // и сравнение/поиск при восстановлении сессии не срабатывает.
-            data.lastLessonPath = string.IsNullOrWhiteSpace(lessonPath)
+            string normalized = string.IsNullOrWhiteSpace(lessonPath)
                 ? string.Empty
                 : lessonPath.Replace('\\', '/');
+            // Per-project изоляция: чужой путь (другой проект) не сохраняем.
+            if (!string.IsNullOrEmpty(normalized) && !IsPathInsideProject(normalized))
+            {
+                Debug.LogWarning("CourseProgressStore: путь вне проекта, сессия не сохранена — " + normalized);
+                return;
+            }
+
+            data.lastLessonPath = normalized;
             data.lastSlideIndex = Math.Max(0, slideIndex);
+            data.updatedAtUnixMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             SaveToDisk();
         }
 
@@ -67,7 +82,26 @@ namespace NeoCource.Editor.Progress
             CourseProgressData data = GetData();
             lessonPath = data.lastLessonPath ?? string.Empty;
             slideIndex = Math.Max(0, data.lastSlideIndex);
-            return !string.IsNullOrWhiteSpace(lessonPath);
+            if (string.IsNullOrWhiteSpace(lessonPath))
+            {
+                return false;
+            }
+
+            // Per-project изоляция: чужой путь считаем отсутствием сейва.
+            if (!IsPathInsideProject(lessonPath))
+            {
+                if (!s_ForeignPathWarned)
+                {
+                    s_ForeignPathWarned = true;
+                    Debug.LogWarning("CourseProgressStore: сохранённый путь вне проекта, игнорирую — " +
+                                     lessonPath);
+                }
+
+                lessonPath = string.Empty;
+                return false;
+            }
+
+            return true;
         }
 
         public static void SaveToDisk()
@@ -79,10 +113,38 @@ namespace NeoCource.Editor.Progress
                                             AlgoNeoPackageAssetLocator.DefaultProgressFolderAssetPath;
                 AlgoNeoPackageAssetLocator.EnsureProjectFolder(directoryAssetPath);
 
+                CourseProgressData data = GetData();
+                long nowMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                if (data.createdAtUnixMs == 0)
+                {
+                    data.createdAtUnixMs = nowMs;
+                }
+
+                data.updatedAtUnixMs = nowMs;
+
                 string fullPath = AlgoNeoPackageAssetLocator.ToAbsolutePath(assetPath);
-                string json = JsonConvert.SerializeObject(GetData(), Formatting.Indented);
-                File.WriteAllText(fullPath, json);
-                AssetDatabase.Refresh();
+                string json = JsonConvert.SerializeObject(data, Formatting.Indented);
+
+                // Атомарная запись: сначала во временный файл, затем замена.
+                string tmpPath = fullPath + ".tmp";
+                File.WriteAllText(tmpPath, json);
+                try
+                {
+                    File.Replace(tmpPath, fullPath, null);
+                }
+                catch
+                {
+                    // Fallback, если File.Replace недоступен (например, файла ещё нет):
+                    // удаляем целевой и переносим временный.
+                    if (File.Exists(fullPath))
+                    {
+                        File.Delete(fullPath);
+                    }
+
+                    File.Move(tmpPath, fullPath);
+                }
+
+                ScheduleProgressImport(assetPath);
             }
             catch (Exception ex)
             {
@@ -143,6 +205,54 @@ namespace NeoCource.Editor.Progress
             {
                 return lessonPath.Replace('\\', '/');
             }
+        }
+
+        // Per-project изоляция: полный путь должен лежать внутри корня проекта.
+        // Относительные пути (Assets/...) резолвятся через GetFullPath
+        // относительно текущей папки (в Editor это корень проекта).
+        private static bool IsPathInsideProject(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return false;
+            }
+
+            try
+            {
+                string root = Path.GetFullPath(AlgoNeoPackageAssetLocator.GetProjectRoot());
+                root = root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) +
+                       Path.DirectorySeparatorChar;
+                string full = Path.GetFullPath(path);
+                return full.StartsWith(root, StringComparison.OrdinalIgnoreCase);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        // Дешёвая замена AssetDatabase.Refresh(): один coalesced ImportAsset
+        // через delayCall вместо тяжёлого рефреша всей базы ассетов.
+        // В Clear() Refresh оставлен сознательно (редкая операция).
+        private static void ScheduleProgressImport(string assetPath)
+        {
+            if (s_ImportScheduled)
+            {
+                return;
+            }
+
+            s_ImportScheduled = true;
+            EditorApplication.delayCall += () =>
+            {
+                try
+                {
+                    AssetDatabase.ImportAsset(assetPath);
+                }
+                finally
+                {
+                    s_ImportScheduled = false;
+                }
+            };
         }
 
         private static CourseProgressData LoadFromDisk()
