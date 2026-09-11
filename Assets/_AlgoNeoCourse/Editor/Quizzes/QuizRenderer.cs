@@ -19,9 +19,24 @@ namespace NeoCource.Editor.Quizzes
 
             QuizSettings settings = QuizSettings.instance;
             LessonQuizState lessonState = QuizStateStore.GetLessonState(lessonPath);
+            if (lessonState == null)
+            {
+                // Путь урока пуст — персистить некуда, работаем на временном состоянии без сохранения.
+                lessonState = new LessonQuizState { lessonPath = lessonPath ?? string.Empty };
+            }
+
+            if (lessonState.questionIdToState == null)
+            {
+                lessonState.questionIdToState = new Dictionary<string, QuizQuestionState>();
+            }
 
             foreach (QuizQuestion q in questions)
             {
+                if (q.answers == null)
+                {
+                    q.answers = new List<QuizAnswer>();
+                }
+
                 VisualElement block = new();
                 block.AddToClassList("quiz-block");
 
@@ -53,6 +68,23 @@ namespace NeoCource.Editor.Quizzes
                     }
 
                     lessonState.questionIdToState[q.id] = qState;
+                }
+
+                if (qState.selectedAnswerIds == null)
+                {
+                    qState.selectedAnswerIds = new HashSet<string>();
+                }
+
+                if (!IsShuffledOrderValid(qState.shuffledOrder, q.answers.Count))
+                {
+                    // .md правили после сохранения (добавили/удалили ответы) —
+                    // старый порядок индексов указывает мимо, пересоздаём.
+                    qState.shuffledOrder = Enumerable.Range(0, q.answers.Count).ToList();
+                    if (settings.randomizeAnswersOnCourseOpen)
+                    {
+                        int seed = (lessonPath + "|" + q.id).GetHashCode();
+                        QuizUtils.Shuffle(qState.shuffledOrder, seed);
+                    }
                 }
 
                 // Кнопки ответов
@@ -143,6 +175,24 @@ namespace NeoCource.Editor.Quizzes
                     HighlightAnswersAfterComplete(q, qState, answerButtons, answerByButton);
                 }
             }
+        }
+
+        private static bool IsShuffledOrderValid(List<int> order, int answersCount)
+        {
+            if (order == null || order.Count != answersCount)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < order.Count; i++)
+            {
+                if (order[i] < 0 || order[i] >= answersCount)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private static void ToggleMultipleSelection(QuizQuestionState qState, QuizAnswer ans, Button btn,

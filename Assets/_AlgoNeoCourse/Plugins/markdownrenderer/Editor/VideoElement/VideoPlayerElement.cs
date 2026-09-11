@@ -7,7 +7,10 @@ using UnityEngine.Video;
 /// <summary>
 ///     A VisualElement that is a VideoPlayer with a roll up play bar with play, speed and audio controls
 /// </summary>
-public class VideoPlayerElement : VisualElement
+#if UNITY_6000_0_OR_NEWER
+[UxmlElement]
+#endif
+public partial class VideoPlayerElement : VisualElement
 {
     // Use a pool where unused player are returned. This avoid creating player
     // in a loop.
@@ -515,7 +518,12 @@ public class VideoPlayerElement : VisualElement
         player.time = percent * player.length;
     }
 
-    public new class UxmlFactory : UxmlFactory<VideoPlayerElement>
+#if UNITY_6000_0_OR_NEWER
+    // Unity 6+: legacy UxmlFactory/UxmlTraits deprecated and removed in 6.6 —
+    // [UxmlElement] source generator above replaces the factory.
+#else
+    public new class UxmlFactory : UnityEngine.UIElements.UxmlFactory<VideoPlayerElement>
     {
     }
+#endif
 }

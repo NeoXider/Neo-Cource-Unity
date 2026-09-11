@@ -205,7 +205,8 @@ namespace NeoCource.Editor
                 LessonQuizState state = QuizStateStore.GetLessonState(lessonPath, false);
                 if (state == null)
                 {
-                    return questions.Count == 0;
+                    // Состояния нет — вопросы не пройдены (кроме случая, когда их вовсе нет).
+                    return questions.Count > 0;
                 }
 
                 foreach (QuizQuestion question in questions)

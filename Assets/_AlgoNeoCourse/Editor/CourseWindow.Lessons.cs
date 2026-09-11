@@ -82,6 +82,7 @@ namespace NeoCource.Editor
             }
 
             CourseProgressStore.TryGetLastSession(out string savedPath, out int savedSlide);
+            savedPath = NormalizeSessionPath(savedPath);
             int selectedIndex = 0;
             if (!string.IsNullOrEmpty(savedPath))
             {
@@ -103,16 +104,34 @@ namespace NeoCource.Editor
                 }
             }
 
+            if (lessonDropdown == null || mdRenderer == null || slideIndicator == null)
+            {
+                Debug.LogWarning("CourseWindow: UI окна ещё не готово — восстановление сессии отложено.");
+                return;
+            }
+
             lessonDropdown.choices = titles;
             lessonDropdown.index = titles.Count > 0 ? selectedIndex : -1;
 
             if (filteredList.Count > 0)
             {
-                LoadLesson(filteredList[selectedIndex]);
-                if (!string.IsNullOrEmpty(savedPath))
+                // Грузим сохранённую позицию молча: промежуточные ShowSlide(0)/сохранения
+                // не должны затирать lastSlideIndex до конца восстановления.
+                suppressSessionSave = true;
+                try
                 {
-                    ShowSlide(Mathf.Clamp(savedSlide, 0, Math.Max(0, slides.Count - 1)));
+                    LoadLesson(filteredList[selectedIndex]);
+                    if (!string.IsNullOrEmpty(savedPath))
+                    {
+                        ShowSlide(Mathf.Clamp(savedSlide, 0, Math.Max(0, slides.Count - 1)));
+                    }
                 }
+                finally
+                {
+                    suppressSessionSave = false;
+                }
+
+                SaveLastSession();
             }
             else
             {
@@ -120,6 +139,22 @@ namespace NeoCource.Editor
                 currentSlideIndex = 0;
                 slideIndicator.text = "—/—";
                 mdRenderer.SetMarkdown("# Нет уроков\n\nСначала загрузите список и скачайте уроки в CourseSettings.");
+            }
+        }
+
+        private bool IsAlreadyOnSession(string lastPath, int lastSlide)
+        {
+            try
+            {
+                string currentNormalized = NormalizeSessionPath(currentLessonFilePath);
+                return !string.IsNullOrEmpty(currentNormalized) && slides.Count > 0 &&
+                       string.Equals(Path.GetFullPath(currentNormalized), Path.GetFullPath(lastPath),
+                           StringComparison.OrdinalIgnoreCase) &&
+                       currentSlideIndex == Mathf.Max(0, lastSlide);
+            }
+            catch
+            {
+                return false;
             }
         }
 
@@ -204,7 +239,22 @@ namespace NeoCource.Editor
 
         private void SaveLastSession()
         {
+            if (suppressSessionSave)
+            {
+                return;
+            }
+
             CourseProgressStore.SaveLastSession(currentLessonFilePath, currentSlideIndex);
+        }
+
+        private static string NormalizeSessionPath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return string.Empty;
+            }
+
+            return path.Replace('\\', '/').Trim();
         }
 
         private void RestoreLastSession()
@@ -219,7 +269,21 @@ namespace NeoCource.Editor
                 return;
             }
 
+            lastPath = NormalizeSessionPath(lastPath);
             if (string.IsNullOrEmpty(lastPath) || !File.Exists(lastPath))
+            {
+                if (!string.IsNullOrEmpty(lastPath))
+                {
+                    Debug.LogWarning(
+                        $"CourseWindow: сохранённый урок не найден на диске, открываю первый доступный: {lastPath}");
+                }
+
+                return;
+            }
+
+            // Уже на сохранённой позиции (повторный вызов после рекомпиляции) — ничего не делаем,
+            // чтобы не дёргать LoadLesson/ShowSlide и не перезаписывать прогресс.
+            if (IsAlreadyOnSession(lastPath, lastSlide))
             {
                 return;
             }
@@ -228,35 +292,51 @@ namespace NeoCource.Editor
             {
                 try
                 {
+                    // RefreshLessonsList сам грузит сохранённую позицию и сохраняет её в конце.
                     RefreshLessonsList();
                 }
                 catch
                 {
+                }
+
+                if (IsAlreadyOnSession(lastPath, lastSlide))
+                {
+                    return;
                 }
             }
 
             (string title, string filePath, string id) found = availableLessons.FirstOrDefault(l =>
                 string.Equals(Path.GetFullPath(l.filePath), Path.GetFullPath(lastPath),
                     StringComparison.OrdinalIgnoreCase));
-            if (string.IsNullOrEmpty(found.filePath))
+            suppressSessionSave = true;
+            try
             {
-                try
+                if (string.IsNullOrEmpty(found.filePath))
                 {
-                    currentLessonTitle = Path.GetFileNameWithoutExtension(lastPath);
-                    currentLessonFilePath = lastPath;
-                    slides = SplitSlides(File.ReadAllText(lastPath));
-                    SeedMarkdownContext(lastPath);
+                    try
+                    {
+                        currentLessonTitle = Path.GetFileNameWithoutExtension(lastPath);
+                        currentLessonFilePath = lastPath;
+                        slides = SplitSlides(File.ReadAllText(lastPath));
+                        SeedMarkdownContext(lastPath);
+                        ShowSlide(Mathf.Clamp(lastSlide, 0, Math.Max(0, slides.Count - 1)));
+                    }
+                    catch
+                    {
+                    }
+                }
+                else
+                {
+                    LoadLesson(found);
                     ShowSlide(Mathf.Clamp(lastSlide, 0, Math.Max(0, slides.Count - 1)));
                 }
-                catch
-                {
-                }
             }
-            else
+            finally
             {
-                LoadLesson(found);
-                ShowSlide(Mathf.Clamp(lastSlide, 0, Math.Max(0, slides.Count - 1)));
+                suppressSessionSave = false;
             }
+
+            SaveLastSession();
         }
 
         private void ResetProgressAndReload()

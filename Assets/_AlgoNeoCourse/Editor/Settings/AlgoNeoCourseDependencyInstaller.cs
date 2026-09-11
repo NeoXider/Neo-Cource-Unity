@@ -70,25 +70,20 @@ namespace NeoCource.Editor
                 }
 
                 string originalText = File.ReadAllText(target);
-                string updatedText = Regex.Replace(
-                    originalText,
-                    @"(?m)^\s*\[UxmlElement(?:Attribute)?\]\s*\r?\n",
-                    string.Empty);
 
-                if (!updatedText.Contains("class UxmlFactory : UxmlFactory<VideoPlayerElement>"))
+                // Исходник уже версионно-разделён (#if UNITY_6000_0_OR_NEWER) — патчить нечего.
+                if (originalText.Contains("UNITY_6000_0_OR_NEWER"))
                 {
-                    Match classMatch = Regex.Match(
-                        updatedText,
-                        @"public\s+partial\s+class\s+VideoPlayerElement\s*:\s*VisualElement\s*\{",
-                        RegexOptions.Multiline);
-                    if (classMatch.Success)
-                    {
-                        int insertPos = classMatch.Index + classMatch.Length;
-                        string insertText =
-                            "\n    public new class UxmlFactory : UxmlFactory<VideoPlayerElement> { }\n";
-                        updatedText = updatedText.Insert(insertPos, insertText);
-                    }
+                    return false;
                 }
+
+#if UNITY_6000_0_OR_NEWER
+                // Unity 6.0–6.6: нужен [UxmlElement] + partial, legacy UxmlFactory
+                // deprecated и удалён в 6.6 (CS0308). Лечим копии, испорченные старым фиксом.
+                string updatedText = EnsureModernUxmlElement(originalText);
+#else
+                string updatedText = EnsureLegacyUxmlFactory(originalText);
+#endif
 
                 if (string.Equals(originalText, updatedText, StringComparison.Ordinal))
                 {
@@ -105,5 +100,61 @@ namespace NeoCource.Editor
                 return false;
             }
         }
+
+#if UNITY_6000_0_OR_NEWER
+        private static string EnsureModernUxmlElement(string text)
+        {
+            // 1. Убрать legacy-фабрику (именно она ломает компиляцию в 6.6).
+            string updated = Regex.Replace(
+                text,
+                @"(?ms)^[ \t]*public\s+new\s+class\s+UxmlFactory\s*:\s*[^\r\n{]+\{\s*\}\s*\r?\n?",
+                string.Empty);
+
+            // 2. Класс должен быть partial для source-генератора UxmlElement.
+            if (!updated.Contains("partial class VideoPlayerElement"))
+            {
+                updated = Regex.Replace(
+                    updated,
+                    @"public\s+class\s+VideoPlayerElement",
+                    "public partial class VideoPlayerElement");
+            }
+
+            // 3. Вернуть атрибут [UxmlElement], если его срезал старый фикс.
+            if (!Regex.IsMatch(updated, @"\[UxmlElement(?:Attribute)?\]\s*\r?\n\s*public\s+partial\s+class\s+VideoPlayerElement"))
+            {
+                updated = Regex.Replace(
+                    updated,
+                    @"public\s+partial\s+class\s+VideoPlayerElement",
+                    "[UxmlElement]\npublic partial class VideoPlayerElement");
+            }
+
+            return updated;
+        }
+#else
+        private static string EnsureLegacyUxmlFactory(string text)
+        {
+            string updatedText = Regex.Replace(
+                text,
+                @"(?m)^\s*\[UxmlElement(?:Attribute)?\]\s*\r?\n",
+                string.Empty);
+
+            if (!updatedText.Contains("class UxmlFactory"))
+            {
+                Match classMatch = Regex.Match(
+                    updatedText,
+                    @"public\s+partial\s+class\s+VideoPlayerElement\s*:\s*VisualElement\s*\{",
+                    RegexOptions.Multiline);
+                if (classMatch.Success)
+                {
+                    int insertPos = classMatch.Index + classMatch.Length;
+                    string insertText =
+                        "\n    public new class UxmlFactory : UnityEngine.UIElements.UxmlFactory<VideoPlayerElement> { }\n";
+                    updatedText = updatedText.Insert(insertPos, insertText);
+                }
+            }
+
+            return updatedText;
+        }
+#endif
     }
 }

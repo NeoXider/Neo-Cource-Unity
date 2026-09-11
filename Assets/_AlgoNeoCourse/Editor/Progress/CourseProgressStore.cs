@@ -53,7 +53,11 @@ namespace NeoCource.Editor.Progress
         public static void SaveLastSession(string lessonPath, int slideIndex)
         {
             CourseProgressData data = GetData();
-            data.lastLessonPath = lessonPath ?? string.Empty;
+            // Всегда прямые слеши: иначе один и тот же урок сохраняется то с '\', то с '/',
+            // и сравнение/поиск при восстановлении сессии не срабатывает.
+            data.lastLessonPath = string.IsNullOrWhiteSpace(lessonPath)
+                ? string.Empty
+                : lessonPath.Replace('\\', '/');
             data.lastSlideIndex = Math.Max(0, slideIndex);
             SaveToDisk();
         }

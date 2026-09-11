@@ -54,9 +54,15 @@ namespace NeoCource.Editor.Quizzes
 
         public static bool HasUnfinishedQuestions(IEnumerable<QuizQuestion> questions, LessonQuizState lessonState)
         {
-            if (questions == null || lessonState == null)
+            if (questions == null)
             {
                 return false;
+            }
+
+            if (lessonState == null)
+            {
+                // Состояния нет — любой вопрос считается незавершённым.
+                return questions.Any();
             }
 
             foreach (QuizQuestion q in questions)

@@ -1,6 +1,6 @@
 # AlgoNeoCourse
 
-Версия пакета: `1.5.1`
+Версия пакета: `1.5.2`
 
 <img width="917" height="735" alt="image" src="https://github.com/user-attachments/assets/5a53acc7-5a97-4c3d-9b05-25a20f114970" />
 
@@ -234,6 +234,22 @@ answers:
 `MarkdownViewer.HandleDblClick` использует `EntityId` под `#if UNITY_6000_3_OR_NEWER`
 с fallback на `int` для старых версий Unity. Других `GetAssetPath(int)` / `OnOpenAsset(int)`
 использований в пакете нет.
+
+### Ошибка CS0308 про `VideoPlayerElement.UxmlFactory` (Unity 6.6)
+
+В Unity 6.6 legacy `UxmlFactory/UxmlTraits` удалены. Исправлено в `1.5.2`:
+`VideoPlayerElement` использует `[UxmlElement]` под `#if UNITY_6000_0_OR_NEWER`
+(работает на всех Unity 6.0–6.6), на старых Unity остаётся `UxmlFactory`.
+Автофикс `Tools/AlgoNeoCourse/Dependencies` тоже стал версионно-зависимым
+и больше не ломает исходник в 6.6.
+
+### После перезагрузки Unity открывается не тот урок/слайд
+
+Исправлено в `1.5.2`: восстановление сессии больше не затирает сохранённую
+позицию промежуточным `ShowSlide(0)` (подавление записи на время restore +
+одна финальная запись), пути нормализуются к `/`, повторный restore после
+рекомпиляции пропускается, устаревший `shuffledOrder` после правки `.md`
+пересоздаётся вместо падения.
 
 ## Документация
 

@@ -43,6 +43,10 @@ namespace NeoCource.Editor
         private string selectedLessonGroup;
         private string selectedLessonModule;
 
+        // Пока идёт восстановление сессии после открытия/перезагрузки —
+        // промежуточные LoadLesson/ShowSlide не должны затирать сохранённую позицию.
+        private bool suppressSessionSave;
+
         private int LessonDropdownMaxLength =>
             Math.Max(5, CourseSettings.instance?.maxLessonTitleLength ?? 20);
 
