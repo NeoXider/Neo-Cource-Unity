@@ -319,6 +319,8 @@ answers:
 - Минимальная версия Unity — 6000.0.
 - Удалён пункт меню `Dependencies -> Apply Embedded Markdown Fix`.
 
+Обновление с прошлой версии: перед импортом пакета удалите папку `Assets/_AlgoNeoCourse/Plugins/markdownrenderer` — состав файлов рендерера изменился.
+
 ## Документация
 
 - `Assets/_AlgoNeoCourse/Docs/README.md`
