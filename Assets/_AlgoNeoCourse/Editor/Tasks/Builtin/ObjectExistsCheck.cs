@@ -18,7 +18,7 @@ namespace NeoCource.Editor.Tasks.Builtin
                 return false;
             }
 
-            GameObject go = GameObject.Find(target);
+            GameObject go = AlgoNeoEditorUtils.FindSceneObject(target);
             bool ok = go != null;
 
             List<string> lines = new();

@@ -25,7 +25,7 @@ com.neoxider.algoneocourse
 - quiz system with local JSON persistence
 - validation checks for practical tasks
 - editor assemblies via `asmdef`
-- GIF -> MP4 support
+- images and `.mp4` video in slides
 
 ## Dependency
 
@@ -43,7 +43,7 @@ Use `Tools -> AlgoNeoCourse -> Settings -> Open Course Settings` to:
 - choose `Course1`, `Course2`, or `Custom`
 - load lesson metadata
 - download local lesson files
-- configure GIF conversion and download paths
+- pick lessons by module and download one module or everything
 
 Then open:
 

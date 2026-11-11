@@ -18,7 +18,7 @@ namespace NeoCource.Editor.Validation
         private Label m_SummaryLabel;
         private ScrollView m_IssuesView;
 
-        [MenuItem("Tools/AlgoNeoCourse/Validate Lessons", priority = 12)]
+        [MenuItem("Tools/AlgoNeoCourse/Settings/Validate Lessons", priority = 120)]
         public static void Open()
         {
             LessonValidationWindow win = GetWindow<LessonValidationWindow>("Валидация уроков");

@@ -162,6 +162,12 @@ namespace NeoCource.Editor.Quizzes
                         {
                             PlayCorrectEffect(block, answerButtons);
                         }
+                        else if (!qState.isCompleted)
+                        {
+                            // Неверный набор, попытки ещё есть — вспышка на выбранных вариантах.
+                            PlayWrongEffect(answerButtons.Where(b =>
+                                b.userData is QuizAnswer a && qState.selectedAnswerIds.Contains(a.id)));
+                        }
                     }) { text = "Проверить" };
                     checkBtn.style.marginBottom = 6;
                     checkBtn.SetEnabled(qState.selectedAnswerIds.Count > 0 && !qState.isCompleted);
@@ -339,6 +345,28 @@ namespace NeoCource.Editor.Quizzes
             }
         }
 
+        // Неверный ответ при оставшихся попытках: короткая красная вспышка (стиль — в Quiz.uss).
+        private static void PlayWrongEffect(IEnumerable<Button> targets)
+        {
+            if (targets == null)
+            {
+                return;
+            }
+
+            foreach (Button t in targets)
+            {
+                if (t == null)
+                {
+                    continue;
+                }
+
+                Button captured = t;
+                captured.AddToClassList("quiz-answer--wrong-flash");
+                captured.schedule.Execute(() => captured.RemoveFromClassList("quiz-answer--wrong-flash"))
+                    .StartingIn(450);
+            }
+        }
+
         private static void HighlightAnswersAfterComplete(QuizQuestion q, QuizQuestionState qState,
             List<Button> buttons, Dictionary<Button, QuizAnswer> map)
         {
@@ -416,11 +444,16 @@ namespace NeoCource.Editor.Quizzes
                 UpdateAfterStateChange(settings, lessonPath, qState, block, buttons, onStateChanged);
 
                 // Эффект верного ответа (только при успехе, классы — no-op без USS).
+                Button clickedButton =
+                    buttons.FirstOrDefault(b => ReferenceEquals(b.userData as QuizAnswer, ans));
                 if (isCorrectNow)
                 {
-                    Button clickedButton =
-                        buttons.FirstOrDefault(b => ReferenceEquals(b.userData as QuizAnswer, ans));
                     PlayCorrectEffect(block, buttons, clickedButton);
+                }
+                else if (!qState.isCompleted)
+                {
+                    // Неверно, но попытки ещё есть: без вспышки клик выглядел бы так, будто ничего не произошло.
+                    PlayWrongEffect(new[] { clickedButton });
                 }
             }
             catch (Exception ex)

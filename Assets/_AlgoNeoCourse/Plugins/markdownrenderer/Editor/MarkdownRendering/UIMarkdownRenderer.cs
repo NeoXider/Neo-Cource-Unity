@@ -344,6 +344,22 @@ namespace UIMarkdownRenderer
             SetMarkdown(File.ReadAllText(filePath));
         }
 
+        /// <summary>
+        ///     Задаёт папку файла (для относительных ссылок и картинок) так же, как <see cref="OpenFile" />,
+        ///     но ничего не рендерит: текст потом подаётся через <see cref="SetMarkdown" />.
+        /// </summary>
+        public void SetFileContext(string filePath)
+        {
+            if (string.IsNullOrEmpty(filePath))
+            {
+                return;
+            }
+
+            string folder = Path.GetDirectoryName(filePath);
+            m_LocalFilePath = folder;
+            FileFolder = Path.GetFullPath(string.IsNullOrEmpty(folder) ? "." : folder);
+        }
+
         public void SetMarkdown(string markdownText)
         {
             MarkdownDocument parsed = Markdown.Parse(markdownText, s_StaticPipeline);

@@ -11,15 +11,6 @@
     background-color: rgba(24, 29, 39, 0.98);
 }
 
-.algo-course-navbar {
-    min-height: 28px;
-    padding-top: 2px;
-    padding-bottom: 4px;
-    border-bottom-width: 1px;
-    border-bottom-color: rgba(94, 133, 194, 0.28);
-    background-color: rgba(21, 26, 35, 0.98);
-}
-
 .algo-course-dropdown {
     flex-grow: 1;
     min-width: 120px;
@@ -169,8 +160,8 @@
 }
 
 .algo-course-content {
-    margin: 10px;
-    padding: 8px;
+    margin: 8px 10px 10px 10px;
+    padding: 12px 14px;
     border-radius: 10px;
     border-width: 1px;
     border-color: rgba(74, 100, 141, 0.24);
@@ -189,9 +180,10 @@
 }
 
 .algo-course-progress {
-    height: 6px;
-    background-color: #2a2d33;
-    border-radius: 3px;
+    height: 8px;
+    background-color: #262a32;
+    border-radius: 4px;
+    overflow: hidden;
     flex-direction: row;
 }
 
@@ -199,9 +191,10 @@
     height: 100%;
     width: 0%;
     background-color: #ff9933;
-    border-radius: 3px;
+    border-radius: 4px;
     transition-property: width, background-color;
-    transition-duration: 0.3s;
+    transition-duration: 0.35s;
+    transition-timing-function: ease-out;
 }
 
 .algo-course-progress-label {
@@ -209,4 +202,125 @@
     color: #9aa0aa;
     margin-left: 8px;
     margin-bottom: 2px;
+}
+
+/* ---------- Отклик кнопок: плавная подсветка и лёгкое нажатие ---------- */
+.algo-course-icon-button,
+.algo-course-nav-button,
+.algo-course-docs-menu,
+.algo-course-continue,
+.algo-course-empty-button {
+    transition-property: background-color, border-color, scale, opacity;
+    transition-duration: 0.12s;
+}
+
+.algo-course-icon-button:active,
+.algo-course-nav-button:active,
+.algo-course-continue:active,
+.algo-course-empty-button:active {
+    scale: 0.93 0.93;
+}
+
+.algo-course-nav-button:disabled,
+.algo-course-icon-button:disabled {
+    opacity: 0.35;
+}
+
+.algo-course-empty-box {
+    transition-property: opacity;
+    transition-duration: 0.3s;
+}
+
+/* ---------- Смена слайда: содержимое въезжает со стороны движения ---------- */
+.algo-slide {
+    opacity: 1;
+    translate: 0 0;
+    transition-property: opacity, translate;
+    transition-duration: 0.22s;
+    transition-timing-function: ease-out;
+}
+
+.algo-slide--from-right {
+    opacity: 0;
+    translate: 22px 0;
+    transition-duration: 0s;
+}
+
+.algo-slide--from-left {
+    opacity: 0;
+    translate: -22px 0;
+    transition-duration: 0s;
+}
+
+/* ---------- Тема слайдов: одна палитра вместо кислотных цветов рендерера ---------- */
+.algo-course-content .mainBody {
+    margin: 0;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.algo-course-content .block {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.algo-course-content .paragraph,
+.algo-course-content .list {
+    color: rgb(214, 222, 233);
+    font-size: 13px;
+}
+
+.algo-course-content .h1 {
+    font-size: 22px;
+    color: rgb(240, 245, 252);
+    padding-bottom: 5px;
+    margin-bottom: 4px;
+    border-bottom-width: 2px;
+    border-bottom-color: rgba(255, 153, 51, 0.75);
+}
+
+.algo-course-content .h2 {
+    font-size: 18px;
+    color: rgb(255, 199, 115);
+    margin-top: 2px;
+}
+
+.algo-course-content .h3 {
+    font-size: 15px;
+    -unity-font-style: bold;
+    color: rgb(122, 214, 255);
+}
+
+.algo-course-content .quote {
+    margin-left: 0;
+    padding: 7px 12px;
+    border-left-width: 3px;
+    border-left-color: rgb(84, 196, 255);
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+    background-color: rgba(84, 196, 255, 0.09);
+}
+
+.algo-course-content .codeblock {
+    margin: 6px 0;
+    padding: 9px 12px;
+    border-width: 1px;
+    border-color: rgba(120, 140, 170, 0.32);
+    border-radius: 8px;
+    background-color: rgb(13, 17, 23);
+}
+
+.algo-course-content .codeblock Label {
+    color: rgb(222, 230, 240);
+}
+
+.algo-course-content .line {
+    height: 1px;
+    border-width: 0;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    background-color: rgba(120, 140, 170, 0.3);
+}
+
+.algo-course-content .md-image {
+    border-radius: 8px;
 }

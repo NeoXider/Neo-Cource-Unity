@@ -8,6 +8,7 @@ using System.Threading;
 using NeoCource.Editor.Settings;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
 namespace NeoCource.Editor.Utils
@@ -181,61 +182,202 @@ namespace NeoCource.Editor.Utils
             throw lastError ?? new IOException("Не удалось прочитать файл: " + assetPath);
         }
 
+        // Ищет тип по имени. Точное совпадение всегда выигрывает: "CircleCollider2D" — это именно
+        // CircleCollider2D, а не любой Collider2D. Проверка базового типа ("Collider2D") по-прежнему
+        // проходит с наследником — это делает сам GetComponent.
         public static Type FindTypeByName(string name)
         {
-            if (name.Contains("Collider2D"))
+            if (string.IsNullOrWhiteSpace(name))
             {
-                return typeof(Collider2D);
+                return null;
             }
 
-            IEnumerable<Type> allTypes = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(a =>
-                {
-                    try
-                    {
-                        return a.GetTypes();
-                    }
-                    catch (ReflectionTypeLoadException)
-                    {
-                        return Array.Empty<Type>();
-                    }
-                });
+            name = name.Trim();
+            Type best = null;
+            int bestScore = 0;
 
-            Type exactMatch = null;
-            Type nameMatch = null;
-            Type endsWithMatch = null;
-
-            foreach (Type t in allTypes)
+            foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
-                if (t == null)
+                Type[] types;
+                try
+                {
+                    types = assembly.GetTypes();
+                }
+                catch (ReflectionTypeLoadException ex)
+                {
+                    types = ex.Types ?? Array.Empty<Type>();
+                }
+                catch
                 {
                     continue;
                 }
 
-                if (string.Equals(t.FullName, name, StringComparison.OrdinalIgnoreCase))
+                foreach (Type t in types)
                 {
-                    exactMatch = t;
-                    break;
-                }
-
-                if (string.Equals(t.Name, name, StringComparison.OrdinalIgnoreCase))
-                {
-                    if (nameMatch == null || t.FullName.StartsWith("UnityEngine"))
+                    if (t == null)
                     {
-                        nameMatch = t;
+                        continue;
                     }
-                }
 
-                if (t.FullName.EndsWith("." + name, StringComparison.OrdinalIgnoreCase))
-                {
-                    if (endsWithMatch == null || t.FullName.StartsWith("UnityEngine"))
+                    int score = ScoreTypeMatch(t, name);
+                    if (score > bestScore)
                     {
-                        endsWithMatch = t;
+                        best = t;
+                        bestScore = score;
                     }
                 }
             }
 
-            return exactMatch ?? endsWithMatch ?? nameMatch;
+            return best;
+        }
+
+        // 0 — не подходит. Чем выше, тем точнее: полное имя > короткое имя > то же без учёта регистра.
+        // При равенстве имён выигрывает компонент (UnityEngine.UI.Button, а не UIElements.Button).
+        private static int ScoreTypeMatch(Type t, string name)
+        {
+            string fullName = t.FullName ?? t.Name;
+            int score;
+            if (string.Equals(fullName, name, StringComparison.Ordinal))
+            {
+                score = 400;
+            }
+            else if (string.Equals(t.Name, name, StringComparison.Ordinal) ||
+                     fullName.EndsWith("." + name, StringComparison.Ordinal))
+            {
+                score = 300;
+            }
+            else if (string.Equals(fullName, name, StringComparison.OrdinalIgnoreCase))
+            {
+                score = 200;
+            }
+            else if (string.Equals(t.Name, name, StringComparison.OrdinalIgnoreCase) ||
+                     fullName.EndsWith("." + name, StringComparison.OrdinalIgnoreCase))
+            {
+                score = 100;
+            }
+            else
+            {
+                return 0;
+            }
+
+            if (typeof(Component).IsAssignableFrom(t))
+            {
+                score += 50;
+            }
+
+            if (fullName.StartsWith("UnityEngine.", StringComparison.Ordinal))
+            {
+                score += 20;
+            }
+
+            if (t.IsPublic)
+            {
+                score += 5;
+            }
+
+            return score;
+        }
+
+        // Объект сцены по имени или по пути в иерархии ("Player/ShootPoint", "Canvas/WallText").
+        // В отличие от GameObject.Find находит и ВЫКЛЮЧЕННЫЕ объекты: уроки намеренно прячут
+        // GameOverPanel и подобные, а потом проверяют их.
+        public static GameObject FindSceneObject(string nameOrPath)
+        {
+            if (string.IsNullOrWhiteSpace(nameOrPath))
+            {
+                return null;
+            }
+
+            string query = nameOrPath.Trim().Replace('\\', '/');
+            try
+            {
+                GameObject active = GameObject.Find(query);
+                if (active != null)
+                {
+                    return active;
+                }
+            }
+            catch
+            {
+            }
+
+            bool rooted = query.StartsWith("/", StringComparison.Ordinal);
+            string[] segments = query.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+            if (segments.Length == 0)
+            {
+                return null;
+            }
+
+            foreach (GameObject root in GetLoadedSceneRoots())
+            {
+                foreach (Transform t in root.GetComponentsInChildren<Transform>(true))
+                {
+                    if (MatchesHierarchyPath(t, segments, rooted))
+                    {
+                        return t.gameObject;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        // Есть ли в загруженных сценах (включая выключенные объекты) компонент такого типа.
+        public static Component FindSceneComponent(Type componentType)
+        {
+            if (!IsComponentType(componentType))
+            {
+                return null;
+            }
+
+            foreach (GameObject root in GetLoadedSceneRoots())
+            {
+                Component[] found = root.GetComponentsInChildren(componentType, true);
+                if (found != null && found.Length > 0)
+                {
+                    return found[0];
+                }
+            }
+
+            return null;
+        }
+
+        // GetComponent принимает только наследников Component и интерфейсы — на остальном бросает исключение.
+        public static bool IsComponentType(Type type)
+        {
+            return type != null && (typeof(Component).IsAssignableFrom(type) || type.IsInterface);
+        }
+
+        private static List<GameObject> GetLoadedSceneRoots()
+        {
+            List<GameObject> roots = new();
+            for (int i = 0; i < SceneManager.sceneCount; i++)
+            {
+                Scene scene = SceneManager.GetSceneAt(i);
+                if (scene.IsValid() && scene.isLoaded)
+                {
+                    roots.AddRange(scene.GetRootGameObjects());
+                }
+            }
+
+            return roots;
+        }
+
+        // Совпадение по хвосту пути: последний сегмент — сам объект, предыдущие — его родители.
+        private static bool MatchesHierarchyPath(Transform t, string[] segments, bool rooted)
+        {
+            Transform current = t;
+            for (int i = segments.Length - 1; i >= 0; i--)
+            {
+                if (current == null || !string.Equals(current.name, segments[i], StringComparison.Ordinal))
+                {
+                    return false;
+                }
+
+                current = current.parent;
+            }
+
+            return !rooted || current == null;
         }
     }
 }

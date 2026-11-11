@@ -29,7 +29,9 @@ namespace NeoCource.Editor
             availableLessons.Clear();
             if (settings.lessonSelections != null)
             {
-                foreach (CourseSettings.LessonSelection selection in settings.lessonSelections.Where(s => s.selected))
+                // Галочка «selected» решает только, что скачивать. Урок, который уже лежит на диске,
+                // показываем с его названием из курса в любом случае — иначе в списке остаётся имя файла.
+                foreach (CourseSettings.LessonSelection selection in settings.lessonSelections.Where(s => s != null))
                 {
                     string path = ResolveLocalLessonPath(settings, selection.id, selection.file);
                     if (!string.IsNullOrEmpty(path) && File.Exists(path))
@@ -57,8 +59,16 @@ namespace NeoCource.Editor
                             continue;
                         }
 
-                        string title = Path.GetFileNameWithoutExtension(markdownFile);
-                        availableLessons.Add((title, markdownFile, title));
+                        // Файла нет в списке курса (например, положен вручную): название берём
+                        // из его первого заголовка и раскладываем по модулям по имени файла.
+                        string fileId = Path.GetFileNameWithoutExtension(markdownFile);
+                        string title = BuildFallbackLessonTitle(markdownFile, fileId);
+                        if (availableLessons.Any(l => string.Equals(l.title, title, StringComparison.Ordinal)))
+                        {
+                            title += " (" + fileId + ")";
+                        }
+
+                        availableLessons.Add((title, markdownFile, fileId));
                     }
                 }
             }
@@ -99,6 +109,8 @@ namespace NeoCource.Editor
             CourseProgressStore.TryGetLastSession(out string savedPath, out int savedSlide);
             savedPath = NormalizeSessionPath(savedPath);
             int selectedIndex = 0;
+            // Сохранённый урок может отсутствовать в списке (сняли галочку, удалили файл, пример из Docs).
+            bool savedLessonFound = false;
             if (!string.IsNullOrEmpty(savedPath))
             {
                 try
@@ -110,6 +122,7 @@ namespace NeoCource.Editor
                                 StringComparison.OrdinalIgnoreCase))
                         {
                             selectedIndex = i;
+                            savedLessonFound = true;
                             break;
                         }
                     }
@@ -125,8 +138,9 @@ namespace NeoCource.Editor
                 return;
             }
 
+            // Без ChangeEvent: урок ниже загружается явно, повторная загрузка из колбэка не нужна.
             lessonDropdown.choices = titles;
-            lessonDropdown.index = titles.Count > 0 ? selectedIndex : -1;
+            lessonDropdown.SetValueWithoutNotify(titles[Mathf.Clamp(selectedIndex, 0, titles.Count - 1)]);
 
             if (filteredList.Count > 0)
             {
@@ -135,10 +149,16 @@ namespace NeoCource.Editor
                 suppressSessionSave = true;
                 try
                 {
-                    LoadLesson(filteredList[selectedIndex]);
-                    if (!string.IsNullOrEmpty(savedPath))
+                    bool loaded = LoadLesson(filteredList[selectedIndex]);
+                    // Сохранённый слайд относится только к сохранённому уроку: если его нет в списке,
+                    // открыт первый урок — и чужой номер слайда записался бы в его прогресс.
+                    if (loaded && savedLessonFound)
                     {
                         ShowSlide(Mathf.Clamp(savedSlide, 0, Math.Max(0, slides.Count - 1)));
+                    }
+                    else if (!loaded && (slides == null || slides.Count == 0))
+                    {
+                        ShowSlide(0);
                     }
                 }
                 finally
@@ -146,14 +166,22 @@ namespace NeoCource.Editor
                     suppressSessionSave = false;
                 }
 
-                SaveLastSession();
+                // Сохранённый урок вне списка, но файл на месте (пример из Docs) — позицию не затираем:
+                // RestoreLastSession откроет его напрямую.
+                if (savedLessonFound || string.IsNullOrEmpty(savedPath) || !File.Exists(savedPath))
+                {
+                    SaveLastSession();
+                }
             }
             else
             {
+                // Пустое состояние: одна заглушка (без дублирующего текста слайда) и выключенная навигация.
                 slides.Clear();
                 currentSlideIndex = 0;
                 slideIndicator.text = "—/—";
-                mdRenderer.SetMarkdown("# Нет уроков\n\nСначала загрузите список и скачайте уроки в CourseSettings.");
+                prevBtn?.SetEnabled(false);
+                nextBtn?.SetEnabled(false);
+                mdRenderer.SetMarkdown(string.Empty);
                 ShowEmptyState();
             }
 
@@ -271,20 +299,21 @@ namespace NeoCource.Editor
 
             try
             {
-                foreach (Match m in Regex.Matches(lessonText, @"```check\s*\n([\s\S]*?)\n```"))
+                // Идём по слайдам, как ShowSlide: SplitSlides убирает \r (иначе в CRLF-файлах id получали
+                // "\r" и никогда не совпадали с id кнопок), а регулярка и ссылка — те же, что у кнопки.
+                foreach (string slide in SplitSlides(lessonText))
                 {
-                    string encoded;
-                    try
+                    foreach (Match m in CheckBlockRegex.Matches(slide))
                     {
-                        encoded = Uri.EscapeDataString(m.Groups[1].Value);
+                        try
+                        {
+                            ids.Add(QuizStateStore.CheckIdForLink(BuildCheckLink(m.Groups[1].Value)));
+                        }
+                        catch
+                        {
+                            // Блок, который не кодируется в ссылку, кнопки тоже не получит.
+                        }
                     }
-                    catch
-                    {
-                        continue;
-                    }
-
-                    ids.Add(QuizStateStore.CheckIdForLink(
-                        "unity://check?type=from-block&dialog=auto&__raw_block__=" + encoded));
                 }
             }
             catch
@@ -307,9 +336,11 @@ namespace NeoCource.Editor
                     return;
                 }
 
+                // Пути — в том же виде, что и ключи прогресса (относительно проекта): абсолютный путь
+                // примера из Docs и относительный путь урока сравниваются одинаково, а сохранение переносимо.
                 CourseProgressData data = CourseProgressStore.GetData();
-                string current = NormalizeSessionPath(currentLessonFilePath);
-                string far = NormalizeSessionPath(data.farthestLessonPath);
+                string current = CourseProgressStore.NormalizeLessonPathKey(currentLessonFilePath);
+                string far = CourseProgressStore.NormalizeLessonPathKey(data.farthestLessonPath);
 
                 bool advance = false;
                 if (string.IsNullOrEmpty(far))
@@ -364,14 +395,17 @@ namespace NeoCource.Editor
             return -1;
         }
 
-        private bool IsAlreadyOnSession(string lastPath, int lastSlide)        {
+        private bool IsAlreadyOnSession(string lastPath, int lastSlide)
+        {
             try
             {
+                // Сохранённый слайд зажимаем в границы урока так же, как это делает GoToSession:
+                // урок могли укоротить, и «слайд 30 из 20» — это последний слайд.
                 string currentNormalized = NormalizeSessionPath(currentLessonFilePath);
                 return !string.IsNullOrEmpty(currentNormalized) && slides.Count > 0 &&
                        string.Equals(Path.GetFullPath(currentNormalized), Path.GetFullPath(lastPath),
                            StringComparison.OrdinalIgnoreCase) &&
-                       currentSlideIndex == Mathf.Max(0, lastSlide);
+                       currentSlideIndex == Mathf.Clamp(lastSlide, 0, slides.Count - 1);
             }
             catch
             {
@@ -424,14 +458,30 @@ namespace NeoCource.Editor
                 });
         }
 
-        private void LoadLesson((string title, string filePath, string id) lesson)
+        // Возвращает false, если файл урока не прочитался: тогда состояние окна остаётся прежним целиком.
+        private bool LoadLesson((string title, string filePath, string id) lesson)
         {
-            ClearEmptyState();
             if (mdRenderer == null)
             {
                 BuildContent();
             }
 
+            // Сначала читаем в локальные переменные. Иначе при ошибке чтения окно «называлось» бы
+            // новым уроком, показывая старый, и позиция старого сохранилась бы под новым.
+            List<string> loadedSlides;
+            try
+            {
+                loadedSlides = SplitSlides(File.ReadAllText(lesson.filePath));
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning(
+                    $"CourseWindow: не удалось открыть урок «{lesson.title}» ({lesson.filePath}) — {ex.Message}");
+                SyncLessonDropdown();
+                return false;
+            }
+
+            ClearEmptyState();
             try
             {
                 if (!string.IsNullOrEmpty(currentLessonFilePath))
@@ -446,12 +496,14 @@ namespace NeoCource.Editor
             currentLessonTitle = lesson.title;
             currentLessonFilePath = lesson.filePath;
             currentSlideIndex = 0;
+            slides = loadedSlides;
 
-            string text = File.ReadAllText(currentLessonFilePath);
-            slides = SplitSlides(text);
             SeedMarkdownContext(currentLessonFilePath);
+            // «Продолжить» и восстановление сессии меняют урок без участия дропдауна — показываем его там.
+            SyncLessonDropdown();
             ShowSlide(0);
             SaveLastSession();
+            return true;
         }
 
         private static List<string> SplitSlides(string md)
@@ -607,23 +659,35 @@ namespace NeoCource.Editor
             {
                 if (string.IsNullOrEmpty(found.filePath))
                 {
+                    // Урока нет в списке (например, пример из Docs) — открываем файл напрямую.
+                    // Как и в LoadLesson: сначала читаем, состояние меняем только при успехе.
+                    List<string> loadedSlides;
                     try
                     {
-                        ClearEmptyState();
-                        currentLessonTitle = Path.GetFileNameWithoutExtension(lastPath);
-                        currentLessonFilePath = lastPath;
-                        slides = SplitSlides(File.ReadAllText(lastPath));
-                        SeedMarkdownContext(lastPath);
-                        ShowSlide(Mathf.Clamp(lastSlide, 0, Math.Max(0, slides.Count - 1)));
+                        loadedSlides = SplitSlides(File.ReadAllText(lastPath));
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        Debug.LogWarning($"CourseWindow: не удалось открыть урок {lastPath} — {ex.Message}");
+                        return;
                     }
+
+                    ClearEmptyState();
+                    currentLessonTitle = Path.GetFileNameWithoutExtension(lastPath);
+                    currentLessonFilePath = lastPath;
+                    slides = loadedSlides;
+                    SeedMarkdownContext(lastPath);
+                    SyncLessonDropdown();
+                    ShowSlide(Mathf.Clamp(lastSlide, 0, Math.Max(0, slides.Count - 1)));
+                }
+                else if (LoadLesson(found))
+                {
+                    ShowSlide(Mathf.Clamp(lastSlide, 0, Math.Max(0, slides.Count - 1)));
                 }
                 else
                 {
-                    LoadLesson(found);
-                    ShowSlide(Mathf.Clamp(lastSlide, 0, Math.Max(0, slides.Count - 1)));
+                    // Урок не прочитался — остаёмся где были, сохранённую позицию не трогаем.
+                    return;
                 }
             }
             finally
@@ -648,6 +712,53 @@ namespace NeoCource.Editor
             currentSlideIndex = 0;
             slides.Clear();
             RefreshLessonsList();
+        }
+
+        // Название для файла, которого нет в списке курса: «l2 / m5 / <первый заголовок урока>».
+        // Имя вида l2m5y1-y1 даёт группы для подменю; без него остаётся просто заголовок или имя файла.
+        internal static string BuildFallbackLessonTitle(string markdownFile, string fileId)
+        {
+            string heading = null;
+            try
+            {
+                foreach (string line in File.ReadLines(markdownFile))
+                {
+                    string trimmed = line.Trim();
+                    if (trimmed.StartsWith("# ", StringComparison.Ordinal))
+                    {
+                        heading = trimmed.Substring(2).Trim();
+                        break;
+                    }
+
+                    if (trimmed.Length > 0 && !trimmed.StartsWith("#", StringComparison.Ordinal))
+                    {
+                        // Урок без заголовка первой строкой — дальше не ищем.
+                        break;
+                    }
+                }
+            }
+            catch
+            {
+                // Файл занят или недоступен — обойдёмся именем.
+            }
+
+            if (!string.IsNullOrEmpty(heading))
+            {
+                // «Модуль 5, Урок 1: Арбалет…» -> «Арбалет…»; «/» в названии создал бы лишнее подменю.
+                int colon = heading.IndexOf(": ", StringComparison.Ordinal);
+                if (colon >= 0 && colon + 2 < heading.Length)
+                {
+                    heading = heading.Substring(colon + 2);
+                }
+
+                heading = heading.Replace("/", "·").Trim();
+            }
+
+            string name = string.IsNullOrEmpty(heading) ? fileId : heading;
+            Match match = Regex.Match(fileId ?? string.Empty, @"^l(\d+)m(\d+)y(\d+)", RegexOptions.IgnoreCase);
+            return match.Success
+                ? $"l{match.Groups[1].Value} / m{match.Groups[2].Value} / {name}"
+                : name;
         }
 
         private static (int module, int lesson) ExtractModuleLessonKey(string id, string path, string title)

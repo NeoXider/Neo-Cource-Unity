@@ -120,6 +120,74 @@ namespace NeoCource.Editor.Tests
         }
 
         [Test]
+        public void CollectCheckIds_Crlf_File_Gives_Same_Ids_As_Button_Link()
+        {
+            MethodInfo mi = typeof(CourseWindow).GetMethod("CollectCheckIds",
+                BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.IsNotNull(mi, "CollectCheckIds method not found");
+
+            const string block = "rules:\n  - object_exists: \"Player\"\n  - scene_name: \"Main\"";
+            string lf = "# T\n```check\n" + block + "\n```\n---\nSecond\n";
+            string crlf = lf.Replace("\n", "\r\n");
+
+            var lfIds = (HashSet<string>)mi.Invoke(null, new object[] { lf });
+            var crlfIds = (HashSet<string>)mi.Invoke(null, new object[] { crlf });
+
+            // id кнопки «Проверить» строится из того же текста блока (без \r) той же функцией.
+            string buttonId = NeoCource.Editor.Quizzes.QuizStateStore.CheckIdForLink(CourseWindow.BuildCheckLink(block));
+            Assert.AreEqual(1, lfIds.Count);
+            Assert.IsTrue(lfIds.Contains(buttonId));
+            Assert.IsTrue(crlfIds.SetEquals(lfIds), "CRLF-файл должен давать те же id, что и LF");
+        }
+
+        [Test]
+        public void Lesson_Title_Is_Truncated_Only_In_Last_Segment()
+        {
+            CourseWindow wnd = ScriptableObject.CreateInstance<CourseWindow>();
+            try
+            {
+                MethodInfo mi = GetPrivateMethod(typeof(CourseWindow), "TruncateLessonTitle");
+                Assert.IsNotNull(mi, "TruncateLessonTitle method not found");
+
+                string shortTitle = "l2 / m2 / Основы";
+                Assert.AreEqual(shortTitle, (string)mi.Invoke(wnd, new object[] { shortTitle }));
+
+                string longTitle = "l2 / m2 / " + new string('я', 300);
+                string shown = (string)mi.Invoke(wnd, new object[] { longTitle });
+                StringAssert.StartsWith("l2 / m2 / я", shown);
+                StringAssert.EndsWith("...", shown);
+                Assert.Less(shown.Length, longTitle.Length);
+                Assert.AreEqual(string.Empty, (string)mi.Invoke(wnd, new object[] { null }));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(wnd);
+            }
+        }
+
+        [Test]
+        public void Fallback_Title_Uses_First_Heading_And_Module_Groups()
+        {
+            // Файл, которого нет в списке курса, должен попасть в подменю «l2 / m5», а не лежать именем файла.
+            string path = System.IO.Path.Combine(System.IO.Path.GetTempPath(),
+                "algoneo_title_" + System.Guid.NewGuid().ToString("N") + ".md");
+            try
+            {
+                System.IO.File.WriteAllText(path, "# Модуль 5, Урок 1: Арбалет и цель/мишень\n\nТекст\n");
+                Assert.AreEqual("l2 / m5 / Арбалет и цель·мишень",
+                    CourseWindow.BuildFallbackLessonTitle(path, "l2m5y1-y1"));
+                Assert.AreEqual("Арбалет и цель·мишень", CourseWindow.BuildFallbackLessonTitle(path, "notes"));
+
+                System.IO.File.WriteAllText(path, "Без заголовка\n");
+                Assert.AreEqual("l2 / m6 / l2m6y4-y4", CourseWindow.BuildFallbackLessonTitle(path, "l2m6y4-y4"));
+            }
+            finally
+            {
+                System.IO.File.Delete(path);
+            }
+        }
+
+        [Test]
         public void PreprocessMediaLinks_ResolvesRelativeToMdFolder()
         {
             // Arrange: create a temp image under Assets so that project-relative path can be built

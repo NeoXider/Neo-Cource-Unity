@@ -45,29 +45,17 @@ namespace NeoCource.Editor.Settings
         [Tooltip("Режим теста — использовать локальные файлы вместо загрузки с GitHub.")]
         public bool testMode;
 
-        [Tooltip("Максимальная длина заголовка урока в дропдауне окна курса.")]
-        public int maxLessonTitleLength = 25;
+        public const int DefaultMaxLessonTitleLength = 48;
+        private const int LegacyMaxLessonTitleLength = 25;
+
+        [Tooltip("Максимальная длина названия урока в дропдауне окна курса (без префикса «уровень / модуль»).")]
+        public int maxLessonTitleLength = DefaultMaxLessonTitleLength;
 
         [Tooltip("Цвет для сообщений OK (консоль)")]
         public Color okLogColor = new(0.2f, 0.85f, 0.2f);
 
         [Tooltip("Цвет для сообщений FAIL (консоль)")]
         public Color failLogColor = new(1.0f, 0.6f, 0.2f);
-
-        [Tooltip("Автоматически конвертировать .gif в .mp4 для корректного воспроизведения")]
-        public bool autoConvertGifToMp4 = true;
-
-        [Tooltip("Путь к ffmpeg.exe (если пусто, конвертация отключена)")]
-        public string ffmpegPath = "Assets/_AlgoNeoCourse/Editor/Utils/ffmpeg.exe";
-
-        [Tooltip("Папка кэша mp4 (в проекте)")]
-        public string gifVideoCacheFolder = "Assets/_AlgoNeoCourse/VideoCache";
-
-        [Tooltip("Ограничение FPS при конвертации GIF в MP4. Меньше значение = быстрее конвертация и меньший размер файла.")]
-        public int gifConversionFps = 12;
-
-        [Tooltip("Максимальная ширина видео после конвертации. 0 или меньше - без ограничения.")]
-        public int gifConversionMaxWidth = 960;
 
         [Tooltip("Путь к локальному course.json (используется только в режиме теста).")]
         public string localCourseJsonPath;
@@ -153,29 +141,11 @@ namespace NeoCource.Editor.Settings
                 courseJsonFile = DefaultCourseJsonFile;
             }
 
-            if (maxLessonTitleLength <= 0)
+            // 25 — прежнее значение по умолчанию: оно резало всю строку "l2 / m2 / Название" и было
+            // слишком коротким. Теперь лимит относится только к названию урока, старый дефолт поднимаем.
+            if (maxLessonTitleLength <= 0 || maxLessonTitleLength == LegacyMaxLessonTitleLength)
             {
-                maxLessonTitleLength = 25;
-            }
-
-            if (string.IsNullOrWhiteSpace(ffmpegPath))
-            {
-                ffmpegPath = "Assets/_AlgoNeoCourse/Editor/Utils/ffmpeg.exe";
-            }
-
-            if (string.IsNullOrWhiteSpace(gifVideoCacheFolder))
-            {
-                gifVideoCacheFolder = "Assets/_AlgoNeoCourse/VideoCache";
-            }
-
-            if (gifConversionFps <= 0)
-            {
-                gifConversionFps = 12;
-            }
-
-            if (gifConversionMaxWidth <= 0)
-            {
-                gifConversionMaxWidth = 960;
+                maxLessonTitleLength = DefaultMaxLessonTitleLength;
             }
 
             if (string.IsNullOrWhiteSpace(downloadFolderRelative))
@@ -208,14 +178,9 @@ namespace NeoCource.Editor.Settings
             enableDebugLogging = false;
             testMode = false;
             localCourseJsonPath = string.Empty;
-            maxLessonTitleLength = 25;
+            maxLessonTitleLength = DefaultMaxLessonTitleLength;
             okLogColor = new Color(0.2f, 0.85f, 0.2f);
             failLogColor = new Color(1.0f, 0.6f, 0.2f);
-            autoConvertGifToMp4 = true;
-            ffmpegPath = "Assets/_AlgoNeoCourse/Editor/Utils/ffmpeg.exe";
-            gifVideoCacheFolder = AlgoNeoPackageAssetLocator.DefaultVideoCacheFolderAssetPath;
-            gifConversionFps = 12;
-            gifConversionMaxWidth = 960;
             downloadFolderRelative = AlgoNeoPackageAssetLocator.DefaultDownloadFolderAssetPath;
             lessonsFolderInRepo = "lessons";
             lessonSelections = new List<LessonSelection>();
@@ -253,34 +218,6 @@ namespace NeoCource.Editor.Settings
             return AlgoNeoPackageAssetLocator.NormalizeWritableAssetPath(
                 downloadFolderRelative,
                 AlgoNeoPackageAssetLocator.DefaultDownloadFolderAssetPath);
-        }
-
-        public string GetGifVideoCacheFolderPath()
-        {
-            return AlgoNeoPackageAssetLocator.NormalizeWritableAssetPath(
-                gifVideoCacheFolder,
-                AlgoNeoPackageAssetLocator.DefaultVideoCacheFolderAssetPath);
-        }
-
-        public string GetFfmpegAssetPath()
-        {
-            string normalized = (ffmpegPath ?? string.Empty).Replace('\\', '/');
-            if (string.IsNullOrWhiteSpace(normalized))
-            {
-                return AlgoNeoPackageAssetLocator.EmbeddedFfmpegAssetPath;
-            }
-
-            if (normalized.StartsWith("Assets/", StringComparison.OrdinalIgnoreCase) ||
-                normalized.StartsWith("Packages/", StringComparison.OrdinalIgnoreCase))
-            {
-                return AlgoNeoPackageAssetLocator.AssetExists(normalized)
-                    ? normalized
-                    : AlgoNeoPackageAssetLocator.EmbeddedFfmpegAssetPath;
-            }
-
-            return File.Exists(normalized)
-                ? normalized
-                : AlgoNeoPackageAssetLocator.EmbeddedFfmpegAssetPath;
         }
 
         public void CheckCourseLink()

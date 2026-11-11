@@ -76,13 +76,12 @@ VisualElement {
 
 .linkHovered {
     cursor: link;
-    scale: 0.99%;
-    border-left-width: 1;
+    border-left-width: 1px;
     border-left-color: #FF69B4; /* Hot Pink */
 }
 
 .h1 {
-    font-size: 200%;
+    font-size: 22px;
     -unity-font-style: bold;
     color: #ADFF2F; /* Green Yellow */
     white-space: normal;
@@ -92,7 +91,7 @@ VisualElement {
 }
 
 .h2 {
-    font-size: 150%;
+    font-size: 18px;
     -unity-font-style: bold;
     color: #FFD700; /* Gold */
     white-space: normal;
@@ -102,7 +101,7 @@ VisualElement {
 }
 
 .h3 {
-    font-size: 120%;
+    font-size: 15px;
     color: #00FFFF; /* Cyan */
     white-space: normal;
     overflow: visible;
@@ -128,20 +127,4 @@ VisualElement {
 }
 
 .video-audio-slider {
-}
-
-.check-result-label {
-    margin-top: 5;
-    padding-left: 10;
-    padding-right: 10;
-    padding-top: 5;
-    padding-bottom: 5;
-    border-left-width: 3;
-    border-left-color: #ADFF2F;
-    margin: 8px;
-    border-radius: 5px;
-    background-color: #2C3E50;
-    color: #FFFFFF;
-    white-space: normal;
-    flex-grow: 1;
 }

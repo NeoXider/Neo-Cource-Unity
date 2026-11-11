@@ -105,10 +105,13 @@ public class MediaPopoutWindow : EditorWindow
     //This is called by the tutorial window when changing page to make sure we don't have any left over pop out media
     public static void EnsureClosed()
     {
-        if (HasOpenInstances<MediaPopoutWindow>())
+        // Не GetWindow: он создаёт и фокусирует окно, если подходящего нет. Закрываем только существующие.
+        foreach (MediaPopoutWindow win in Resources.FindObjectsOfTypeAll<MediaPopoutWindow>())
         {
-            MediaPopoutWindow win = GetWindow<MediaPopoutWindow>();
-            win.Close();
+            if (win != null)
+            {
+                win.Close();
+            }
         }
     }
 }

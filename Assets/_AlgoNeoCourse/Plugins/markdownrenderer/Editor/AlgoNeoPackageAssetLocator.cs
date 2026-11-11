@@ -37,11 +37,8 @@ namespace NeoCource.Editor.Infrastructure
         public static string VideoPlayerStylesheetAssetPath =>
             CombineFromPackageRoot("Plugins/markdownrenderer/Editor/VideoElement/VideoPlayerElement.uss");
 
-        public static string EmbeddedFfmpegAssetPath => CombineFromPackageRoot("Editor/Utils/ffmpeg.exe");
-
         public static string DefaultDownloadFolderAssetPath => LegacyAssetsRoot + "/Downloaded";
         public static string DefaultProgressFolderAssetPath => LegacyAssetsRoot + "/Progress";
-        public static string DefaultVideoCacheFolderAssetPath => LegacyAssetsRoot + "/VideoCache";
 
         public static string CombineFromPackageRoot(string relativePath)
         {

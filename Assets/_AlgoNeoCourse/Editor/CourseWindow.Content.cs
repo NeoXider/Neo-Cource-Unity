@@ -1,9 +1,12 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using NeoCource.Editor.Infrastructure;
+using NeoCource.Editor.Quizzes;
 using NeoCource.Editor.Settings;
+using NeoCource.Editor.UI;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -90,12 +93,14 @@ namespace NeoCource.Editor
                     BuildContent();
                 }
 
+                // Сначала читаем: при ошибке чтения состояние окна остаётся прежним.
+                List<string> loadedSlides = SplitSlides(File.ReadAllText(assetPath));
                 currentLessonTitle = Path.GetFileNameWithoutExtension(assetPath);
                 currentLessonFilePath = assetPath;
                 currentSlideIndex = 0;
-                string text = File.ReadAllText(assetPath);
-                slides = SplitSlides(text);
+                slides = loadedSlides;
                 SeedMarkdownContext(assetPath);
+                SyncLessonDropdown();
                 ShowSlide(0);
                 ClearEmptyState();
             }
@@ -106,7 +111,8 @@ namespace NeoCource.Editor
         }
 
         private void BuildContent()
-        {            contentRoot = new ScrollView(ScrollViewMode.Vertical);
+        {
+            contentRoot = new ScrollView(ScrollViewMode.Vertical);
             contentRoot.style.flexGrow = 1f;
             contentRoot.AddToClassList("algo-course-content");
 
@@ -124,6 +130,7 @@ namespace NeoCource.Editor
             {
             }
 
+            mdRenderer.RootElement.AddToClassList("algo-slide");
             contentRoot.Add(mdRenderer.RootElement);
             rootVisualElement.Add(contentRoot);
         }
@@ -269,6 +276,7 @@ namespace NeoCource.Editor
                         }
                     };
                     button.AddToClassList("check-button");
+                    button.userData = link;
                     parent.Insert(index, button);
                     parent.Remove(label);
                 }
@@ -276,6 +284,106 @@ namespace NeoCource.Editor
             catch
             {
             }
+        }
+
+        // Блок check показываем не сырым YAML, а карточкой задания с пунктами и кнопкой.
+        private void DecorateCheckBlocks()
+        {
+            if (mdRenderer?.RootElement == null || slides == null || currentSlideIndex < 0 ||
+                currentSlideIndex >= slides.Count)
+            {
+                return;
+            }
+
+            try
+            {
+                // Та же регулярка, что ставит кнопки (InjectCheckBlocksIfDebug) и считает проверки урока.
+                MatchCollection raws = CheckBlockRegex.Matches(slides[currentSlideIndex]);
+                if (raws.Count == 0)
+                {
+                    return;
+                }
+
+                List<VisualElement> blocks =
+                    mdRenderer.RootElement.Query<VisualElement>(className: "language-check").ToList();
+                List<Button> buttons = mdRenderer.RootElement.Query<Button>(className: "check-button").ToList();
+                LessonQuizState state = string.IsNullOrEmpty(currentLessonFilePath)
+                    ? null
+                    : QuizStateStore.GetLessonState(currentLessonFilePath, false);
+
+                for (int i = 0; i < blocks.Count && i < raws.Count; i++)
+                {
+                    VisualElement block = blocks[i];
+                    VisualElement parent = block.parent;
+                    if (parent == null)
+                    {
+                        continue;
+                    }
+
+                    Button button = i < buttons.Count ? buttons[i] : null;
+                    string link = button?.userData as string;
+                    bool? saved = null;
+                    if (link != null && state?.checkIdToPassed != null &&
+                        state.checkIdToPassed.TryGetValue(QuizStateStore.CheckIdForLink(link), out bool passed))
+                    {
+                        saved = passed;
+                    }
+
+                    VisualElement buttonHost = button?.parent;
+                    CheckCard card = new(raws[i].Groups[1].Value, link, button, saved);
+                    parent.Insert(parent.IndexOf(block), card);
+                    block.RemoveFromHierarchy();
+
+                    // Строка, в которой жила кнопка, осталась пустой — убираем лишний отступ.
+                    if (buttonHost != null && buttonHost != parent && buttonHost.childCount == 0)
+                    {
+                        buttonHost.RemoveFromHierarchy();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Карточка — украшение: если не собралась, остаётся прежний вид (код + кнопка).
+                Debug.LogWarning("CourseWindow: карточка задания не построена — " + ex.Message);
+            }
+        }
+
+        // Смена слайда: прокрутка в начало и короткий въезд содержимого со стороны движения.
+        private void PlaySlideEnter()
+        {
+            VisualElement body = mdRenderer?.RootElement;
+            if (body == null)
+            {
+                return;
+            }
+
+            bool sameLesson = string.Equals(lastShownLessonPath, currentLessonFilePath, StringComparison.Ordinal);
+            int direction = !sameLesson ? 1 : Math.Sign(currentSlideIndex - lastShownSlideIndex);
+            lastShownLessonPath = currentLessonFilePath;
+            lastShownSlideIndex = currentSlideIndex;
+
+            // Тот же слайд перерисован (обновление, проверка) — без анимации и без прыжка прокрутки.
+            if (direction == 0)
+            {
+                return;
+            }
+
+            if (contentRoot != null)
+            {
+                contentRoot.scrollOffset = Vector2.zero;
+            }
+
+            // Корень рендерера — тоже ScrollView: длинный слайд прокручивается в нём.
+            if (body is ScrollView bodyScroll)
+            {
+                bodyScroll.scrollOffset = Vector2.zero;
+            }
+
+            string startClass = direction > 0 ? "algo-slide--from-right" : "algo-slide--from-left";
+            body.RemoveFromClassList("algo-slide--from-right");
+            body.RemoveFromClassList("algo-slide--from-left");
+            body.AddToClassList(startClass);
+            body.schedule.Execute(() => body.RemoveFromClassList(startClass)).StartingIn(20);
         }
 
         private void LoadWindowStyles()

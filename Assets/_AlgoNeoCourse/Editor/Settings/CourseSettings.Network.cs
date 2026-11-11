@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using UnityEditor;
+using UnityEditorInternal;
 using UnityEngine;
 
 namespace NeoCource.Editor.Settings
@@ -46,15 +47,21 @@ namespace NeoCource.Editor.Settings
 
         public void LoadLessonsList()
         {
+            // Повторный запрос, пока идёт первый, не нужен: список придёт тот же.
+            if (IsLoadingLessonsList)
+            {
+                return;
+            }
+
             _ = LoadLessonsListAsync();
         }
 
         private async Task LoadLessonsListAsync()
         {
             EnsureRuntimeState();
+            IsLoadingLessonsList = true;
             try
             {
-                EditorUtility.DisplayProgressBar("AlgoNeoCourse", "Загрузка списка уроков...", 0.1f);
                 string jsonText = await LoadCourseJsonAsync();
                 if (string.IsNullOrWhiteSpace(jsonText))
                 {
@@ -67,6 +74,16 @@ namespace NeoCource.Editor.Settings
                 {
                     Debug.LogError("CourseSettings: не удалось распарсить список уроков (поле lessons)");
                     return;
+                }
+
+                // Перезагрузили тот же курс — галочки остаются как были; новые уроки отмечены.
+                System.Collections.Generic.Dictionary<string, bool> previous = new();
+                foreach (LessonSelection old in lessonSelections)
+                {
+                    if (old != null && !string.IsNullOrEmpty(old.id))
+                    {
+                        previous[old.id + "|" + old.file] = old.selected;
+                    }
                 }
 
                 lessonSelections = descriptor.lessons.Select((lesson, index) =>
@@ -92,7 +109,7 @@ namespace NeoCource.Editor.Settings
 
                     return new LessonSelection
                     {
-                        selected = true,
+                        selected = !previous.TryGetValue(id + "|" + fileOrPath, out bool wasSelected) || wasSelected,
                         id = id,
                         title = title,
                         file = fileOrPath
@@ -109,7 +126,9 @@ namespace NeoCource.Editor.Settings
             }
             finally
             {
-                EditorUtility.ClearProgressBar();
+                IsLoadingLessonsList = false;
+                InvalidateDownloadedCache();
+                InternalEditorUtility.RepaintAllViews();
             }
         }
 

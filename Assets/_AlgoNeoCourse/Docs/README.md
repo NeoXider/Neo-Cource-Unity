@@ -14,7 +14,7 @@ Entry point for the package documentation inside `Assets/_AlgoNeoCourse/Docs`.
 - how lesson Markdown is structured
 - how `quiz` and `check` blocks work
 - how media paths are resolved
-- how the package behaves with local JSON progress and GIF conversion
+- how the package behaves with local JSON progress
 
 ## Important current facts
 
@@ -22,4 +22,4 @@ Entry point for the package documentation inside `Assets/_AlgoNeoCourse/Docs`.
 - course data is described in `course1.json`, `course2.json`, or another `courseN.json`
 - one lesson is one `.md` file referenced by `file`
 - local progress is persisted automatically
-- GIF is better replaced with `.mp4`, but GIF -> MP4 conversion is supported
+- animated GIF is not played; use `.mp4` for animation

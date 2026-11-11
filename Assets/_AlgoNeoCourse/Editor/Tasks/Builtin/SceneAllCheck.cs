@@ -33,7 +33,7 @@ namespace NeoCource.Editor.Tasks.Builtin
             }
 
             List<string> lines = new();
-            GameObject go = GameObject.Find(targetName);
+            GameObject go = AlgoNeoEditorUtils.FindSceneObject(targetName);
             bool overall = go != null;
             int objectsTotal = 1;
             int objectsOk = go != null ? 1 : 0;
@@ -62,14 +62,15 @@ namespace NeoCource.Editor.Tasks.Builtin
                     {
                         Type t = Type.GetType(compName)
                                  ?? Type.GetType("UnityEngine." + compName + ", UnityEngine")
-                                 ?? Type.GetType(compName + ", Assembly-CSharp");
+                                 ?? Type.GetType(compName + ", Assembly-CSharp")
+                                 ?? AlgoNeoEditorUtils.FindTypeByName(compName);
                         if (t == null)
                         {
                             error = $" (ОШИБКА: не найден тип компонента '{compName}')";
                         }
                         else
                         {
-                            ok = go.GetComponent(t) != null;
+                            ok = AlgoNeoEditorUtils.IsComponentType(t) && go.GetComponent(t) != null;
                             if (!ok)
                             {
                                 error = $" (ОШИБКА: компонент '{compName}' не найден на объекте)";

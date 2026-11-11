@@ -24,26 +24,14 @@ namespace NeoCource.Editor
             lessonDropdown.AddToClassList("algo-course-dropdown");
             lessonDropdown.formatSelectedValueCallback = value =>
             {
-                if (string.IsNullOrEmpty(value))
-                {
-                    return value;
-                }
-
-                bool needTruncate = value.Length > LessonDropdownMaxLength;
-                lessonDropdown.tooltip = needTruncate ? value : "Выберите урок";
-                return needTruncate ? value.Substring(0, LessonDropdownMaxLength - 3) + "..." : value;
-            };
-            lessonDropdown.formatListItemCallback = value =>
-            {
-                if (string.IsNullOrEmpty(value))
-                {
-                    return value;
-                }
-
-                return value.Length > LessonDropdownMaxLength
-                    ? value.Substring(0, LessonDropdownMaxLength - 3) + "..."
+                string shown = TruncateLessonTitle(value);
+                lessonDropdown.tooltip = string.Equals(shown, value, StringComparison.Ordinal)
+                    ? "Выберите урок"
                     : value;
+                return shown;
             };
+            // В списке "/" создаёт подменю ("l2 / m2 / Название"), поэтому режем только само название.
+            lessonDropdown.formatListItemCallback = TruncateLessonTitle;
             lessonDropdown.RegisterValueChangedCallback(_ =>
             {
                 int idx = lessonDropdown.index;
@@ -92,15 +80,12 @@ namespace NeoCource.Editor
             nextBtn.AddToClassList("algo-course-nav-button");
             nextBtn.AddToClassList("next");
             prevBtn.tooltip = "Предыдущий слайд (←)";
-            nextBtn.tooltip = "Следующий слайд (→)";
-            prevBtn.style.unityFontStyleAndWeight = FontStyle.Bold;
-            nextBtn.style.unityFontStyleAndWeight = FontStyle.Bold;
-            prevBtn.style.color = new StyleColor(new Color(0.65f, 0.75f, 1f));
-            nextBtn.style.color = new StyleColor(new Color(0.6f, 1f, 0.6f));
-            nextBtn.style.minWidth = 60;
-            // Кнопка возврата к сохранённой позиции (состояние обновляет UpdateContinueButton).
+            nextBtn.tooltip = NextSlideTooltip;
+            // Цвет, жирность, ширина и вид выключенной кнопки — в USS (.algo-course-nav-button):
+            // инлайн-стили перебивали бы таблицу стилей.
+            // Кнопка возврата к дальней достигнутой точке (состояние обновляет UpdateContinueButton).
             continueBtn = new ToolbarButton(() => GoToFarthestSession()) { text = "▶ Продолжить" };
-            continueBtn.tooltip = "Продолжить с сохранённой позиции";
+            continueBtn.tooltip = "Продолжить с места, до которого вы дошли";
             continueBtn.AddToClassList("algo-course-continue");
             slideIndicator = new Label("—/—") { style = { unityTextAlign = TextAnchor.MiddleCenter, minWidth = 60 } };
             slideIndicator.AddToClassList("algo-course-slide-indicator");
@@ -180,6 +165,12 @@ namespace NeoCource.Editor
 
                     if (rootVisualElement.focusController?.focusedElement is TextField ||
                         rootVisualElement.focusController?.focusedElement is PopupField<string>)
+                    {
+                        return;
+                    }
+
+                    // Горячие клавиши окна — только без модификаторов: Ctrl+R / Ctrl+O и т.п. не наши.
+                    if (evt.ctrlKey || evt.commandKey || evt.altKey || evt.shiftKey)
                     {
                         return;
                     }
@@ -277,17 +268,14 @@ namespace NeoCource.Editor
                     return;
                 }
 
+                // Нет уроков (показана заглушка) или дальняя точка — это текущий слайд: идти некуда.
                 bool has = false;
-                if (CourseProgressStore.TryGetFarthestSession(out string farPath, out int farSlide) &&
+                if (emptyStateBox == null &&
+                    CourseProgressStore.TryGetFarthestSession(out string farPath, out int farSlide) &&
                     !string.IsNullOrEmpty(farPath))
                 {
-                    has = !IsAlreadyOnSession(NormalizeSessionPath(farPath), farSlide);
-                }
-
-                if (!has)
-                {
-                    has = CourseProgressStore.TryGetLastSession(out string lastPath, out _) &&
-                          !string.IsNullOrEmpty(lastPath);
+                    string far = NormalizeSessionPath(farPath);
+                    has = File.Exists(far) && !IsAlreadyOnSession(far, farSlide);
                 }
 
                 continueBtn.SetEnabled(has);
@@ -297,6 +285,60 @@ namespace NeoCource.Editor
             }
         }
 
+        // Название урока для дропдауна: укорачиваем только последний сегмент "l2 / m2 / Название".
+        private string TruncateLessonTitle(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return string.Empty;
+            }
+
+            int max = LessonDropdownMaxLength;
+            int cut = value.LastIndexOf('/');
+            string prefix = cut >= 0 ? value.Substring(0, cut + 1) : string.Empty;
+            string last = cut >= 0 ? value.Substring(cut + 1) : value;
+            string name = last.Trim();
+            if (name.Length <= max)
+            {
+                return value;
+            }
+
+            string leadingSpace = last.Substring(0, last.Length - last.TrimStart().Length);
+            return prefix + leadingSpace + name.Substring(0, max - 3).TrimEnd() + "...";
+        }
+
+        // Показывает в дропдауне текущий урок БЕЗ ChangeEvent (иначе урок загрузился бы повторно).
+        // Урок вне списка (пример из Docs) показываем его названием: тогда любой выбор из списка — это смена значения.
+        private void SyncLessonDropdown()
+        {
+            if (lessonDropdown == null)
+            {
+                return;
+            }
+
+            try
+            {
+                int idx = string.IsNullOrEmpty(currentLessonFilePath)
+                    ? -1
+                    : IndexInAvailableLessons(NormalizeSessionPath(currentLessonFilePath));
+                List<string> choices = lessonDropdown.choices;
+                if (idx >= 0 && choices != null && idx < choices.Count)
+                {
+                    lessonDropdown.SetValueWithoutNotify(choices[idx]);
+                }
+                else if (!string.IsNullOrEmpty(currentLessonTitle))
+                {
+                    lessonDropdown.SetValueWithoutNotify(currentLessonTitle);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("CourseWindow: не удалось обновить список уроков в тулбаре — " + ex.Message);
+            }
+        }
+
+        // Только готовим корень к приёму клавиш. Фокус окну здесь НЕ отдаём: CreateGUI вызывается
+        // после каждой перекомпиляции, и окно курса отбирало бы фокус у редактора кода/сцены.
         private void EnsureHotkeysHook()
         {
             try
@@ -304,25 +346,19 @@ namespace NeoCource.Editor
                 rootVisualElement.focusable = true;
                 rootVisualElement.pickingMode = PickingMode.Position;
                 rootVisualElement.tabIndex = 0;
-                EditorApplication.delayCall += () =>
-                {
-                    if (this != null)
-                    {
-                        TryFocusWindowForHotkeys();
-                    }
-                };
             }
             catch
             {
             }
         }
 
+        // Вызывается только из Open(): пользователь сам открыл окно — можно забрать фокус для клавиш.
         private void TryFocusWindowForHotkeys()
         {
             try
             {
-                rootVisualElement?.Focus();
                 Focus();
+                rootVisualElement?.Focus();
             }
             catch
             {

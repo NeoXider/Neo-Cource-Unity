@@ -2,9 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text.RegularExpressions;
-using NeoCource.Editor.GifSupport;
 using NeoCource.Editor.Quizzes;
 using NeoCource.Editor.Settings;
 using NeoCource.Editor.UI;
@@ -17,6 +15,9 @@ namespace NeoCource.Editor
 {
     public partial class CourseWindow
     {
+        private const string NextSlideTooltip = "Следующий слайд (→)";
+        private const string NextSlideBlockedTooltip = "Сначала ответьте на вопросы слайда";
+
         private void ShowSlide(int index)
         {
             // Закрываем откреплённое медиа: иначе оно переживает смену слайда.
@@ -42,6 +43,8 @@ namespace NeoCource.Editor
             if (slides == null || slides.Count == 0)
             {
                 slideIndicator.text = "—/—";
+                prevBtn?.SetEnabled(false);
+                nextBtn?.SetEnabled(false);
                 mdRenderer.SetMarkdown("# Пусто");
                 EnsureRichTextOnAllLabels();
                 FixBrokenMarkdownLinks();
@@ -74,7 +77,6 @@ namespace NeoCource.Editor
             string markdown = slides[currentSlideIndex];
             markdown = InjectCheckBlocksIfDebug(markdown);
             markdown = PreprocessMediaLinks(markdown);
-            markdown = ConvertGifLinksToMp4(markdown);
 
             List<QuizQuestion> parsedForMarkers;
             try
@@ -86,20 +88,12 @@ namespace NeoCource.Editor
                 parsedForMarkers = new List<QuizQuestion>();
             }
 
+            // Контекст папки обычно выставлен при загрузке урока; здесь — страховка (например, после
+            // перезагрузки домена, когда рендерер создан заново).
             if (mdRenderer != null && string.IsNullOrEmpty(mdRenderer.FileFolder) &&
                 !string.IsNullOrEmpty(currentLessonFilePath))
             {
                 SeedMarkdownContext(currentLessonFilePath);
-                if (string.IsNullOrEmpty(mdRenderer.FileFolder) && File.Exists(currentLessonFilePath))
-                {
-                    try
-                    {
-                        mdRenderer.OpenFile(currentLessonFilePath);
-                    }
-                    catch (Exception)
-                    {
-                    }
-                }
             }
 
             mdRenderer.SetMarkdown(markdown);
@@ -117,6 +111,8 @@ namespace NeoCource.Editor
             TryRenderSlideQuizzes();
             EnsureRichTextOnAllLabels();
             FixBrokenMarkdownLinks();
+            DecorateCheckBlocks();
+            PlaySlideEnter();
             UpdateSlideGuardState();
             SaveLastSession();
             UpdateCourseProgressUI();
@@ -134,10 +130,12 @@ namespace NeoCource.Editor
                     return;
                 }
 
-                List<Label> labels = mdRenderer.RootElement.Query<Label>().ToList();
                 foreach (QuizQuestion question in currentSlideQuestions)
                 {
                     string marker = "[[QUIZ:" + question.id + "]]";
+                    // Заново на каждый вопрос: предыдущая замена могла разбить метку на новые
+                    // (два квиза в одном абзаце) — в старом списке их нет.
+                    List<Label> labels = mdRenderer.RootElement.Query<Label>().ToList();
                     Label host = labels.FirstOrDefault(l => string.Equals(l.text, marker, StringComparison.Ordinal));
                     if (host?.parent != null)
                     {
@@ -154,12 +152,16 @@ namespace NeoCource.Editor
 
                     VisualElement parent = hostWithText.parent;
                     int index = parent.IndexOf(hostWithText);
-                    string[] parts = hostWithText.text.Split(new[] { marker }, StringSplitOptions.None);
+                    // Делим по ПЕРВОМУ вхождению метки: хвост остаётся одной меткой (в нём может быть следующий квиз).
+                    string text = hostWithText.text;
+                    int markerAt = text.IndexOf(marker, StringComparison.Ordinal);
+                    string before = text.Substring(0, markerAt);
+                    string after = text.Substring(markerAt + marker.Length);
                     parent.Remove(hostWithText);
 
-                    if (!string.IsNullOrEmpty(parts[0]))
+                    if (!string.IsNullOrWhiteSpace(before))
                     {
-                        parent.Insert(index++, new Label(parts[0]));
+                        parent.Insert(index++, CloneTextLabel(hostWithText, before));
                     }
 
                     VisualElement container = new();
@@ -167,9 +169,9 @@ namespace NeoCource.Editor
                     QuizRenderer.RenderQuizzes(container, currentLessonFilePath, new List<QuizQuestion> { question },
                         OnQuizStateChanged);
 
-                    if (parts.Length > 1 && !string.IsNullOrEmpty(parts[1]))
+                    if (!string.IsNullOrWhiteSpace(after))
                     {
-                        parent.Insert(index, new Label(parts[1]));
+                        parent.Insert(index, CloneTextLabel(hostWithText, after));
                     }
                 }
             }
@@ -177,6 +179,18 @@ namespace NeoCource.Editor
             {
                 Debug.LogWarning("CourseWindow: quiz render failed — " + ex.Message);
             }
+        }
+
+        // Кусок разбитой метки сохраняет классы исходной (paragraph и т.п.) — иначе текст теряет стиль темы.
+        private static Label CloneTextLabel(Label source, string text)
+        {
+            Label label = new(text) { enableRichText = true };
+            foreach (string className in source.GetClasses())
+            {
+                label.AddToClassList(className);
+            }
+
+            return label;
         }
 
         private void ReplaceLabelWithQuiz(Label host, QuizQuestion question)
@@ -204,17 +218,20 @@ namespace NeoCource.Editor
         {
             try
             {
-                if (!QuizSettings.instance.guardSlideNavigation)
+                bool guard = QuizSettings.instance.guardSlideNavigation;
+                canGoNextNow = !guard || !HasUnfinishedQuestions(currentSlideQuestions, currentLessonFilePath);
+
+                // Guard не должен «оживлять» кнопку на последнем слайде: дальше идти некуда.
+                bool hasNextSlide = slides != null && currentSlideIndex < slides.Count - 1;
+                if (nextBtn != null)
                 {
-                    return;
+                    nextBtn.SetEnabled(canGoNextNow && hasNextSlide);
+                    nextBtn.tooltip = !canGoNextNow && hasNextSlide ? NextSlideBlockedTooltip : NextSlideTooltip;
                 }
 
-                bool canGoNext = !HasUnfinishedQuestions(currentSlideQuestions, currentLessonFilePath);
-                canGoNextNow = canGoNext;
-                nextBtn.SetEnabled(canGoNextNow);
-                if (QuizSettings.instance.enableDebugLogging)
+                if (guard && QuizSettings.instance.enableDebugLogging)
                 {
-                    Debug.Log($"[Quiz] guard update: canNext={canGoNext}, slide={currentSlideIndex + 1}");
+                    Debug.Log($"[Quiz] guard update: canNext={canGoNextNow}, slide={currentSlideIndex + 1}");
                 }
             }
             catch
@@ -277,13 +294,10 @@ namespace NeoCource.Editor
         // удалены в 1.6.1, транспорт unity://check остался внутренним для этих кнопок.
         private string InjectCheckBlocksIfDebug(string markdown)
         {
-            string pattern = @"```check\n([\s\S]*?)\n```";
-            Regex regex = new(pattern, RegexOptions.Multiline);
-            return regex.Replace(markdown, match =>
+            // Слайды уже с LF-переводами строк (SplitSlides); регулярка общая с CollectCheckIds и карточкой.
+            return CheckBlockRegex.Replace(markdown ?? string.Empty, match =>
             {
-                string raw = match.Groups[1].Value;
-                string encoded = Uri.EscapeDataString(raw);
-                string button = $"[▶ Проверить](unity://check?type=from-block&dialog=auto&__raw_block__={encoded})";
+                string button = $"[▶ Проверить]({BuildCheckLink(match.Groups[1].Value)})";
                 return match.Value + "\n" + button + "\n";
             });
         }
@@ -356,92 +370,6 @@ namespace NeoCource.Editor
             });
         }
 
-        private string ConvertGifLinksToMp4(string markdown)
-        {
-            if (string.IsNullOrEmpty(markdown))
-            {
-                return markdown;
-            }
-
-            CourseSettings settings = CourseSettings.instance;
-            if (settings == null)
-            {
-                return markdown;
-            }
-
-            if (!settings.autoConvertGifToMp4 || string.IsNullOrEmpty(settings.GetFfmpegAssetPath()))
-            {
-                return markdown;
-            }
-
-            int replacedCount = 0;
-            string result = Regex.Replace(markdown, "!\\[[^\\]]*\\]\\(([^)]+)\\)", match =>
-            {
-                string url = match.Groups[1].Value.Trim();
-                if (!(url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-                      url.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ||
-                      url.StartsWith("file://", StringComparison.OrdinalIgnoreCase)))
-                {
-                    return match.Value;
-                }
-
-                if (!LooksLikeGifUrl(url))
-                {
-                    return match.Value;
-                }
-
-                string mp4AssetsPath = GifConverter.ConvertGifToMp4IfNeeded(url);
-                if (string.IsNullOrEmpty(mp4AssetsPath))
-                {
-                    return match.Value;
-                }
-
-                replacedCount++;
-
-                string alt = Regex.Match(match.Value, "!\\[([^\\]]*)\\]").Groups[1].Value;
-                return $"![{alt}]({mp4AssetsPath})";
-            });
-
-            if (replacedCount > 0 && !autoReloadScheduled)
-            {
-                autoReloadScheduled = true;
-                EditorApplication.delayCall += () =>
-                {
-                    if (this == null)
-                    {
-                        autoReloadScheduled = false;
-                        return;
-                    }
-
-                    try
-                    {
-                        ShowSlide(currentSlideIndex);
-                    }
-                    finally
-                    {
-                        autoReloadScheduled = false;
-                    }
-                };
-            }
-
-            return result;
-        }
-
-        private static bool LooksLikeGifUrl(string url)
-        {
-            if (string.IsNullOrWhiteSpace(url))
-            {
-                return false;
-            }
-
-            if (Uri.TryCreate(url, UriKind.Absolute, out Uri uri))
-            {
-                return string.Equals(Path.GetExtension(uri.AbsolutePath), ".gif", StringComparison.OrdinalIgnoreCase);
-            }
-
-            return string.Equals(Path.GetExtension(url), ".gif", StringComparison.OrdinalIgnoreCase);
-        }
-
         private void OnLinkClicked(string link, UIMarkdownRenderer.UIMarkdownRenderer renderer,
             VisualElement clickedElement = null)
         {
@@ -460,7 +388,21 @@ namespace NeoCource.Editor
                     string resultMessage = AlgoNeoTaskChecker.Execute(args, out bool checkOk);
                     if (clickedElement != null && resultMessage != null)
                     {
-                        CheckResultPresenter.Show(clickedElement, resultMessage, checkOk);
+                        // Кнопка внутри карточки задания — отмечаем пункты; иначе старый текстовый результат.
+                        CheckCard card = clickedElement.GetFirstAncestorOfType<CheckCard>();
+                        if (card != null)
+                        {
+                            // Тот же текст блока, что ушёл в проверку: пункты карточки и вердикт не расходятся.
+                            string cardRaw = args.TryGetValue("__raw_block__", out string linkRaw) &&
+                                             !string.IsNullOrEmpty(linkRaw)
+                                ? linkRaw
+                                : card.Raw;
+                            card.ShowResults(AlgoNeoYamlChecker.EvaluateRules(cardRaw), checkOk);
+                        }
+                        else
+                        {
+                            CheckResultPresenter.Show(clickedElement, resultMessage, checkOk);
+                        }
                     }
 
                     // Персистим результат практической проверки для прогресса урока.
@@ -475,6 +417,9 @@ namespace NeoCource.Editor
                         catch
                         {
                         }
+
+                        // Счётчик «проверки N/M» под полосой прогресса обновляется сразу, а не при смене слайда.
+                        UpdateCourseProgressUI();
                     }
 
                     return;
@@ -559,13 +504,8 @@ namespace NeoCource.Editor
 
             try
             {
-                string localDir = Path.GetDirectoryName(filePath);
-                string fullDir = Path.GetFullPath(localDir ?? ".");
-                Type type = typeof(UIMarkdownRenderer.UIMarkdownRenderer);
-                FieldInfo localField = type.GetField("m_LocalFilePath", BindingFlags.NonPublic | BindingFlags.Instance);
-                FieldInfo folderField = type.GetField("m_FileFolder", BindingFlags.NonPublic | BindingFlags.Instance);
-                localField?.SetValue(mdRenderer, localDir);
-                folderField?.SetValue(mdRenderer, fullDir);
+                // Только контекст папки (относительные ссылки и картинки), без рендера всего урока.
+                mdRenderer.SetFileContext(filePath);
             }
             catch (Exception ex)
             {

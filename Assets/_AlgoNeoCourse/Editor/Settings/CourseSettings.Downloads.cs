@@ -18,16 +18,25 @@ namespace NeoCource.Editor.Settings
         public void DownloadSelectedLessons()
         {
             EnsureRuntimeState();
-            CancelDownloads();
-            currentDownloadCts = new CancellationTokenSource();
-            _ = DownloadSelectedLessonsAsync(currentDownloadCts.Token);
+            DownloadLessons(lessonSelections.Where(selection => selection != null && selection.selected).ToList());
         }
 
-        private async Task DownloadSelectedLessonsAsync(CancellationToken cancellationToken)
+        // Скачивает ровно переданные уроки (например, один модуль) — галочки при этом не трогает.
+        public void DownloadLessons(System.Collections.Generic.IReadOnlyList<LessonSelection> lessons)
         {
-            if (lessonSelections == null || lessonSelections.Count == 0)
+            EnsureRuntimeState();
+            CancelDownloads();
+            currentDownloadCts = new CancellationTokenSource();
+            _ = DownloadLessonsAsync(lessons.ToList(), currentDownloadCts.Token);
+        }
+
+        private async Task DownloadLessonsAsync(System.Collections.Generic.List<LessonSelection> lessons,
+            CancellationToken cancellationToken)
+        {
+            if (lessons == null || lessons.Count == 0)
             {
-                Debug.LogWarning("CourseSettings: список уроков пуст. Сначала выполните 'Загрузить список уроков'.");
+                Debug.LogWarning("CourseSettings: нечего скачивать — отметьте уроки или обновите список.");
+                currentDownloadCts = null;
                 return;
             }
 
@@ -41,9 +50,9 @@ namespace NeoCource.Editor.Settings
 
             try
             {
-                int total = lessonSelections.Count(selection => selection.selected);
+                int total = lessons.Count;
                 int completed = 0;
-                foreach (LessonSelection selection in lessonSelections.Where(selection => selection.selected))
+                foreach (LessonSelection selection in lessons)
                 {
                     if (cancellationToken.IsCancellationRequested)
                     {
@@ -59,7 +68,7 @@ namespace NeoCource.Editor.Settings
 
                     string url = BuildLessonUrl(repositoryBaseUrl, remoteRel);
                     // Имя файла не меняем: {id}-{file}.
-                    string fileName = SanitizeFileName(selection.id + "-" + Path.GetFileName(remoteRel));
+                    string fileName = GetDownloadedFileName(selection);
                     string localPath = Path.Combine(targetFolderAbs, fileName);
 
                     if (EditorUtility.DisplayCancelableProgressBar(
@@ -131,6 +140,7 @@ namespace NeoCource.Editor.Settings
             finally
             {
                 EditorUtility.ClearProgressBar();
+                InvalidateDownloadedCache();
                 AssetDatabase.Refresh();
                 CancelDownloads();
                 // Автообновление открытых окон курса: скачанные уроки появляются сами.
@@ -195,6 +205,7 @@ namespace NeoCource.Editor.Settings
             {
                 FileUtil.DeleteFileOrDirectory(targetFolder);
                 FileUtil.DeleteFileOrDirectory(targetFolder + ".meta");
+                InvalidateDownloadedCache();
                 Debug.Log("CourseSettings: папка с загруженными уроками очищена.");
             }
             catch (Exception ex)

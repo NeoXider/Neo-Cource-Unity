@@ -16,13 +16,16 @@ namespace NeoCource.Editor.Progress
         public string farthestLessonPath = string.Empty;
         public int farthestSlideIndex;
 
-        public Dictionary<string, LessonQuizState> lessonStates = new();
+        // Ключ — путь урока относительно проекта ("Assets/.../lesson.md"), сравнение без учёта регистра.
+        // См. CourseProgressStore.NormalizeLessonPathKey / MigrateLessonKeys.
+        public Dictionary<string, LessonQuizState> lessonStates = new(StringComparer.OrdinalIgnoreCase);
 
         // Опциональные поля под будущий бэкенд (userId/deviceId/метки).
         // Newtonsoft толерантен к отсутствующим полям, старые сейвы читаются как раньше.
         // Поурочные поля (lessonId, lastSlideIndex, maxSlideReached, slidesTotal,
         // lastActivityAtUnixMs) — в LessonQuizState (QuizModels.cs).
-        public int schemaVersion = 1;
+        // 1 — ключи уроков были абсолютными путями; 2 — относительные (старые файлы мигрируются при загрузке).
+        public int schemaVersion = 2;
         public string userId = "";
         public string deviceId = "";
         public long createdAtUnixMs = 0;

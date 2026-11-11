@@ -12,7 +12,7 @@ namespace NeoCource.Editor.Progress
     // Ручной перенос прогресса между машинами/проектами через JSON.
     public static class ProgressTransferMenu
     {
-        [MenuItem("Tools/AlgoNeoCourse/Progress/Export JSON...", priority = 23)]
+        [MenuItem("Tools/AlgoNeoCourse/Settings/Progress/Export JSON...", priority = 140)]
         public static void ExportJson()
         {
             try
@@ -43,7 +43,7 @@ namespace NeoCource.Editor.Progress
             }
         }
 
-        [MenuItem("Tools/AlgoNeoCourse/Progress/Import JSON...", priority = 24)]
+        [MenuItem("Tools/AlgoNeoCourse/Settings/Progress/Import JSON...", priority = 141)]
         public static void ImportJson()
         {
             try
@@ -55,13 +55,14 @@ namespace NeoCource.Editor.Progress
                 }
 
                 string json = File.ReadAllText(src);
-                CourseProgressData data = JsonConvert.DeserializeObject<CourseProgressData>(json);
-                if (data == null)
+                if (string.IsNullOrWhiteSpace(json) || json.TrimStart()[0] != '{')
                 {
                     throw new InvalidDataException("Файл не похож на прогресс AlgoNeoCourse.");
                 }
 
-                data.lessonStates ??= new Dictionary<string, LessonQuizState>();
+                // Тот же разбор, что при загрузке: пути уроков с другого ПК/из другой папки
+                // переводятся в относительные, дубли одного урока объединяются.
+                CourseProgressData data = CourseProgressStore.ParseProgressJson(json);
 
                 string assetPath = CourseProgressStore.GetProgressFileAssetPath();
                 string dirAssetPath = Path.GetDirectoryName(assetPath)?.Replace('\\', '/') ??
