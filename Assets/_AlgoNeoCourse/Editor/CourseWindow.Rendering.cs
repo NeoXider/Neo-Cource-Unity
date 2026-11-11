@@ -74,8 +74,20 @@ namespace NeoCource.Editor
             {
             }
 
-            string markdown = slides[currentSlideIndex];
-            markdown = InjectCheckBlocksIfDebug(markdown);
+            RenderSlideContent(slides[currentSlideIndex]);
+            PlaySlideEnter();
+            UpdateSlideGuardState();
+            SaveLastSession();
+            UpdateCourseProgressUI();
+            UpdateContinueButton();
+            Repaint();
+        }
+
+        // Содержимое одного слайда: кнопки проверок, медиа, квизы, цвета текста, карточки заданий.
+        // Навигация и сохранение прогресса остаются в ShowSlide; тесты вызывают этот метод напрямую.
+        internal void RenderSlideContent(string slideMarkdown)
+        {
+            string markdown = InjectCheckBlocksIfDebug(slideMarkdown);
             markdown = PreprocessMediaLinks(markdown);
 
             List<QuizQuestion> parsedForMarkers;
@@ -97,6 +109,7 @@ namespace NeoCource.Editor
             }
 
             mdRenderer.SetMarkdown(markdown);
+            ApplyLegacyTextColors();
             try
             {
                 currentSlideQuestions = parsedForMarkers != null && parsedForMarkers.Count > 0
@@ -111,13 +124,7 @@ namespace NeoCource.Editor
             TryRenderSlideQuizzes();
             EnsureRichTextOnAllLabels();
             FixBrokenMarkdownLinks();
-            DecorateCheckBlocks();
-            PlaySlideEnter();
-            UpdateSlideGuardState();
-            SaveLastSession();
-            UpdateCourseProgressUI();
-            UpdateContinueButton();
-            Repaint();
+            DecorateCheckBlocks(slideMarkdown);
         }
 
         private void TryRenderSlideQuizzes()

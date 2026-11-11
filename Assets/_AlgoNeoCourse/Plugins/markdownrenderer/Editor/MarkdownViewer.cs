@@ -12,10 +12,7 @@ namespace UIMarkdownRenderer
         private string m_Path;
         private UIMarkdownRenderer m_Renderer;
 
-        private void Awake()
-        {
-            m_Renderer = new UIMarkdownRenderer(HandleLink);
-        }
+        private void Awake() => EnsureRenderer();
 
         private void OnSelectionChange()
         {
@@ -41,7 +38,7 @@ namespace UIMarkdownRenderer
             {
                 string path = AssetDatabase.GetAssetPath(txtAsset);
 
-                if (string.Equals(Path.GetExtension(path), ".md", StringComparison.OrdinalIgnoreCase))
+                if (IsMarkdownPath(path))
                 {
                     m_Path = path;
                     Setup();
@@ -49,24 +46,46 @@ namespace UIMarkdownRenderer
             }
         }
 
-        [OnOpenAsset(0)]
+        // WHY сигнатура под условной компиляцией: в Unity 6.3+ атрибут `[OnOpenAsset]` принимает
+        // ТОЛЬКО перегрузки с `EntityId`, и метод со старым `int` он не находит вовсе — редактор
+        // пишет в консоль «does not match any of [OnOpenAssetAttribute] expected signatures» на
+        // каждом обновлении домена. Внутренний хелпер конвертацию уже учитывал, а сама сигнатура
+        // осталась старой, поэтому двойной клик по .md переставал открывать просмотрщик.
 #if UNITY_6000_3_OR_NEWER
-        public static bool HandleDblClick(EntityId entityId, int line)
+        [OnOpenAsset(0)]
+        public static bool HandleDblClick(EntityId instanceID, int line)
         {
-            string path = AssetDatabase.GetAssetPath(entityId);
+            Object asset = EditorUtility.EntityIdToObject(instanceID);
 #else
+        [OnOpenAsset(0)]
         public static bool HandleDblClick(int instanceID, int line)
         {
-            string path = AssetDatabase.GetAssetPath(instanceID);
+            Object asset = InstanceIdToObject(instanceID);
 #endif
+            string path = asset != null ? AssetDatabase.GetAssetPath(asset) : string.Empty;
 
-            if (string.Equals(Path.GetExtension(path), ".md", StringComparison.OrdinalIgnoreCase))
+            if (IsMarkdownPath(path))
             {
                 Open(path);
                 return true;
             }
 
             return false;
+        }
+
+        // Без учёта регистра: README.MD — тоже Markdown.
+        private static bool IsMarkdownPath(string path) =>
+            !string.IsNullOrEmpty(path) &&
+            string.Equals(Path.GetExtension(path), ".md", StringComparison.OrdinalIgnoreCase);
+
+        private static Object InstanceIdToObject(int instanceID)
+        {
+#if UNITY_6000_3_OR_NEWER
+            EntityId entityId = EntityId.FromULong(unchecked((ulong)(uint)instanceID));
+            return EditorUtility.EntityIdToObject(entityId);
+#else
+            return EditorUtility.InstanceIDToObject(instanceID);
+#endif
         }
 
         [MenuItem("Window/Markdown Doc Viewer")]
@@ -86,10 +105,13 @@ namespace UIMarkdownRenderer
 
         private void Setup()
         {
+            EnsureRenderer();
             rootVisualElement.Clear();
             m_Renderer.OpenFile(m_Path);
             rootVisualElement.Add(m_Renderer.RootElement);
         }
+
+        private void EnsureRenderer() => m_Renderer ??= new UIMarkdownRenderer(HandleLink);
 
         public static void HandleLink(string link, UIMarkdownRenderer renderer)
         {
@@ -161,11 +183,7 @@ namespace UIMarkdownRenderer
                     parameters = parametersString.Split(',');
                 }
 
-                UIMarkdownRenderer.Command cmd = new()
-                {
-                    CommandName = cmdName,
-                    CommandParameters = parameters
-                };
+                UIMarkdownRenderer.Command cmd = new() { CommandName = cmdName, CommandParameters = parameters };
 
                 renderer.SendCommand(cmd);
             }
@@ -175,9 +193,10 @@ namespace UIMarkdownRenderer
                 //this is a link to an external MD or text file so we open it with the viewer instead of using Application.OpenURL
                 if (!Path.IsPathRooted(link))
                 {
-                    // FileFolder УЖЕ папка (см. UIMarkdownRenderer.OpenFile),
-                    // поэтому комбинируем напрямую без лишнего GetDirectoryName.
-                    link = Path.Combine(renderer.FileFolder, link);
+                    string currentFolder = string.IsNullOrEmpty(renderer.FileFolder)
+                        ? Directory.GetCurrentDirectory()
+                        : renderer.FileFolder;
+                    link = Path.GetFullPath(Path.Combine(currentFolder, link));
                 }
 
                 Open(link);

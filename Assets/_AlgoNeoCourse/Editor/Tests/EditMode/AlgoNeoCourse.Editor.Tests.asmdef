@@ -2,7 +2,9 @@
   "name": "AlgoNeoCourse.Editor.Tests",
   "rootNamespace": "NeoCource.Editor.Tests",
   "references": [
-    "AlgoNeoCourse.Editor"
+    "AlgoNeoCourse.Editor",
+    "Rtl.MarkdownRenderer.Runtime",
+    "Markdig"
   ],
   "includePlatforms": [
     "Editor"

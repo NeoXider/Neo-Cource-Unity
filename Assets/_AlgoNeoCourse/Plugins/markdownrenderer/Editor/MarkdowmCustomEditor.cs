@@ -16,13 +16,18 @@ namespace UIMarkdownRenderer
         private string m_TargetPath;
 
 
-        private void Awake()
-        {
-            m_Renderer = new UIMarkdownRenderer(MarkdownViewer.HandleLink);
-        }
+        private void Awake() => EnsureRenderer();
 
         public virtual void OnEnable()
         {
+            EnsureRenderer();
+            if (target == null)
+            {
+                m_TargetPath = string.Empty;
+                m_IsMDFile = false;
+                return;
+            }
+
             m_TargetPath = AssetDatabase.GetAssetPath(target);
 
             Assembly assembly = typeof(Editor).Assembly;
@@ -31,25 +36,36 @@ namespace UIMarkdownRenderer
             CreateCachedEditor(target, type, ref m_DefaultEditor);
 
             //TODO : handle also other extension? Potentially skip that and display every file as Markdown?
-            m_IsMDFile = string.Equals(Path.GetExtension(AssetDatabase.GetAssetPath(target)), ".md",
-                StringComparison.OrdinalIgnoreCase);
+            // Без учёта регистра: README.MD — тоже Markdown.
+            m_IsMDFile = string.Equals(Path.GetExtension(m_TargetPath), ".md", StringComparison.OrdinalIgnoreCase);
         }
 
         public override VisualElement CreateInspectorGUI()
         {
             if (m_IsMDFile)
             {
-                // Удалённый .md ронял инспектор — открываем файл защищённо.
+                EnsureRenderer();
+                if (string.IsNullOrEmpty(m_TargetPath))
+                {
+                    return new Label("Markdown asset path is empty.");
+                }
+
+                // Файл могли удалить или занять, пока инспектор открыт — инспектор при этом не должен падать.
                 try
                 {
                     m_Renderer.OpenFile(Path.GetFullPath(m_TargetPath));
                 }
                 catch (Exception ex)
                 {
-                    return new Label("Не удалось открыть .md: " + ex.Message);
+                    return new Label("Couldn't open the Markdown file: " + ex.Message);
                 }
 
                 return m_Renderer.RootElement;
+            }
+
+            if (m_DefaultEditor == null)
+            {
+                return new Label("Text asset inspector is not available.");
             }
 
             IMGUIContainer elem = new(m_DefaultEditor.OnInspectorGUI);
@@ -59,5 +75,7 @@ namespace UIMarkdownRenderer
             elem.style.marginLeft = -15;
             return elem;
         }
+
+        private void EnsureRenderer() => m_Renderer ??= new UIMarkdownRenderer(MarkdownViewer.HandleLink);
     }
 }

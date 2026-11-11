@@ -261,6 +261,15 @@
 .algo-course-content .block {
     margin-top: 5px;
     margin-bottom: 5px;
+    /* У рендерера блок — колонка с flex-wrap: wrap. На высоком слайде такая колонка «переносила» часть
+       содержимого во второй столбец за правым краем окна (список в цитате, последняя строка кода).
+       Без переноса содержимое блока всегда идёт сверху вниз и занимает ширину слайда. */
+    flex-wrap: nowrap;
+}
+
+/* Кнопка вне карточки задания не растягивается на всю ширину блока. */
+.algo-course-content .block > .check-button {
+    align-self: flex-start;
 }
 
 .algo-course-content .paragraph,
@@ -311,6 +320,8 @@
 
 .algo-course-content .codeblock Label {
     color: rgb(222, 230, 240);
+    /* Длинная строка кода переносится, а не уезжает за край окна. */
+    white-space: normal;
 }
 
 .algo-course-content .line {
@@ -323,4 +334,62 @@
 
 .algo-course-content .md-image {
     border-radius: 8px;
+}
+
+/* Бегунок дорожки видео выступает за её правый край и в конце ролика выходил за ширину слайда. */
+.algo-course-content VideoPlayerElement {
+    overflow: hidden;
+}
+
+/* ---------- Таблицы (pipe tables) ----------
+   Дерево рендерера: .md-table > .md-table-row (шапка: + .md-table-header, каждая вторая строка тела:
+   + .md-table-row--alt) > .md-table-cell (+ --left / --center / --right по строке-разделителю; само
+   выравнивание и ширину колонок рендерер задаёт инлайном). Здесь — цвета, рамки и отступы.
+   Внешняя рамка со скруглением — у таблицы; линии между строками — верхняя рамка строки (у шапки её
+   нет), между колонками — правая рамка ячейки. Строка на 1px шире содержимого таблицы, поэтому правая
+   рамка последней ячейки уходит под обрезку (overflow: hidden) и не двоит внешнюю рамку. */
+.algo-course-content .md-table {
+    margin-top: 8px;
+    margin-bottom: 8px;
+    border-width: 1px;
+    border-color: rgba(120, 140, 170, 0.35);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.algo-course-content .md-table-row {
+    margin-right: -1px;
+    border-top-width: 1px;
+    border-color: rgba(120, 140, 170, 0.35);
+}
+
+.algo-course-content .md-table-header {
+    border-top-width: 0;
+    background-color: rgba(84, 196, 255, 0.12);
+}
+
+.algo-course-content .md-table-row--alt {
+    background-color: rgba(255, 255, 255, 0.035);
+}
+
+.algo-course-content .md-table-cell {
+    padding: 5px 9px;
+    border-right-width: 1px;
+    border-bottom-width: 0;
+    border-color: rgba(120, 140, 170, 0.35);
+}
+
+.algo-course-content .md-table-cell .block {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.algo-course-content .md-table-cell Label {
+    font-size: 13px;
+    color: rgb(214, 222, 233);
+}
+
+.algo-course-content .md-table-header Label {
+    -unity-font-style: bold;
+    color: rgb(214, 222, 233);
 }

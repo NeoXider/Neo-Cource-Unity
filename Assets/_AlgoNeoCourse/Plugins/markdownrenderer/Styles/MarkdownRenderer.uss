@@ -2,32 +2,32 @@ VisualElement {
 }
 
 .mainBody {
-    margin: 2px;
-    background-color: var(--unity-colors-box-background);
+  margin: 2px;
+  background-color: var(--unity-colors-box-background);
 }
 
 .header {
 }
 
 .block {
-    margin-top: 8px;
-    margin-bottom: 8px;
-    flex-wrap: wrap;
+  margin-top: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
 }
 
 .line {
-    height: 2px;
-    border-width: 1px;
-    border-color: #FFD700; /* Gold */
+  height: 2px;
+  border-width: 1px;
+  border-color: #FFD700; /* Gold */
 }
 
 .codeblock {
-    margin: 8px;
-    border-color: #FF69B4; /* Hot Pink */
-    border-width: 1px;
-    border-radius: 5px;
-    background-color: #2E2E2E;
-    padding: 5px;
+  margin: 8px;
+  border-color: #FF69B4; /* Hot Pink */
+  border-width: 1px;
+  border-radius: 5px;
+  background-color: #2E2E2E;
+  padding: 5px;
 }
 
 /* Подсветка fenced-блоков с языком "quiz" (пример/документация) */
@@ -35,96 +35,167 @@ VisualElement {
 .codeblock.language-quiz,
 .codeblock.fence-quiz,
 .codeblock.lang-quiz {
-    border-color: #00E5FF; /* Cyan bright */
-    background-color: rgba(0, 229, 255, 0.12);
+  border-color: #00E5FF; /* Cyan bright */
+  background-color: rgba(0, 229, 255, 0.12);
 }
 
 .codeblock.quiz Label,
 .codeblock.language-quiz Label,
 .codeblock.fence-quiz Label,
 .codeblock.lang-quiz Label {
-    color: #E0FBFF;
+  color: #E0FBFF;
 }
 
 .codeblock.language-truefalse {
-    border-color: #4DA3FF; /* Blue accent */
-    background-color: rgba(77, 163, 255, 0.12);
+  border-color: #4DA3FF; /* Blue accent */
+  background-color: rgba(77, 163, 255, 0.12);
 }
 
 .codeblock.language-truefalse Label {
-    color: #E6F2FF;
+  color: #E6F2FF;
 }
 
 .quote {
-    margin-left: 4px;
-    padding-left: 4px;
-    border-left-width: 2px;
-    border-left-color: #00FFFF; /* Cyan */
-    background-color: #3C3C3C;
+  margin-left: 4px;
+  padding-left: 4px;
+  border-left-width: 2px;
+  border-left-color: #00FFFF; /* Cyan */
+  background-color: #3C3C3C;
 }
 
 .codeblock Label {
-    -unity-font: resource('Fonts/RobotoMono/RobotoMono-Regular.ttf');
-    -unity-font-definition: resource('Fonts/RobotoMono/RobotoMono-Regular SDF.asset');
-    color: #FFFFFF;
+  -unity-font: resource('Fonts/RobotoMono/RobotoMono-Regular.ttf');
+  -unity-font-definition: resource('Fonts/RobotoMono/RobotoMono-Regular SDF.asset');
+  color: #FFFFFF;
 }
 
 .list {
-    white-space: normal;
-    color: #E0E0E0;
+  white-space: normal;
+  color: #E0E0E0;
 }
 
 .linkHovered {
-    cursor: link;
-    border-left-width: 1px;
-    border-left-color: #FF69B4; /* Hot Pink */
+  cursor: link;
+  border-left-width: 1px;
+  border-left-color: #FF69B4; /* Hot Pink */
 }
 
+/* Размер заголовков — в px: импортёр USS ждёт длину, проценты он отбрасывал, и заголовки оставались
+   без размера. Значения близки к задуманным 200% / 150% / 120% от базовых 12px. */
 .h1 {
-    font-size: 22px;
-    -unity-font-style: bold;
-    color: #ADFF2F; /* Green Yellow */
-    white-space: normal;
-    overflow: visible;
-    min-width: 0;
-    flex-grow: 1;
+  font-size: 22px;
+  -unity-font-style: bold;
+  color: #ADFF2F; /* Green Yellow */
+  white-space: normal;
+  overflow: visible;
+  min-width: 0;
+  flex-grow: 1;
 }
 
 .h2 {
-    font-size: 18px;
-    -unity-font-style: bold;
-    color: #FFD700; /* Gold */
-    white-space: normal;
-    overflow: visible;
-    min-width: 0;
-    flex-grow: 1;
+  font-size: 18px;
+  -unity-font-style: bold;
+  color: #FFD700; /* Gold */
+  white-space: normal;
+  overflow: visible;
+  min-width: 0;
+  flex-grow: 1;
 }
 
 .h3 {
-    font-size: 15px;
-    color: #00FFFF; /* Cyan */
-    white-space: normal;
-    overflow: visible;
-    min-width: 0;
-    flex-grow: 1;
+  font-size: 15px;
+  color: #00FFFF; /* Cyan */
+  white-space: normal;
+  overflow: visible;
+  min-width: 0;
+  flex-grow: 1;
 }
 
 .paragraph {
-    white-space: normal;
-    color: #E0E0E0;
+  white-space: normal;
+  color: #E0E0E0;
 }
 
 .md-image {
-    width: 90%;
-    border-radius: 10px;
+  width: 90%;
+  border-radius: 10px;
 }
 
 .video-play-track {
 }
 
 .video-play-overlay-button {
-    -unity-background-image-tint-color: rgba(255, 255, 255, 0.39);
+  -unity-background-image-tint-color: rgba(255, 255, 255, 0.39);
 }
 
 .video-audio-slider {
+}
+
+.check-result-label {
+  margin: 8px;
+  padding-left: 10px;
+  padding-right: 10px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  border-left-width: 3px;
+  border-left-color: #ADFF2F;
+  border-radius: 5px;
+  background-color: #2C3E50;
+  color: #FFFFFF;
+  white-space: normal;
+  flex-grow: 1;
+}
+
+/* ---------- Таблицы (pipe tables) ----------
+   Дерево: .md-table > .md-table-row (шапка: + .md-table-header, каждая вторая строка тела:
+   + .md-table-row--alt) > .md-table-cell (+ .md-table-cell--left / --center / --right по строке-разделителю).
+   Раскладку колонок задаёт TableRenderer инлайном: flex-direction: row у строки и общие для колонки
+   flex-grow / flex-basis / flex-shrink у ячейки (их из USS не переопределить). Здесь — рамки, фон и отступы;
+   сетка собирается из верхней и левой рамки таблицы плюс правой и нижней рамки каждой ячейки, поэтому
+   линии не двоятся. */
+.md-table {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  border-top-width: 1px;
+  border-left-width: 1px;
+  border-color: #5A5A5A;
+}
+
+.md-table-row {
+  flex-direction: row;
+  flex-wrap: nowrap;
+}
+
+.md-table-row--alt {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.md-table-header {
+  background-color: #3C3C3C;
+}
+
+.md-table-cell {
+  min-width: 0;
+  overflow: hidden;
+  padding: 3px 6px;
+  border-right-width: 1px;
+  border-bottom-width: 1px;
+  border-color: #5A5A5A;
+}
+
+/* Абзац внутри ячейки — обычный .block: его вертикальные отступы в таблице лишние. */
+.md-table-cell .block {
+  margin-top: 0;
+  margin-bottom: 0;
+  flex-wrap: nowrap;
+}
+
+.md-table-cell Label {
+  white-space: normal;
+  min-width: 0;
+}
+
+.md-table-header Label {
+  -unity-font-style: bold;
+  color: #FFFFFF;
 }

@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using NeoCource.Editor.Infrastructure;
 using NeoCource.Editor.Quizzes;
@@ -110,29 +111,73 @@ namespace NeoCource.Editor
             }
         }
 
-        private void BuildContent()
+        // Цвета текста слайдов, которые до 1.8.0 были зашиты во встроенную копию рендерера.
+        // Теперь копия совпадает с апстримом (там жирный без цвета, встроенный код — жирный циановый),
+        // а прежний вид окна курса задаёт сам плагин.
+        internal const string BoldColorHex = "#FF9F1C";
+        internal const string InlineCodeColorHex = "#B388FF";
+
+        internal void BuildContent()
         {
             contentRoot = new ScrollView(ScrollViewMode.Vertical);
             contentRoot.style.flexGrow = 1f;
             contentRoot.AddToClassList("algo-course-content");
+            // Содержимое подстраивается под ширину окна: горизонтальной прокрутки нет никогда.
+            contentRoot.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+            // Въезд слайда анимируем на самой карточке: сдвиг внутри ScrollView раздувал бы его границы.
+            contentRoot.AddToClassList("algo-slide");
 
-            mdRenderer = new UIMarkdownRenderer.UIMarkdownRenderer((link, renderer) => OnLinkClicked(link, renderer));
+            mdRenderer = CreateSlideRenderer();
+            if (mdRenderer.RootElement is ScrollView slideScroll)
+            {
+                slideScroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+            }
+
+            contentRoot.Add(mdRenderer.RootElement);
+            rootVisualElement.Add(contentRoot);
+        }
+
+        private UIMarkdownRenderer.UIMarkdownRenderer CreateSlideRenderer()
+        {
+            // Ассеты рендерера передаём явно: сам он ищет их от корня своего пакета, а встроенная копия
+            // лежит внутри плагина (Assets/_AlgoNeoCourse или Packages/com.neoxider.algoneocourse).
+            // Не нашли — передаём null, и рендерер ищет сам. Вложенный ScrollView не нужен:
+            // слайд прокручивает только contentRoot.
+            UIMarkdownRenderer.UIMarkdownRenderer renderer = new(
+                (link, clickedRenderer) => OnLinkClicked(link, clickedRenderer),
+                includeScrollview: false,
+                defaultStylesheet: LoadPluginAsset<StyleSheet>(AlgoNeoPackageAssetLocator.MarkdownStylesheetAssetPath),
+                videoPlayerStyleSheet: LoadPluginAsset<StyleSheet>(
+                    AlgoNeoPackageAssetLocator.VideoPlayerStylesheetAssetPath),
+                videoPlayerElementPrefab: LoadPluginAsset<VisualTreeAsset>(
+                    AlgoNeoPackageAssetLocator.VideoPlayerUxmlAssetPath));
+
+            if (ColorUtility.TryParseHtmlString(InlineCodeColorHex, out Color inlineCodeColor))
+            {
+                renderer.InlineCodeColor = inlineCodeColor;
+            }
+
+            // Стили квизов, кнопки «Проверить» и карточки задания — после стиля рендерера:
+            // при равной специфичности побеждает таблица, добавленная позже.
+            StyleSheet quizStyleSheet = LoadPluginAsset<StyleSheet>(AlgoNeoPackageAssetLocator.QuizStylesheetAssetPath);
+            if (quizStyleSheet != null)
+            {
+                renderer.RootElement.styleSheets.Add(quizStyleSheet);
+            }
+
+            return renderer;
+        }
+
+        private static T LoadPluginAsset<T>(string assetPath) where T : UnityEngine.Object
+        {
             try
             {
-                StyleSheet styleSheet =
-                    AssetDatabase.LoadAssetAtPath<StyleSheet>(AlgoNeoPackageAssetLocator.QuizStylesheetAssetPath);
-                if (styleSheet != null)
-                {
-                    mdRenderer.RootElement.styleSheets.Add(styleSheet);
-                }
+                return AssetDatabase.LoadAssetAtPath<T>(assetPath);
             }
             catch
             {
+                return null;
             }
-
-            mdRenderer.RootElement.AddToClassList("algo-slide");
-            contentRoot.Add(mdRenderer.RootElement);
-            rootVisualElement.Add(contentRoot);
         }
 
         private void ShowEmptyState()
@@ -214,6 +259,122 @@ namespace NeoCource.Editor
             }
         }
 
+        // Прежний вид текста слайда: жирный — оранжевый, встроенный код — без жирности.
+        // Вызывается один раз сразу после SetMarkdown, пока в дереве только метки рендерера.
+        private void ApplyLegacyTextColors()
+        {
+            if (mdRenderer?.RootElement == null)
+            {
+                return;
+            }
+
+            try
+            {
+                string inlineCodeOpenTag = "<color=#" + ColorUtility.ToHtmlStringRGB(mdRenderer.InlineCodeColor) + ">";
+                foreach (Label label in mdRenderer.RootElement.Query<Label>().ToList())
+                {
+                    string text = label?.text;
+                    if (string.IsNullOrEmpty(text))
+                    {
+                        continue;
+                    }
+
+                    string restyled = RestyleBoldTags(text, inlineCodeOpenTag);
+                    if (!ReferenceEquals(restyled, text))
+                    {
+                        label.text = restyled;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("CourseWindow: цвета текста слайда не применены — " + ex.Message);
+            }
+        }
+
+        // Рендерер пишет жирный как <b>…</b>, встроенный код — как <color=#код><b>…</b></color>.
+        // Жирный оборачиваем в оранжевый цвет, у встроенного кода снимаем <b> (цвет остаётся).
+        // Повторный вызов текст не меняет: уже окрашенный <b> узнаётся по тегу цвета перед ним.
+        internal static string RestyleBoldTags(string text, string inlineCodeOpenTag)
+        {
+            const string open = "<b>";
+            const string close = "</b>";
+            const string boldOpenTag = "<color=" + BoldColorHex + ">";
+
+            if (string.IsNullOrEmpty(text) || text.IndexOf(open, StringComparison.Ordinal) < 0)
+            {
+                return text;
+            }
+
+            StringBuilder result = new(text.Length + 48);
+            // 0 — оставить как есть, 1 — жирный текст (закрыть цвет), 2 — встроенный код (тег снят).
+            Stack<int> openTags = new();
+            int i = 0;
+            while (i < text.Length)
+            {
+                if (string.CompareOrdinal(text, i, open, 0, open.Length) == 0)
+                {
+                    if (!string.IsNullOrEmpty(inlineCodeOpenTag) && EndsWith(result, inlineCodeOpenTag))
+                    {
+                        openTags.Push(2);
+                    }
+                    else if (EndsWith(result, boldOpenTag))
+                    {
+                        openTags.Push(0);
+                        result.Append(open);
+                    }
+                    else
+                    {
+                        openTags.Push(1);
+                        result.Append(boldOpenTag).Append(open);
+                    }
+
+                    i += open.Length;
+                    continue;
+                }
+
+                if (string.CompareOrdinal(text, i, close, 0, close.Length) == 0)
+                {
+                    int kind = openTags.Count > 0 ? openTags.Pop() : 0;
+                    if (kind == 1)
+                    {
+                        result.Append(close).Append("</color>");
+                    }
+                    else if (kind == 0)
+                    {
+                        result.Append(close);
+                    }
+
+                    i += close.Length;
+                    continue;
+                }
+
+                result.Append(text[i]);
+                i++;
+            }
+
+            return result.ToString();
+        }
+
+        private static bool EndsWith(StringBuilder builder, string suffix)
+        {
+            if (builder.Length < suffix.Length)
+            {
+                return false;
+            }
+
+            int offset = builder.Length - suffix.Length;
+            for (int i = 0; i < suffix.Length; i++)
+            {
+                if (builder[offset + i] != suffix[i])
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         private void FixBrokenMarkdownLinks()
         {
             if (mdRenderer?.RootElement == null)
@@ -287,10 +448,9 @@ namespace NeoCource.Editor
         }
 
         // Блок check показываем не сырым YAML, а карточкой задания с пунктами и кнопкой.
-        private void DecorateCheckBlocks()
+        private void DecorateCheckBlocks(string slideMarkdown)
         {
-            if (mdRenderer?.RootElement == null || slides == null || currentSlideIndex < 0 ||
-                currentSlideIndex >= slides.Count)
+            if (mdRenderer?.RootElement == null || string.IsNullOrEmpty(slideMarkdown))
             {
                 return;
             }
@@ -298,7 +458,7 @@ namespace NeoCource.Editor
             try
             {
                 // Та же регулярка, что ставит кнопки (InjectCheckBlocksIfDebug) и считает проверки урока.
-                MatchCollection raws = CheckBlockRegex.Matches(slides[currentSlideIndex]);
+                MatchCollection raws = CheckBlockRegex.Matches(slideMarkdown);
                 if (raws.Count == 0)
                 {
                     return;
@@ -351,7 +511,7 @@ namespace NeoCource.Editor
         // Смена слайда: прокрутка в начало и короткий въезд содержимого со стороны движения.
         private void PlaySlideEnter()
         {
-            VisualElement body = mdRenderer?.RootElement;
+            VisualElement body = contentRoot;
             if (body == null)
             {
                 return;
@@ -368,13 +528,10 @@ namespace NeoCource.Editor
                 return;
             }
 
-            if (contentRoot != null)
-            {
-                contentRoot.scrollOffset = Vector2.zero;
-            }
+            contentRoot.scrollOffset = Vector2.zero;
 
-            // Корень рендерера — тоже ScrollView: длинный слайд прокручивается в нём.
-            if (body is ScrollView bodyScroll)
+            // Если корень рендерера — тоже ScrollView, сбрасываем и его прокрутку.
+            if (mdRenderer?.RootElement is ScrollView bodyScroll)
             {
                 bodyScroll.scrollOffset = Vector2.zero;
             }

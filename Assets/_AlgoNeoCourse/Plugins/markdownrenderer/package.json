@@ -1,9 +1,23 @@
 {
-  "name": "com.rtl.markdownrenderer",
-  "displayName": "Markdown Renderer",
-  "version": "1.2.0",
-  "unity": "2021.3",
-  "description": "Add a markdown renderer to render markdown file as UIElements",
-  "dependencies": {
+  "name": "com.neoxider.markdownrenderer",
+  "displayName": "Neoxider Markdown Renderer",
+  "version": "1.3.0",
+  "unity": "6000.0",
+  "description": "Markdig-based Markdown renderer for Unity UI Toolkit: headings, emphasis, inline code, quotes, lists, links, tables, syntax-highlighted code blocks, video embeds, and Editor tooling (asset inspector, doc viewer, standalone preview window).",
+  "author": {
+    "name": "Neoxider"
+  },
+  "keywords": [
+    "neoxider",
+    "markdown",
+    "markdig",
+    "ui-toolkit",
+    "docs",
+    "syntax-highlighting"
+  ],
+  "license": "SEE LICENSE IN LICENSE.md",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NeoXider/NeoxiderMarkdownRenderer.git"
   }
 }

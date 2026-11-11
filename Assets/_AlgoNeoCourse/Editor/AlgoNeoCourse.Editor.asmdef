@@ -2,6 +2,7 @@
   "name": "AlgoNeoCourse.Editor",
   "rootNamespace": "NeoCource.Editor",
   "references": [
+    "Rtl.MarkdownRenderer.Runtime",
     "Rtl.MarkdownRenderer.Editor",
     "Markdig"
   ],

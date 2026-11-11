@@ -14,6 +14,7 @@ Entry point for the package documentation inside `Assets/_AlgoNeoCourse/Docs`.
 - how lesson Markdown is structured
 - how `quiz` and `check` blocks work
 - how media paths are resolved
+- how tables are written
 - how the package behaves with local JSON progress
 
 ## Important current facts
@@ -23,3 +24,6 @@ Entry point for the package documentation inside `Assets/_AlgoNeoCourse/Docs`.
 - one lesson is one `.md` file referenced by `file`
 - local progress is persisted automatically
 - animated GIF is not played; use `.mp4` for animation
+- pipe tables (a header row plus a separator row) are rendered as a grid since `1.8.0`
+- the package requires Unity `6000.0` or newer since `1.8.0`
+- slides are rendered by the embedded Neoxider Markdown Renderer `1.3.0` (`Plugins/markdownrenderer`)
