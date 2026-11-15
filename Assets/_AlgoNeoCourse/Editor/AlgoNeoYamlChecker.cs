@@ -47,19 +47,23 @@ namespace NeoCource.Editor
 
         public static CheckVerdict GetVerdict(List<CheckRuleResult> results)
         {
-            if (results == null || results.Count == 0)
+            return GetVerdictFromRows(results?.ConvertAll(result => result?.rule == null
+                ? (false, false, true)
+                : (result.ok, result.rule.optional, !string.IsNullOrEmpty(result.rule.problem))));
+        }
+
+        internal static CheckVerdict GetVerdictFromRows(IEnumerable<(bool ok, bool optional, bool error)> results)
+        {
+            if (results == null)
             {
                 return CheckVerdict.Failed;
             }
 
+            bool any = false;
             bool remarks = false;
-            foreach (CheckRuleResult result in results)
+            foreach ((bool ok, bool optional, bool error) result in results)
             {
-                if (result == null || result.rule == null)
-                {
-                    return CheckVerdict.Failed;
-                }
-
+                any = true;
                 if (result.ok)
                 {
                     continue;
@@ -67,7 +71,7 @@ namespace NeoCource.Editor
 
                 // Ошибка в самом правиле (опечатка, нет type) — всегда провал, даже у дополнительного:
                 // такую проверку нужно чинить автору урока, а не прощать.
-                if (!result.rule.optional || !string.IsNullOrEmpty(result.rule.problem))
+                if (!result.optional || result.error)
                 {
                     return CheckVerdict.Failed;
                 }
@@ -75,7 +79,7 @@ namespace NeoCource.Editor
                 remarks = true;
             }
 
-            return remarks ? CheckVerdict.PassedWithRemarks : CheckVerdict.Perfect;
+            return !any ? CheckVerdict.Failed : remarks ? CheckVerdict.PassedWithRemarks : CheckVerdict.Perfect;
         }
 
         public static (bool ok, string message) Summarize(List<CheckRuleResult> results)

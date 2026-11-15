@@ -35,6 +35,18 @@ namespace NeoCource.Editor.Quizzes
         // remarks — засчитано, но дополнительные пункты не выполнены.
         public static void SaveCheckResult(string lessonPath, string checkId, bool passed, bool remarks)
         {
+            SaveCheckResult(lessonPath, checkId, passed, remarks, null, preserveMatchingRules: true);
+        }
+
+        public static void SaveCheckResult(string lessonPath, string checkId, bool passed, bool remarks,
+            List<CheckRuleSnapshot> rules)
+        {
+            SaveCheckResult(lessonPath, checkId, passed, remarks, rules, preserveMatchingRules: false);
+        }
+
+        private static void SaveCheckResult(string lessonPath, string checkId, bool passed, bool remarks,
+            List<CheckRuleSnapshot> rules, bool preserveMatchingRules)
+        {
             if (string.IsNullOrEmpty(checkId))
             {
                 return;
@@ -47,8 +59,22 @@ namespace NeoCource.Editor.Quizzes
             }
 
             state.checkIdToPassed ??= new Dictionary<string, bool>();
-            state.checkIdToPassed[checkId] = passed;
             state.checkIdToRemarks ??= new Dictionary<string, bool>();
+            // Legacy callers only update the verdict. Keep rows only while that verdict still matches.
+            bool sameVerdict = state.checkIdToPassed.TryGetValue(checkId, out bool previousPassed) &&
+                previousPassed == passed && (!passed ||
+                    (state.checkIdToRemarks.TryGetValue(checkId, out bool previousRemarks) && previousRemarks) == remarks);
+            state.checkIdToRuleResults ??= new Dictionary<string, List<CheckRuleSnapshot>>();
+            if (rules != null)
+            {
+                state.checkIdToRuleResults[checkId] = rules;
+            }
+            else if (!preserveMatchingRules || !sameVerdict)
+            {
+                state.checkIdToRuleResults.Remove(checkId);
+            }
+
+            state.checkIdToPassed[checkId] = passed;
             if (passed && remarks)
             {
                 state.checkIdToRemarks[checkId] = true;

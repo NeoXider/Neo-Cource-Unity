@@ -104,10 +104,8 @@ namespace NeoCource.Editor
             reloadBtn.AddToClassList("reload");
             reloadBtn.style.color = new StyleColor(new Color(0.2f, 0.8f, 0.8f));
 
-            Texture2D resetTex = (Texture2D)(EditorGUIUtility.IconContent("d_TreeEditor.Trash").image ??
-                                             EditorGUIUtility.IconContent("TreeEditor.Trash").image);
-            resetProgressBtn = CreateIconButton(resetTex, "Сбросить локальный прогресс", ResetProgressAndReload);
-            resetProgressBtn.AddToClassList("reset");
+            // Сброс прогресса живёт в настройках (Course Settings → «Сбросить прогресс курса»),
+            // а не в окне урока: так его не нажать случайно посреди занятия.
 
             openInExplorerBtn = new ToolbarButton(() =>
             {
@@ -129,7 +127,6 @@ namespace NeoCource.Editor
             openInExplorerBtn.tooltip = "Показать файл урока (O)";
 
             navBar.Add(reloadBtn);
-            navBar.Add(resetProgressBtn);
             navBar.Add(openInExplorerBtn);
 
             // Полоса общего прогресса курса — отдельным рядом под тулбаром:

@@ -89,11 +89,15 @@ namespace NeoCource.Editor.Settings
             }
         }
 
+        // Прогресс сброшен (кнопка в настройках или пункт меню): открытое окно курса перерисовывается.
+        public static event Action ProgressCleared;
+
         public void ClearState()
         {
             try
             {
                 CourseProgressStore.Clear();
+                ProgressCleared?.Invoke();
                 if (Directory.Exists(AlgoNeoPackageAssetLocator.ToAbsolutePath(GetProgressFolderAssetPath())))
                 {
                     Debug.Log("QuizSettings: сохранения очищены");

@@ -39,6 +39,14 @@ namespace NeoCource.Editor.Quizzes
     }
 
     [Serializable]
+    public class CheckRuleSnapshot
+    {
+        public bool ok;
+        public string hint;
+        public bool error;
+    }
+
+    [Serializable]
     public class LessonQuizState
     {
         public string lessonPath;
@@ -51,6 +59,8 @@ namespace NeoCource.Editor.Quizzes
         // Засчитанная проверка, у которой не выполнены дополнительные (optional) пункты.
         // Нет записи — «идеально» (или старый сейв до 1.9.0).
         public Dictionary<string, bool> checkIdToRemarks = new();
+
+        public Dictionary<string, List<CheckRuleSnapshot>> checkIdToRuleResults = new();
 
         // Задел под прогресс/синк (опциональные, старые сейвы читаются без них):
         public string lessonId = string.Empty; // стабильный id из course.json, не путь

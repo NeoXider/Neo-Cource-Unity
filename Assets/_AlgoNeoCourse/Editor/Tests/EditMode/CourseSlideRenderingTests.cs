@@ -3,6 +3,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using NeoCource.Editor.Infrastructure;
+using NeoCource.Editor.Quizzes;
 using NeoCource.Editor.Settings;
 using NeoCource.Editor.UI;
 using NUnit.Framework;
@@ -211,6 +212,120 @@ namespace NeoCource.Editor.Tests
 
             Assert.IsFalse(LabelTexts().Any(text => text.Contains("unity://check")),
                 "ссылка-транспорт заменена кнопкой");
+        }
+
+        [TestCase("perfect", "идеально · 5/5", "Проверено", "success")]
+        [TestCase("remarks", "засчитано · 1 замечание", "Проверено", "remarks")]
+        [TestCase("failed", "готово 2 из 3", "Проверить ещё раз", "fail")]
+        [TestCase("broken", "готово 3 из 3", "Проверить ещё раз", "fail")]
+        public void Check_Card_Restores_Rows_Immediately(string outcome, string expectedStatus,
+            string expectedButton, string buttonClass)
+        {
+            const string raw = "rules:\n  - object_exists: A\n  - object_exists: B\n  - object_exists: C\n" +
+                               "  - object_exists: D\n    optional: true\n  - object_exists: E\n    optional: true";
+            List<CheckRuleSnapshot> saved = Enumerable.Range(0, 5)
+                .Select(_ => new CheckRuleSnapshot { ok = true, hint = "успешная подсказка скрыта" }).ToList();
+            if (outcome != "perfect")
+            {
+                int failedRow = outcome == "failed" ? 1 : 4;
+                saved[failedRow] = new CheckRuleSnapshot
+                    { ok = false, hint = "сохранённая подсказка", error = outcome == "broken" };
+            }
+
+            Button button = new();
+            // Rows take precedence over the old verdict; restoring never evaluates the scene.
+            CheckCard card = new(raw, null, button,
+                outcome == "perfect" ? CheckVerdict.Failed : CheckVerdict.Perfect, saved);
+            CheckVerdict expectedVerdict = outcome == "perfect" ? CheckVerdict.Perfect :
+                outcome == "remarks" ? CheckVerdict.PassedWithRemarks : CheckVerdict.Failed;
+            Assert.AreEqual(expectedVerdict, card.Verdict);
+            List<VisualElement> rows = card.Query<VisualElement>(className: "check-rule").ToList();
+            for (int i = 0; i < rows.Count; i++)
+            {
+                bool remark = !saved[i].ok && i >= 3 && !saved[i].error;
+                Assert.AreEqual(saved[i].ok ? "✓" : remark ? "!" : "✕",
+                    rows[i].Q<Label>(className: "check-rule__icon").text);
+                Assert.AreEqual(saved[i].ok, rows[i].ClassListContains("check-rule--ok"));
+                Assert.AreEqual(remark, rows[i].ClassListContains("check-rule--remark"));
+                Assert.AreEqual(!saved[i].ok && !remark, rows[i].ClassListContains("check-rule--fail"));
+                Label hint = rows[i].Q<Label>(className: "check-rule__hint");
+                Assert.AreEqual(saved[i].ok ? DisplayStyle.None : DisplayStyle.Flex, hint.style.display.value);
+                if (!saved[i].ok)
+                {
+                    Assert.AreEqual(saved[i].hint, hint.text);
+                }
+            }
+
+            Assert.AreEqual(expectedStatus, card.Q<Label>(className: "check-card__status").text);
+            Assert.AreEqual(expectedButton, button.text);
+            foreach (string modifier in new[] { "success", "remarks", "fail" })
+            {
+                Assert.AreEqual(modifier == buttonClass, button.ClassListContains("check-button--" + modifier));
+            }
+
+            Assert.AreEqual(expectedVerdict != CheckVerdict.Failed, card.ClassListContains("check-card--done"));
+            Assert.AreEqual(expectedVerdict == CheckVerdict.Perfect, card.ClassListContains("check-card--perfect"));
+            Assert.AreEqual(expectedVerdict == CheckVerdict.PassedWithRemarks,
+                card.ClassListContains("check-card--remarks"));
+            Assert.IsFalse(card.Q<Label>(className: "check-card__status").ClassListContains("check-card__status--pop"));
+            Assert.IsNull(card.Q(className: "check-card__shine"));
+
+            // Both display paths must produce the same summary and verdict.
+            List<CheckRule> parsed = AlgoNeoYamlChecker.ParseRules(raw);
+            List<CheckRuleResult> results = new();
+            for (int i = 0; i < saved.Count; i++)
+            {
+                parsed[i].problem = saved[i].error ? "сломанное правило" : null;
+                results.Add(new CheckRuleResult { rule = parsed[i], ok = saved[i].ok, hint = saved[i].hint });
+            }
+
+            Button clickedButton = new();
+            CheckCard clicked = new(raw, null, clickedButton, null);
+            clicked.ShowResults(results);
+            Assert.AreEqual(card.Verdict, clicked.Verdict);
+            Assert.AreEqual(expectedStatus, clicked.Q<Label>(className: "check-card__status").text);
+            Assert.AreEqual(expectedButton, clickedButton.text);
+        }
+
+        [TestCase(0, false, "есть ошибки — проверьте ещё раз", "Проверить ещё раз")]
+        [TestCase(1, false, "засчитано · есть замечания", "Проверено")]
+        [TestCase(2, false, "идеально", "Проверено")]
+        [TestCase(0, true, "есть ошибки — проверьте ещё раз", "Проверить ещё раз")]
+        [TestCase(1, true, "засчитано · есть замечания", "Проверено")]
+        [TestCase(2, true, "идеально", "Проверено")]
+        public void Check_Card_Without_Matching_Rows_Falls_Back_To_Saved_Verdict(int verdict, bool mismatch,
+            string expectedStatus, string expectedButton)
+        {
+            List<CheckRuleSnapshot> saved = mismatch
+                ? new List<CheckRuleSnapshot> { new() { ok = false, hint = "устаревшая подсказка" } }
+                : null;
+            Button button = new();
+            CheckCard card = new("rules:\n  - object_exists: A\n  - object_exists: B", null, button,
+                (CheckVerdict)verdict, saved);
+            foreach (VisualElement row in card.Query<VisualElement>(className: "check-rule").ToList())
+            {
+                Assert.AreEqual("○", row.Q<Label>(className: "check-rule__icon").text);
+                Assert.IsFalse(row.ClassListContains("check-rule--ok"));
+                Assert.IsFalse(row.ClassListContains("check-rule--remark"));
+                Assert.IsFalse(row.ClassListContains("check-rule--fail"));
+                Assert.AreEqual(DisplayStyle.None, row.Q<Label>(className: "check-rule__hint").style.display.value);
+            }
+
+            Assert.AreEqual((CheckVerdict)verdict, card.Verdict);
+            Assert.AreEqual(expectedStatus, card.Q<Label>(className: "check-card__status").text);
+            Assert.AreEqual(expectedButton, button.text);
+            Assert.IsTrue(button.ClassListContains("check-button--" +
+                (verdict == 0 ? "fail" : verdict == 1 ? "remarks" : "success")));
+        }
+
+        [Test]
+        public void Check_Card_Null_Snapshot_Is_A_Failure()
+        {
+            CheckCard card = new("rules:\n  - object_exists: A\n    optional: true", null, null, null,
+                new List<CheckRuleSnapshot> { null });
+            Assert.AreEqual(CheckVerdict.Failed, card.Verdict);
+            Assert.IsTrue(card.Q(className: "check-rule").ClassListContains("check-rule--fail"));
+            Assert.AreEqual("✕", card.Q<Label>(className: "check-rule__icon").text);
         }
 
         [Test]

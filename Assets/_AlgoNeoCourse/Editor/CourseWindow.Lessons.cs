@@ -712,20 +712,34 @@ namespace NeoCource.Editor
             SaveLastSession();
         }
 
-        private void ResetProgressAndReload()
+        // Прогресс сброшен из настроек: урок и слайд остаются открытыми, а полоса, значки заданий,
+        // квизы и карточки проверок перерисовываются уже без сохранённых результатов.
+        private void OnProgressCleared()
         {
-            if (!EditorUtility.DisplayDialog("AlgoNeoCourse",
-                    "Сбросить локальный прогресс курса и сохранения всех квизов?", "Сбросить", "Отмена"))
+            if (this == null || toolbar == null)
             {
                 return;
             }
 
-            QuizSettings.instance.ClearState();
-            currentLessonFilePath = null;
-            currentLessonTitle = null;
-            currentSlideIndex = 0;
-            slides.Clear();
-            RefreshLessonsList();
+            try
+            {
+                ClearProgressMarkers();
+                if (slides != null && currentSlideIndex >= 0 && currentSlideIndex < slides.Count)
+                {
+                    ShowSlide(currentSlideIndex);
+                }
+                else
+                {
+                    UpdateCourseProgressUI();
+                }
+
+                UpdateContinueButton();
+                RefreshLessonsList();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("CourseWindow: окно не обновилось после сброса прогресса — " + ex.Message);
+            }
         }
 
         // Название для файла, которого нет в списке курса: «l2 / m5 / <первый заголовок урока>».

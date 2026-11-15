@@ -388,7 +388,7 @@ namespace NeoCource.Editor.Settings
         {
             AlgoNeoEditorGui.BeginSection("Сброс и обслуживание", new Color(0.97f, 0.45f, 0.36f));
             AlgoNeoEditorGui.DrawInfoBox(
-                "Здесь можно отдельно сбросить настройки курса или полностью очистить локальный прогресс и сохранения квизов.",
+                "Здесь можно отдельно сбросить настройки курса или весь прогресс: пройденные слайды, квизы и проверки заданий. Уроки при этом не удаляются.",
                 MessageType.Warning);
 
             EditorGUILayout.BeginHorizontal();
@@ -399,11 +399,11 @@ namespace NeoCource.Editor.Settings
                 settings.LoadLessonsList();
             }
 
-            if (AlgoNeoEditorGui.DrawActionButton("Очистить сохранения", new Color(0.77f, 0.26f, 0.26f)))
+            if (AlgoNeoEditorGui.DrawActionButton("Сбросить прогресс курса", new Color(0.77f, 0.26f, 0.26f)))
             {
                 if (EditorUtility.DisplayDialog(
                         "AlgoNeoCourse",
-                        "Сбросить локальный прогресс курса и все сохранения квизов?",
+                        "Сбросить прогресс курса: пройденные слайды, ответы на квизы и результаты проверок? Отменить это нельзя.",
                         "Сбросить",
                         "Отмена"))
                 {

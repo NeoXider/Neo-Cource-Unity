@@ -1,6 +1,6 @@
 # AlgoNeo Course
 
-Version: `1.9.0`
+Version: `1.9.1`
 
 Requires Unity `6000.0` or newer.
 

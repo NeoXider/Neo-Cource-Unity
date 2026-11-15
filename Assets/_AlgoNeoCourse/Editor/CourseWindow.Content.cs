@@ -489,13 +489,20 @@ namespace NeoCource.Editor
                     if (checkId != null && state?.checkIdToPassed != null &&
                         state.checkIdToPassed.TryGetValue(checkId, out bool passed))
                     {
-                        bool remarks = state.checkIdToRemarks != null && state.checkIdToRemarks.ContainsKey(checkId);
+                        bool remarks = state.checkIdToRemarks != null &&
+                            state.checkIdToRemarks.TryGetValue(checkId, out bool hasRemarks) && hasRemarks;
                         saved = !passed ? CheckVerdict.Failed :
                             remarks ? CheckVerdict.PassedWithRemarks : CheckVerdict.Perfect;
                     }
 
+                    List<CheckRuleSnapshot> savedRows = null;
+                    if (checkId != null && state?.checkIdToRuleResults != null)
+                    {
+                        state.checkIdToRuleResults.TryGetValue(checkId, out savedRows);
+                    }
+
                     VisualElement buttonHost = button?.parent;
-                    CheckCard card = new(raws[i].Groups[1].Value, link, button, saved);
+                    CheckCard card = new(raws[i].Groups[1].Value, link, button, saved, savedRows);
                     if (showSource)
                     {
                         Label caption = new("исходник ```check · debug");

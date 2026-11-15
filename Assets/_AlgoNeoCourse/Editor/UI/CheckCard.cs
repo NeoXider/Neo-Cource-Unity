@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using NeoCource.Editor.Quizzes;
 using UnityEngine.UIElements;
 
 namespace NeoCource.Editor.UI
@@ -27,7 +28,8 @@ namespace NeoCource.Editor.UI
         // Последний показанный итог (для тестов и перерисовки).
         public CheckVerdict? Verdict { get; private set; }
 
-        public CheckCard(string raw, string link, Button checkButton, CheckVerdict? savedVerdict)
+        public CheckCard(string raw, string link, Button checkButton, CheckVerdict? savedVerdict,
+            IReadOnlyList<CheckRuleSnapshot> savedRows = null)
         {
             Raw = raw;
             Link = link;
@@ -93,14 +95,31 @@ namespace NeoCource.Editor.UI
                 Add(footer);
             }
 
+            if (savedRows != null && savedRows.Count == rows.Count)
+            {
+                List<(bool ok, bool optional, bool error)> verdictRows = new();
+                for (int i = 0; i < rows.Count; i++)
+                {
+                    CheckRuleSnapshot result = savedRows[i];
+                    verdictRows.Add((result?.ok ?? false, rows[i].optional, result?.error ?? true));
+                }
+
+                ApplyResults(savedRows, AlgoNeoYamlChecker.GetVerdictFromRows(verdictRows), animate: false);
+                return;
+            }
+
+            if (savedVerdict.HasValue)
+            {
+                ApplyVerdictClasses(savedVerdict.Value);
+                ApplyButtonVerdict(savedVerdict.Value);
+            }
+
             switch (savedVerdict)
             {
                 case CheckVerdict.Perfect:
-                    ApplyVerdictClasses(CheckVerdict.Perfect);
                     SetStatus("идеально", "check-card__status--perfect");
                     break;
                 case CheckVerdict.PassedWithRemarks:
-                    ApplyVerdictClasses(CheckVerdict.PassedWithRemarks);
                     SetStatus("засчитано · есть замечания", "check-card__status--remarks");
                     break;
                 case CheckVerdict.Failed:
@@ -117,8 +136,17 @@ namespace NeoCource.Editor.UI
         // Показывает результат по каждому пункту; строки отмечаются по очереди.
         public void ShowResults(List<CheckRuleResult> results)
         {
+            ApplyResults(results?.ConvertAll(result => new CheckRuleSnapshot
+            {
+                ok = result?.rule != null && result.ok,
+                hint = result?.hint,
+                error = result?.rule == null || !string.IsNullOrEmpty(result.rule.problem)
+            }), AlgoNeoYamlChecker.GetVerdict(results), animate: true);
+        }
+
+        private void ApplyResults(IReadOnlyList<CheckRuleSnapshot> results, CheckVerdict verdict, bool animate)
+        {
             CancelAnimations();
-            CheckVerdict verdict = AlgoNeoYamlChecker.GetVerdict(results);
             Verdict = verdict;
 
             int mandatoryTotal = 0;
@@ -128,9 +156,9 @@ namespace NeoCource.Editor.UI
             for (int i = 0; i < rows.Count && i < count; i++)
             {
                 Row row = rows[i];
-                CheckRuleResult result = results[i];
+                CheckRuleSnapshot result = results[i] ?? new CheckRuleSnapshot { error = true };
                 // Ошибка в самом правиле — провал даже у дополнительного пункта.
-                bool remark = !result.ok && row.optional && string.IsNullOrEmpty(result.rule?.problem);
+                bool remark = !result.ok && row.optional && !result.error;
                 if (!row.optional)
                 {
                     mandatoryTotal++;
@@ -148,7 +176,7 @@ namespace NeoCource.Editor.UI
                 row.hint.style.display = DisplayStyle.None;
 
                 // Поочерёдное появление: 70 мс на пункт.
-                scheduledItems.Add(row.line.schedule.Execute(() =>
+                void ApplyRow()
                 {
                     row.icon.text = result.ok ? OkIcon : remark ? RemarkIcon : FailIcon;
                     row.line.AddToClassList(result.ok ? "check-rule--ok" :
@@ -158,7 +186,16 @@ namespace NeoCource.Editor.UI
                         row.hint.text = result.hint;
                         row.hint.style.display = DisplayStyle.Flex;
                     }
-                }).StartingIn(40 + i * 70));
+                }
+
+                if (animate)
+                {
+                    scheduledItems.Add(row.line.schedule.Execute(ApplyRow).StartingIn(40 + i * 70));
+                }
+                else
+                {
+                    ApplyRow();
+                }
             }
 
             ApplyVerdictClasses(verdict);
@@ -166,7 +203,10 @@ namespace NeoCource.Editor.UI
             {
                 case CheckVerdict.Perfect:
                     SetStatus(count > 0 ? $"идеально · {count}/{count}" : "идеально", "check-card__status--perfect");
-                    PlayShine(40 + rows.Count * 70);
+                    if (animate)
+                    {
+                        PlayShine(40 + rows.Count * 70);
+                    }
                     break;
                 case CheckVerdict.PassedWithRemarks:
                     SetStatus(remarks == 1 ? "засчитано · 1 замечание" : $"засчитано · замечаний: {remarks}",
@@ -175,10 +215,26 @@ namespace NeoCource.Editor.UI
                 default:
                     SetStatus(mandatoryTotal > 0 ? $"готово {mandatoryPassed} из {mandatoryTotal}" : "есть ошибки",
                         "check-card__status--fail");
-                    PlayShake(40 + rows.Count * 70);
+                    if (animate)
+                    {
+                        PlayShake(40 + rows.Count * 70);
+                    }
                     break;
             }
 
+            ApplyButtonVerdict(verdict);
+
+            // Короткий «поп» статуса — только после нажатия, не при восстановлении.
+            if (animate)
+            {
+                status.AddToClassList("check-card__status--pop");
+                scheduledItems.Add(status.schedule.Execute(() => status.RemoveFromClassList("check-card__status--pop"))
+                    .StartingIn(220));
+            }
+        }
+
+        private void ApplyButtonVerdict(CheckVerdict verdict)
+        {
             if (button != null)
             {
                 button.RemoveFromClassList("check-button--success");
@@ -201,11 +257,6 @@ namespace NeoCource.Editor.UI
                         break;
                 }
             }
-
-            // Короткий «поп» статуса: класс снимается, transition из USS возвращает размер.
-            status.AddToClassList("check-card__status--pop");
-            scheduledItems.Add(status.schedule.Execute(() => status.RemoveFromClassList("check-card__status--pop"))
-                .StartingIn(220));
         }
 
         private void CancelAnimations()
@@ -227,14 +278,6 @@ namespace NeoCource.Editor.UI
             EnableInClassList("check-card--done", verdict != CheckVerdict.Failed);
             EnableInClassList("check-card--perfect", verdict == CheckVerdict.Perfect);
             EnableInClassList("check-card--remarks", verdict == CheckVerdict.PassedWithRemarks);
-            if (button != null && verdict == CheckVerdict.Perfect)
-            {
-                button.AddToClassList("check-button--success");
-            }
-            else if (button != null && verdict == CheckVerdict.PassedWithRemarks)
-            {
-                button.AddToClassList("check-button--remarks");
-            }
         }
 
         // Ошибка: карточка коротко вздрагивает влево-вправо (затухающие 6 → 3 px), когда все пункты

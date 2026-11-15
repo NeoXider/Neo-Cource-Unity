@@ -1,7 +1,7 @@
 {
   "name": "com.neoxider.algoneocourse",
   "displayName": "AlgoNeo Course",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "unity": "6000.0",
   "description": "Interactive Unity Editor course window with Markdown slides, quizzes, validations, and local progress persistence.",
   "author": {

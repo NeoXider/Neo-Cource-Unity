@@ -222,6 +222,92 @@ namespace NeoCource.Editor.Tests
         }
 
         [Test]
+        public void Rule_Snapshots_Round_Trip_Through_Progress_Json()
+        {
+            LessonQuizState state = State(3, Relative);
+            state.checkIdToPassed["check:rows"] = false;
+            state.checkIdToRuleResults["check:rows"] = new List<CheckRuleSnapshot>
+            {
+                new() { ok = true },
+                new() { hint = "Создайте объект «Игрок»" },
+                new() { hint = "сломанное правило", error = true }
+            };
+            CourseProgressData data = new()
+            {
+                lessonStates = new Dictionary<string, LessonQuizState> { [Relative] = state }
+            };
+
+            string json = CourseProgressStore.SerializeProgressJson(data);
+            CourseProgressData loaded = CourseProgressStore.ParseProgressJson(json, out _);
+            LessonQuizState restored = loaded.lessonStates[Relative];
+            Assert.IsFalse(restored.checkIdToPassed["check:rows"]);
+            List<CheckRuleSnapshot> rows = restored.checkIdToRuleResults["check:rows"];
+            Assert.AreEqual(3, rows.Count);
+            Assert.IsTrue(rows[0].ok);
+            Assert.IsNull(rows[0].hint);
+            Assert.IsFalse(rows[0].error);
+            Assert.IsFalse(rows[1].ok);
+            Assert.AreEqual("Создайте объект «Игрок»", rows[1].hint);
+            Assert.IsFalse(rows[1].error);
+            Assert.IsFalse(rows[2].ok);
+            Assert.IsTrue(rows[2].error);
+            Assert.AreEqual("сломанное правило", rows[2].hint);
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void Json_Without_Rule_Snapshots_Still_Loads(bool explicitNull)
+        {
+            string json = "{\"schemaVersion\":2,\"lessonStates\":{\"" + Relative +
+                          "\":{\"checkIdToPassed\":{\"check:old\":true}," +
+                          "\"checkIdToRemarks\":{\"check:old\":true}" +
+                          (explicitNull ? ",\"checkIdToRuleResults\":null" : "") + "}}}";
+            LessonQuizState state = CourseProgressStore.ParseProgressJson(json, out _).lessonStates[Relative];
+            Assert.IsTrue(state.checkIdToPassed["check:old"]);
+            Assert.IsTrue(state.checkIdToRemarks["check:old"]);
+            Assert.IsTrue(state.checkIdToRuleResults == null || state.checkIdToRuleResults.Count == 0);
+        }
+
+        [Test]
+        public void Merge_Rule_Snapshots_Follow_The_Winning_Verdict()
+        {
+            for (int left = 0; left < 4; left++)
+            for (int right = 0; right < 4; right++)
+            for (int stronger = 0; stronger < 2; stronger++)
+            for (int available = 0; available < 4; available++)
+            {
+                LessonQuizState a = State(stronger == 0 ? 10 : 0);
+                LessonQuizState b = State(stronger == 1 ? 10 : 0);
+                SetCheckVerdict(a, left);
+                SetCheckVerdict(b, right);
+                // Include null dictionaries and null values from older/partial saves.
+                a.checkIdToRuleResults = null;
+                b.checkIdToRuleResults["check:merge"] = null;
+                List<CheckRuleSnapshot> leftRows = left > 0 && (available & 1) != 0
+                    ? new List<CheckRuleSnapshot> { new() { ok = left == 3, error = left == 1, hint = "left" } } : null;
+                List<CheckRuleSnapshot> rightRows = right > 0 && (available & 2) != 0
+                    ? new List<CheckRuleSnapshot> { new() { ok = right == 3, error = right == 1, hint = "right" } } : null;
+                if (leftRows != null)
+                {
+                    a.checkIdToRuleResults = new Dictionary<string, List<CheckRuleSnapshot>>
+                        { ["check:merge"] = leftRows };
+                }
+
+                if (rightRows != null)
+                {
+                    b.checkIdToRuleResults["check:merge"] = rightRows;
+                }
+
+                List<CheckRuleSnapshot> expected = left > right ? leftRows : right > left ? rightRows :
+                    stronger == 0 ? leftRows ?? rightRows : rightRows ?? leftRows;
+                LessonQuizState merged = CourseProgressStore.MergeLessonStates(a, b);
+                merged.checkIdToRuleResults.TryGetValue("check:merge", out List<CheckRuleSnapshot> actual);
+                Assert.AreSame(expected, actual,
+                    $"left={left}, right={right}, primary={stronger}, snapshots={available}");
+            }
+        }
+
+        [Test]
         public void Merge_Check_Verdicts_Keeps_The_Best_Of_Both_Original_Entries()
         {
             // none / failed / remarks / perfect, including both input orders and either primary.

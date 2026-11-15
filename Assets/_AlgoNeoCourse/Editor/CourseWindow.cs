@@ -51,7 +51,6 @@ namespace NeoCource.Editor
         private ToolbarButton openInExplorerBtn;
         private ToolbarButton prevBtn;
         private ToolbarButton reloadBtn;
-        private ToolbarButton resetProgressBtn;
         private Label slideIndicator;
         private List<string> slides = new();
 
@@ -94,6 +93,8 @@ namespace NeoCource.Editor
 
             ValidationSettings.Changed -= OnValidationSettingsChanged;
             ValidationSettings.Changed += OnValidationSettingsChanged;
+            QuizSettings.ProgressCleared -= OnProgressCleared;
+            QuizSettings.ProgressCleared += OnProgressCleared;
 
             EditorApplication.delayCall += () =>
             {
@@ -120,6 +121,7 @@ namespace NeoCource.Editor
         private void OnDisable()
         {
             ValidationSettings.Changed -= OnValidationSettingsChanged;
+            QuizSettings.ProgressCleared -= OnProgressCleared;
         }
 
         // Галочки debug действуют сразу: меню Docs и текущий слайд перестраиваются без «Обновить».

@@ -385,14 +385,36 @@ namespace NeoCource.Editor.Progress
                 }
             }
 
-            Dictionary<string, int> verdicts = new();
-            foreach (string id in checkIds)
-            {
-                verdicts[id] = Math.Max(Verdict(a, id), Verdict(b, id));
-            }
-
             LessonQuizState primary = ProgressScore(b) > ProgressScore(a) ? b : a;
             LessonQuizState secondary = ReferenceEquals(primary, a) ? b : a;
+            Dictionary<string, int> verdicts = new();
+            Dictionary<string, List<CheckRuleSnapshot>> ruleResults = new();
+            foreach (string id in checkIds)
+            {
+                int primaryVerdict = Verdict(primary, id);
+                int secondaryVerdict = Verdict(secondary, id);
+                int best = Math.Max(primaryVerdict, secondaryVerdict);
+                verdicts[id] = best;
+                if (best == 0)
+                {
+                    continue;
+                }
+
+                // On a tie prefer the primary entry, then borrow rows only from the same verdict.
+                LessonQuizState winner = secondaryVerdict > primaryVerdict ? secondary : primary;
+                LessonQuizState other = ReferenceEquals(winner, primary) ? secondary : primary;
+                List<CheckRuleSnapshot> savedRows = null;
+                winner.checkIdToRuleResults?.TryGetValue(id, out savedRows);
+                if (savedRows == null && Verdict(other, id) == best)
+                {
+                    other.checkIdToRuleResults?.TryGetValue(id, out savedRows);
+                }
+
+                if (savedRows != null)
+                {
+                    ruleResults[id] = savedRows;
+                }
+            }
 
             primary.maxSlideReached = Math.Max(primary.maxSlideReached, secondary.maxSlideReached);
             primary.lastActivityAtUnixMs = Math.Max(primary.lastActivityAtUnixMs, secondary.lastActivityAtUnixMs);
@@ -426,6 +448,7 @@ namespace NeoCource.Editor.Progress
 
             primary.checkIdToPassed ??= new Dictionary<string, bool>();
             primary.checkIdToRemarks ??= new Dictionary<string, bool>();
+            primary.checkIdToRuleResults = ruleResults;
             foreach (KeyValuePair<string, int> pair in verdicts)
             {
                 primary.checkIdToPassed[pair.Key] = pair.Value >= 2;

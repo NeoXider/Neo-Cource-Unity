@@ -137,10 +137,6 @@
     border-color: rgba(67, 198, 214, 0.45);
 }
 
-.algo-course-icon-button.reset {
-    border-color: rgba(226, 109, 109, 0.45);
-}
-
 .algo-course-icon-button.settings {
     border-color: rgba(152, 122, 223, 0.42);
 }

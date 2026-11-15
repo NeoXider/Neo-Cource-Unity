@@ -429,8 +429,14 @@ namespace NeoCource.Editor
                     {
                         try
                         {
+                            List<CheckRuleSnapshot> snapshots = results?.ConvertAll(result => new CheckRuleSnapshot
+                            {
+                                ok = result?.ok ?? false,
+                                hint = result?.hint,
+                                error = !string.IsNullOrEmpty(result?.rule?.problem)
+                            });
                             QuizStateStore.SaveCheckResult(
-                                currentLessonFilePath, QuizStateStore.CheckIdForLink(link), checkOk, checkRemarks);
+                                currentLessonFilePath, QuizStateStore.CheckIdForLink(link), checkOk, checkRemarks, snapshots);
                         }
                         catch
                         {
