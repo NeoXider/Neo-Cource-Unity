@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using NeoCource.Editor.Progress;
+using NeoCource.Editor.Quizzes;
 using NeoCource.Editor.Settings;
 using UnityEditor;
 using UnityEditor.UIElements;
@@ -140,9 +141,18 @@ namespace NeoCource.Editor
             courseProgressFill = new VisualElement();
             courseProgressFill.AddToClassList("algo-course-progress-fill");
             progressBar.Add(courseProgressFill);
-            courseProgressLabel = new Label("нет урока");
+            courseProgressCheckpoints = new VisualElement { pickingMode = PickingMode.Ignore };
+            courseProgressCheckpoints.AddToClassList("algo-course-progress-checkpoints");
+            courseProgressCheckpoints.RegisterCallback<GeometryChangedEvent>(_ => UpdateProgressMarkerPositions());
+            ClearProgressMarkers();
+            courseProgressMarker = new VisualElement { pickingMode = PickingMode.Ignore };
+            courseProgressMarker.AddToClassList("algo-course-progress-marker");
+            courseProgressMarker.style.display = DisplayStyle.None;
+            progressBar.Add(courseProgressMarker);
+            courseProgressLabel = new Label("нет урока") { enableRichText = true };
             courseProgressLabel.AddToClassList("algo-course-progress-label");
             progressWrap.Add(progressBar);
+            progressWrap.Add(courseProgressCheckpoints);
             progressWrap.Add(courseProgressLabel);
 
             rootVisualElement.Add(toolbar);
@@ -228,25 +238,48 @@ namespace NeoCource.Editor
                 {
                     courseProgressFill.style.width = Length.Percent(0);
                     courseProgressLabel.text = "нет урока";
+                    ClearProgressMarkers();
+                    if (courseProgressMarker != null)
+                    {
+                        courseProgressMarker.style.display = DisplayStyle.None;
+                    }
+
                     return;
                 }
 
-                int pct = GetLessonPercent(currentLessonFilePath,
+                LessonQuizState state = QuizStateStore.GetLessonState(currentLessonFilePath, false);
+                UpdateProgressMarkers(state);
+                // Та же формула, что GetLessonPercent, но по закешированным id загруженных слайдов.
+                int pct = GetCachedLessonPercent(state,
                     out int done, out int total, out int checksDone, out int checksTotal);
-                courseProgressFill.style.width = Length.Percent(pct);
-                // Цвет по заполнению: оранжевый -> жёлтый -> зелёный, 100% — синий.
-                courseProgressFill.style.backgroundColor = pct >= 100
-                    ? new Color(0.25f, 0.55f, 1f)
-                    : pct >= 67
-                        ? new Color(0.3f, 0.75f, 0.4f)
-                        : pct >= 34
-                            ? new Color(0.95f, 0.8f, 0.3f)
-                            : new Color(1f, 0.6f, 0.2f);
+                GetSlideProgress(slides.Count, currentSlideIndex, state?.maxSlideReached ?? 0,
+                    out int farthest, out float fillPercent, out float markerPercent);
+                courseProgressFill.style.width = Length.Percent(fillPercent);
+                // Цвет по общему выполнению: оранжевый -> жёлтый -> зелёный, 100% — синий.
+                courseProgressFill.EnableInClassList("algo-course-progress-fill--complete", pct >= 100);
+                courseProgressFill.EnableInClassList("algo-course-progress-fill--high", pct >= 67 && pct < 100);
+                courseProgressFill.EnableInClassList("algo-course-progress-fill--medium", pct >= 34 && pct < 67);
 
-                string slidePart = $"слайд {currentSlideIndex + 1}/{slides.Count}";
+                // «Вы здесь»: середина отрезка текущего слайда на полосе. Пока ученик на дальнем слайде,
+                // отметка стоит у края заливки; вернулся назад — она уходит внутрь заливки.
+                if (courseProgressMarker != null)
+                {
+                    courseProgressMarker.style.display = DisplayStyle.Flex;
+                    courseProgressMarker.style.left =
+                        Length.Percent(markerPercent);
+                    courseProgressMarker.EnableInClassList("algo-course-progress-marker--back",
+                        currentSlideIndex < farthest);
+                    courseProgressMarker.tooltip = $"вы здесь: слайд {currentSlideIndex + 1}";
+                }
+
+                string slidePart = currentSlideIndex < farthest
+                    ? $"слайд {currentSlideIndex + 1}/{slides.Count} (дальше всего — {farthest + 1})"
+                    : $"слайд {currentSlideIndex + 1}/{slides.Count}";
                 string quizPart = total > 0 ? $" · квизы {done}/{total}" : string.Empty;
                 string checkPart = checksTotal > 0 ? $" · проверки {checksDone}/{checksTotal}" : string.Empty;
-                courseProgressLabel.text = slidePart + quizPart + checkPart;
+                courseProgressLabel.text = slidePart +
+                    quizPart.Replace("квизы", "<color=#B39DFF>квизы</color>") +
+                    checkPart.Replace("проверки", "<color=#FFA94D>проверки</color>");
 
                 if (lessonDropdown != null)
                 {

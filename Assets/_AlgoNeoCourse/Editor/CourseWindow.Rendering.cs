@@ -219,6 +219,7 @@ namespace NeoCource.Editor
         private void OnQuizStateChanged()
         {
             UpdateSlideGuardState();
+            UpdateCourseProgressUI();
         }
 
         private void UpdateSlideGuardState()
@@ -392,19 +393,29 @@ namespace NeoCource.Editor
 
                 if (string.Equals(action, "check", StringComparison.OrdinalIgnoreCase))
                 {
-                    string resultMessage = AlgoNeoTaskChecker.Execute(args, out bool checkOk);
+                    string resultMessage = AlgoNeoTaskChecker.Execute(args, out bool checkOk,
+                        out List<CheckRuleResult> results);
+                    CheckCard card = clickedElement?.GetFirstAncestorOfType<CheckCard>();
+                    if (resultMessage != null && results == null)
+                    {
+                        string raw = args.TryGetValue("__raw_block__", out string linkRaw) &&
+                                     !string.IsNullOrEmpty(linkRaw) ? linkRaw : card?.Raw;
+                        if (raw != null)
+                        {
+                            results = AlgoNeoYamlChecker.EvaluateRules(raw);
+                        }
+                    }
+
+                    // Засчитано, но без дополнительных пунктов — это запоминаем отдельно от «идеально».
+                    bool checkRemarks = checkOk &&
+                        AlgoNeoYamlChecker.GetVerdict(results) == CheckVerdict.PassedWithRemarks;
+
                     if (clickedElement != null && resultMessage != null)
                     {
                         // Кнопка внутри карточки задания — отмечаем пункты; иначе старый текстовый результат.
-                        CheckCard card = clickedElement.GetFirstAncestorOfType<CheckCard>();
                         if (card != null)
                         {
-                            // Тот же текст блока, что ушёл в проверку: пункты карточки и вердикт не расходятся.
-                            string cardRaw = args.TryGetValue("__raw_block__", out string linkRaw) &&
-                                             !string.IsNullOrEmpty(linkRaw)
-                                ? linkRaw
-                                : card.Raw;
-                            card.ShowResults(AlgoNeoYamlChecker.EvaluateRules(cardRaw), checkOk);
+                            card.ShowResults(results);
                         }
                         else
                         {
@@ -419,7 +430,7 @@ namespace NeoCource.Editor
                         try
                         {
                             QuizStateStore.SaveCheckResult(
-                                currentLessonFilePath, QuizStateStore.CheckIdForLink(link), checkOk);
+                                currentLessonFilePath, QuizStateStore.CheckIdForLink(link), checkOk, checkRemarks);
                         }
                         catch
                         {

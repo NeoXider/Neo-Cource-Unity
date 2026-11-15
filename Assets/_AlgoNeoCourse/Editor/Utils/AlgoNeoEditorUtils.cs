@@ -28,6 +28,14 @@ namespace NeoCource.Editor.Utils
             return FailMark.Color(CourseSettings.instance.failLogColor);
         }
 
+        // Провал дополнительного (optional) правила: замечание, а не ошибка.
+        public static string WarnMark => "!";
+
+        public static string WarnMarkColored()
+        {
+            return WarnMark.Color(new Color(1f, 0.82f, 0.25f));
+        }
+
         public static string Color(this string text, Color color)
         {
             string hex = ColorUtility.ToHtmlStringRGBA(color);
@@ -185,6 +193,36 @@ namespace NeoCource.Editor.Utils
         // Ищет тип по имени. Точное совпадение всегда выигрывает: "CircleCollider2D" — это именно
         // CircleCollider2D, а не любой Collider2D. Проверка базового типа ("Collider2D") по-прежнему
         // проходит с наследником — это делает сам GetComponent.
+        // Индекс типов по короткому имени (без учёта регистра). Перебор всех типов всех сборок занимал
+        // сотни миллисекунд на КАЖДОЕ правило проверки — кнопка «Проверить» подвисала на секунды.
+        // Индекс строится один раз; после перекомпиляции статика сбрасывается сама, а новая сборка
+        // (загрузилась позже) замечается по числу сборок.
+        private static Dictionary<string, List<Type>> typeIndex;
+        private static int typeIndexAssemblyCount;
+        private static readonly Dictionary<string, Type> typeLookupCache = new(StringComparer.Ordinal);
+        private static readonly object typeIndexLock = new();
+        private static readonly HashSet<Assembly> indexedAssemblies = new();
+
+        // Индекс собирается в фоне, пока ученик читает слайд: первое «Проверить» не ждёт ~1 с.
+        // Вызывается окном курса при создании (в том числе после каждой перекомпиляции).
+        public static void WarmUpTypeIndex()
+        {
+            System.Threading.Tasks.Task.Run(() =>
+            {
+                try
+                {
+                    lock (typeIndexLock)
+                    {
+                        EnsureTypeIndex();
+                    }
+                }
+                catch
+                {
+                    // Не вышло в фоне — соберётся при первой проверке.
+                }
+            });
+        }
+
         public static Type FindTypeByName(string name)
         {
             if (string.IsNullOrWhiteSpace(name))
@@ -193,11 +231,62 @@ namespace NeoCource.Editor.Utils
             }
 
             name = name.Trim();
+            lock (typeIndexLock)
+            {
+                return FindTypeByNameLocked(name);
+            }
+        }
+
+        private static Type FindTypeByNameLocked(string name)
+        {
+            EnsureTypeIndex();
+            if (typeLookupCache.TryGetValue(name, out Type cached))
+            {
+                return cached;
+            }
+
+            // "UnityEngine.UI.Button" ищем по последнему сегменту, сравнение — как раньше (ScoreTypeMatch).
+            int dot = name.LastIndexOf('.');
+            string shortName = dot >= 0 ? name.Substring(dot + 1) : name;
             Type best = null;
             int bestScore = 0;
-
-            foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+            if (typeIndex.TryGetValue(shortName, out List<Type> candidates))
             {
+                foreach (Type t in candidates)
+                {
+                    int score = ScoreTypeMatch(t, name);
+                    if (score > bestScore)
+                    {
+                        best = t;
+                        bestScore = score;
+                    }
+                }
+            }
+
+            typeLookupCache[name] = best;
+            return best;
+        }
+
+        // Дополняем индекс только новыми сборками: в редакторе они подгружаются по ходу работы, и
+        // пересборка всего индекса при каждой новой сборке съедала ту же секунду, что и раньше.
+        // Динамические сборки (кодогенерация) пропускаем — в них нет компонентов из уроков.
+        private static void EnsureTypeIndex()
+        {
+            Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            if (typeIndex != null && typeIndexAssemblyCount == assemblies.Length)
+            {
+                return;
+            }
+
+            typeIndex ??= new Dictionary<string, List<Type>>(StringComparer.OrdinalIgnoreCase);
+            bool added = false;
+            foreach (Assembly assembly in assemblies)
+            {
+                if (assembly.IsDynamic || !indexedAssemblies.Add(assembly))
+                {
+                    continue;
+                }
+
                 Type[] types;
                 try
                 {
@@ -219,16 +308,23 @@ namespace NeoCource.Editor.Utils
                         continue;
                     }
 
-                    int score = ScoreTypeMatch(t, name);
-                    if (score > bestScore)
+                    if (!typeIndex.TryGetValue(t.Name, out List<Type> list))
                     {
-                        best = t;
-                        bestScore = score;
+                        list = new List<Type>(1);
+                        typeIndex[t.Name] = list;
                     }
+
+                    list.Add(t);
+                    added = true;
                 }
             }
 
-            return best;
+            typeIndexAssemblyCount = assemblies.Length;
+            if (added)
+            {
+                // Новые типы могли изменить лучший ответ (в том числе «не найдено»).
+                typeLookupCache.Clear();
+            }
         }
 
         // 0 — не подходит. Чем выше, тем точнее: полное имя > короткое имя > то же без учёта регистра.
@@ -320,6 +416,78 @@ namespace NeoCource.Editor.Utils
             }
 
             return null;
+        }
+
+        // Префаб из проекта по имени файла: "Bolt" или "EnemyShip/ShootPoint" (дочерний объект префаба).
+        // Если префабов с таким именем несколько, берётся тот, что в папке ученика _source, потом —
+        // не из демо-игры (Demo), потом любой.
+        public static GameObject FindPrefabObject(string nameOrPath, out string problem)
+        {
+            problem = null;
+            string query = (nameOrPath ?? string.Empty).Trim().Replace('\\', '/');
+            string[] segments = query.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+            if (segments.Length == 0)
+            {
+                problem = "не указано имя префаба";
+                return null;
+            }
+
+            string prefabName = segments[0];
+            if (prefabName.EndsWith(".prefab", StringComparison.OrdinalIgnoreCase))
+            {
+                prefabName = prefabName.Substring(0, prefabName.Length - ".prefab".Length);
+            }
+
+            string bestPath = null;
+            int bestScore = 0;
+            foreach (string guid in AssetDatabase.FindAssets(prefabName + " t:Prefab"))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                string file = Path.GetFileNameWithoutExtension(path);
+                if (!string.Equals(file, prefabName, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                string normalized = "/" + path.Replace('\\', '/');
+                int folderRank = 1;
+                if (normalized.IndexOf("/_source/", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    folderRank = 3;
+                }
+                else if (normalized.IndexOf("/Demo/", StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    folderRank = 2;
+                }
+
+                int score = folderRank * 2 + (string.Equals(file, prefabName, StringComparison.Ordinal) ? 1 : 0);
+                if (score > bestScore)
+                {
+                    bestScore = score;
+                    bestPath = path;
+                }
+            }
+
+            GameObject root = bestPath == null ? null : AssetDatabase.LoadAssetAtPath<GameObject>(bestPath);
+            if (root == null)
+            {
+                problem = $"префаба «{prefabName}» в проекте нет — перетащите объект в папку Prefabs";
+                return null;
+            }
+
+            if (segments.Length == 1)
+            {
+                return root;
+            }
+
+            Transform child = root.transform.Find(string.Join("/", segments, 1, segments.Length - 1));
+            if (child == null)
+            {
+                problem = $"внутри префаба «{prefabName}» нет объекта «{string.Join("/", segments, 1, segments.Length - 1)}»";
+                return null;
+            }
+
+            return child.gameObject;
         }
 
         // Есть ли в загруженных сценах (включая выключенные объекты) компонент такого типа.

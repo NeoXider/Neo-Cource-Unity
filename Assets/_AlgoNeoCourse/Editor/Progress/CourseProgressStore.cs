@@ -363,6 +363,34 @@ namespace NeoCource.Editor.Progress
                 return a;
             }
 
+            // Snapshot both inputs before mutating either: none < failed < remarks < perfect.
+            static int Verdict(LessonQuizState state, string id)
+            {
+                if (state.checkIdToPassed == null || !state.checkIdToPassed.TryGetValue(id, out bool passed))
+                {
+                    return 0;
+                }
+
+                return !passed ? 1 : state.checkIdToRemarks != null &&
+                    state.checkIdToRemarks.TryGetValue(id, out bool remarks) && remarks ? 2 : 3;
+            }
+
+            HashSet<string> checkIds = new();
+            foreach (Dictionary<string, bool> entries in new[]
+                     { a.checkIdToPassed, a.checkIdToRemarks, b.checkIdToPassed, b.checkIdToRemarks })
+            {
+                if (entries != null)
+                {
+                    checkIds.UnionWith(entries.Keys);
+                }
+            }
+
+            Dictionary<string, int> verdicts = new();
+            foreach (string id in checkIds)
+            {
+                verdicts[id] = Math.Max(Verdict(a, id), Verdict(b, id));
+            }
+
             LessonQuizState primary = ProgressScore(b) > ProgressScore(a) ? b : a;
             LessonQuizState secondary = ReferenceEquals(primary, a) ? b : a;
 
@@ -396,14 +424,18 @@ namespace NeoCource.Editor.Progress
                 }
             }
 
-            // Проверка считается пройденной, если она пройдена хотя бы в одной из записей.
             primary.checkIdToPassed ??= new Dictionary<string, bool>();
-            if (secondary.checkIdToPassed != null)
+            primary.checkIdToRemarks ??= new Dictionary<string, bool>();
+            foreach (KeyValuePair<string, int> pair in verdicts)
             {
-                foreach (KeyValuePair<string, bool> pair in secondary.checkIdToPassed)
+                primary.checkIdToPassed[pair.Key] = pair.Value >= 2;
+                if (pair.Value == 2)
                 {
-                    bool mine = primary.checkIdToPassed.TryGetValue(pair.Key, out bool passed) && passed;
-                    primary.checkIdToPassed[pair.Key] = mine || pair.Value;
+                    primary.checkIdToRemarks[pair.Key] = true;
+                }
+                else
+                {
+                    primary.checkIdToRemarks.Remove(pair.Key);
                 }
             }
 

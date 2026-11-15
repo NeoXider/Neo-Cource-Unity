@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using NeoCource.Editor.Utils;
 using UnityEngine;
@@ -15,6 +16,9 @@ namespace NeoCource.Editor
         Contains,
         SceneName,
 
+        // Значение поля или свойства компонента (Camera.orthographicSize, длина массива префабов).
+        Field,
+
         // Строка, которую движок не понимает (опечатка в ключе, придуманное правило) — всегда провал.
         Unknown,
 
@@ -29,6 +33,19 @@ namespace NeoCource.Editor
         public string target; // объект / файл / сцена / непонятая строка
         public string value; // тип компонента / искомая строка
 
+        // Дополнительное правило (optional: true): его провал — замечание, а не ошибка задания.
+        public bool optional;
+
+        // component_exists / field: префаб из проекта вместо объекта сцены ("Bolt", "EnemyShip/ShootPoint").
+        public string prefab;
+
+        // field: путь к полю или свойству ("orthographicSize", "main.duration"), ожидаемое значение
+        // (equals) или длина списка (count), допуск для чисел и векторов.
+        public string member;
+        public string expected;
+        public bool expectCount;
+        public float? tolerance;
+
         // Ошибка в самом правиле (нет type, пустое значение): такое правило не проверяется, а сразу проваливается.
         public string problem;
 
@@ -40,9 +57,24 @@ namespace NeoCource.Editor
                 case CheckRuleKind.ObjectExists:
                     return $"На сцене есть объект <b>{Escape(target)}</b>";
                 case CheckRuleKind.ComponentExists:
+                    if (!string.IsNullOrEmpty(prefab))
+                    {
+                        return $"У префаба <b>{Escape(prefab)}</b> есть компонент <b>{Escape(Shown(value))}</b>";
+                    }
+
                     return string.IsNullOrEmpty(target)
                         ? $"На сцене есть объект с компонентом <b>{Escape(Shown(value))}</b>"
                         : $"У объекта <b>{Escape(target)}</b> есть компонент <b>{Escape(Shown(value))}</b>";
+                case CheckRuleKind.Field:
+                {
+                    string owner = !string.IsNullOrEmpty(prefab)
+                        ? $"У префаба <b>{Escape(prefab)}</b>"
+                        : $"У объекта <b>{Escape(Shown(target))}</b>";
+                    string where = $"{Escape(Shown(value))} → <color=#FFD58A>{Escape(Shown(member))}</color>";
+                    return expectCount
+                        ? $"{owner}: {where}, элементов <b>{Escape(Shown(expected))}</b>"
+                        : $"{owner}: {where} = <b>{Escape(ShownValue(expected))}</b>";
+                }
                 case CheckRuleKind.FileExists:
                     return $"В проекте есть файл <b>{Escape(Shown(target))}</b>";
                 case CheckRuleKind.Contains:
@@ -61,14 +93,32 @@ namespace NeoCource.Editor
         // Короткая запись для текстового отчёта (консоль / диалог).
         public string ToLogLine()
         {
+            string line = ToLogLineCore();
+            return optional ? line + " [дополнительно]" : line;
+        }
+
+        private string ToLogLineCore()
+        {
             switch (kind)
             {
                 case CheckRuleKind.ObjectExists:
                     return $"object_exists: {target}";
                 case CheckRuleKind.ComponentExists:
+                    if (!string.IsNullOrEmpty(prefab))
+                    {
+                        return $"component_exists: префаб {prefab}.{Shown(value)}";
+                    }
+
                     return string.IsNullOrEmpty(target)
                         ? $"component_exists: {Shown(value)} (на любом объекте сцены)"
                         : $"component_exists: {target}.{Shown(value)}";
+                case CheckRuleKind.Field:
+                {
+                    string owner = !string.IsNullOrEmpty(prefab) ? "префаб " + prefab : Shown(target);
+                    return expectCount
+                        ? $"field: {owner}.{Shown(value)}.{Shown(member)} count = {Shown(expected)}"
+                        : $"field: {owner}.{Shown(value)}.{Shown(member)} = {ShownValue(expected)}";
+                }
                 case CheckRuleKind.FileExists:
                     return $"filename: {Shown(target)}";
                 case CheckRuleKind.Contains:
@@ -87,6 +137,12 @@ namespace NeoCource.Editor
         private static string Shown(string text)
         {
             return string.IsNullOrEmpty(text) ? "?" : text;
+        }
+
+        // Пустое ожидаемое значение у field — это «пусто», а не «не указано».
+        private static string ShownValue(string text)
+        {
+            return string.IsNullOrEmpty(text) ? "пусто" : text;
         }
 
         // Rich text включён: '<' из кода (List<int>) не должен стать тегом — разрываем его пробелом нулевой ширины.
@@ -108,7 +164,11 @@ namespace NeoCource.Editor
     // вердикт и текст ИЗ ТЕХ ЖЕ результатов — карточка задания и итог не могут разойтись.
     internal static partial class AlgoNeoYamlChecker
     {
-        public const string KnownRulesList = "object_exists, component_exists, scene_name, filename, contains";
+        public const string KnownRulesList = "object_exists, component_exists, field, scene_name, filename, contains";
+
+        // Ключи-параметры правила. Строка "ключ: значение" без дефиса сразу под правилом — его параметр,
+        // если ключ подходит этому правилу; иначе строка разбирается как отдельное правило (как до 1.9.0).
+        private const string OptionalKey = "optional";
 
         public static List<CheckRule> ParseRules(string raw)
         {
@@ -135,6 +195,8 @@ namespace NeoCource.Editor
                     continue;
                 }
 
+                CheckRule rule = null;
+                HashSet<string> seen = new();
                 switch (NormalizeKey(key))
                 {
                     case "rules":
@@ -145,24 +207,24 @@ namespace NeoCource.Editor
                     case "object_exists":
                     {
                         string name = ParseScalar(rest);
-                        rules.Add(new CheckRule
+                        rule = new CheckRule
                         {
                             kind = CheckRuleKind.ObjectExists,
                             target = name,
                             problem = string.IsNullOrEmpty(name) ? "не указано имя объекта" : null
-                        });
+                        };
                         break;
                     }
 
                     case "scene_name":
                     {
                         string scene = ParseScalar(rest);
-                        rules.Add(new CheckRule
+                        rule = new CheckRule
                         {
                             kind = CheckRuleKind.SceneName,
                             target = scene,
                             problem = string.IsNullOrEmpty(scene) ? "не указано имя сцены" : null
-                        });
+                        };
                         break;
                     }
 
@@ -171,36 +233,51 @@ namespace NeoCource.Editor
                         string file = ParseScalar(rest);
                         currentFile = string.IsNullOrEmpty(file) ? null : file;
                         firstFile ??= currentFile;
-                        rules.Add(new CheckRule
+                        rule = new CheckRule
                         {
                             kind = CheckRuleKind.FileExists,
                             target = file,
                             problem = string.IsNullOrEmpty(file) ? "не указано имя файла" : null
-                        });
+                        };
                         break;
                     }
 
                     case "contains":
                     {
                         string term = ParseScalar(rest);
-                        rules.Add(new CheckRule
+                        rule = new CheckRule
                         {
                             kind = CheckRuleKind.Contains,
                             target = currentFile,
                             value = term,
                             problem = string.IsNullOrEmpty(term) ? "пустая строка поиска" : null
-                        });
+                        };
                         break;
                     }
 
                     case "component_exists":
-                        rules.Add(ParseComponentRule(lines, rest, ref i));
+                        rule = new CheckRule { kind = CheckRuleKind.ComponentExists };
+                        ReadInlineParameters(rule, rest, seen);
+                        break;
+
+                    case "field":
+                        rule = new CheckRule { kind = CheckRuleKind.Field };
+                        ReadInlineParameters(rule, rest, seen);
                         break;
 
                     default:
                         rules.Add(new CheckRule { kind = CheckRuleKind.Unknown, target = key });
                         break;
                 }
+
+                if (rule == null)
+                {
+                    continue;
+                }
+
+                ReadParameterLines(rule, lines, ref i, seen);
+                ValidateParameters(rule);
+                rules.Add(rule);
             }
 
             // contains выше первого filename (старые уроки) — берём первый файл блока.
@@ -226,14 +303,11 @@ namespace NeoCource.Editor
             return rules;
         }
 
-        // Две записи: вложенные строки object:/type: или в одну строку { object: "Player", type: "Rigidbody" }.
-        // Без object правило значит «компонент есть на каком-нибудь объекте сцены»; без type — ошибка.
-        private static CheckRule ParseComponentRule(string[] lines, string rest, ref int index)
+        // Значение после ключа правила: короткая запись типа ("- component_exists: "Button"")
+        // или параметры в одну строку ({ object: "Player", type: "Rigidbody", optional: true }).
+        private static void ReadInlineParameters(CheckRule rule, string rest, HashSet<string> seen)
         {
-            string objectName = null;
-            string typeName = null;
             string inline = (rest ?? string.Empty).Trim();
-
             if (inline.StartsWith("{", StringComparison.Ordinal))
             {
                 foreach (string part in SplitOutsideQuotes(StripFlowBraces(inline), ','))
@@ -243,65 +317,220 @@ namespace NeoCource.Editor
                         continue;
                     }
 
-                    switch (NormalizeKey(partKey))
+                    if (rule.kind == CheckRuleKind.ComponentExists)
                     {
-                        case "object":
-                            objectName = ParseScalar(partRest);
-                            break;
-                        case "type":
-                            typeName = ParseScalar(partRest);
-                            break;
-                    }
-                }
-            }
-            else
-            {
-                // "- component_exists: "Button"" — короткая запись только с типом.
-                string inlineType = ParseScalar(inline);
-                if (!string.IsNullOrEmpty(inlineType))
-                {
-                    typeName = inlineType;
-                }
+                        // Legacy flow mapping: unknown keys are ignored, the last value wins.
+                        // Keep subsequent parameter lines behaving as before this compatibility fix.
+                        string value = ParseScalar(partRest);
+                        switch (NormalizeKey(partKey))
+                        {
+                            case "object": rule.target = string.IsNullOrEmpty(value) ? null : value; break;
+                            case "prefab": rule.prefab = string.IsNullOrEmpty(value) ? null : value; break;
+                            case "type": rule.value = value; break;
+                            case OptionalKey:
+                                if (TryParseBool(value, out bool optional))
+                                {
+                                    rule.optional = optional;
+                                    rule.problem = null;
+                                }
+                                else
+                                {
+                                    rule.problem ??= $"optional: «{value}» — пишите true или false";
+                                }
+                                break;
+                        }
 
-                for (int j = index + 1; j < lines.Length; j++)
-                {
-                    string tj = lines[j].Trim();
-                    if (tj.Length == 0 || tj.StartsWith("#", StringComparison.Ordinal))
-                    {
                         continue;
                     }
 
-                    if (tj.StartsWith("-", StringComparison.Ordinal) ||
-                        !TrySplitKey(tj, out string subKey, out string subRest))
+                    if (!TryApplyParameter(rule, NormalizeKey(partKey), partRest, seen))
                     {
-                        break;
+                        rule.problem ??= $"непонятный параметр «{partKey}»";
                     }
+                }
 
-                    string normalized = NormalizeKey(subKey);
-                    if (normalized == "object" && objectName == null)
+                return;
+            }
+
+            string shortValue = ParseScalar(inline);
+            if (string.IsNullOrEmpty(shortValue))
+            {
+                return;
+            }
+
+            if (rule.kind == CheckRuleKind.ComponentExists)
+            {
+                rule.value = shortValue;
+            }
+            else
+            {
+                rule.problem ??= "параметры field пишутся на следующих строках: object, type, name, equals";
+            }
+        }
+
+        // Строки "ключ: значение" без дефиса сразу под правилом. Как только ключ правилу не подходит
+        // (или повторяется), разбор параметров кончается — строка станет следующим правилом, как раньше.
+        private static void ReadParameterLines(CheckRule rule, string[] lines, ref int index, HashSet<string> seen)
+        {
+            for (int j = index + 1; j < lines.Length; j++)
+            {
+                string tj = lines[j].Trim();
+                if (tj.Length == 0 || tj.StartsWith("#", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                if (tj.StartsWith("-", StringComparison.Ordinal) ||
+                    !TrySplitKey(tj, out string subKey, out string subRest) ||
+                    !TryApplyParameter(rule, NormalizeKey(subKey), subRest, seen))
+                {
+                    break;
+                }
+
+                index = j;
+            }
+        }
+
+        private static bool TryApplyParameter(CheckRule rule, string key, string rest, HashSet<string> seen)
+        {
+            if (seen.Contains(key))
+            {
+                return false;
+            }
+
+            bool targeted = rule.kind == CheckRuleKind.ComponentExists || rule.kind == CheckRuleKind.Field;
+            bool field = rule.kind == CheckRuleKind.Field;
+            string value = ParseScalar(rest);
+            switch (key)
+            {
+                case OptionalKey:
+                    if (TryParseBool(value, out bool optional))
                     {
-                        objectName = ParseScalar(subRest);
-                    }
-                    else if (normalized == "type" && typeName == null)
-                    {
-                        typeName = ParseScalar(subRest);
+                        rule.optional = optional;
                     }
                     else
                     {
-                        break;
+                        rule.problem ??= $"optional: «{value}» — пишите true или false";
                     }
 
-                    index = j;
-                }
+                    break;
+                case "object" when targeted:
+                    rule.target = string.IsNullOrEmpty(value) ? null : value;
+                    break;
+                case "prefab" when targeted:
+                    rule.prefab = string.IsNullOrEmpty(value) ? null : value;
+                    break;
+                case "type" when targeted:
+                    // Короткая запись "- component_exists: "Button"" уже задала тип — второй не принимаем.
+                    if (!string.IsNullOrEmpty(rule.value))
+                    {
+                        return false;
+                    }
+
+                    rule.value = value;
+                    break;
+                case "name" when field:
+                    rule.member = value;
+                    break;
+                case "equals" when field:
+                    rule.expected = value;
+                    break;
+                case "count" when field:
+                    rule.expected = value;
+                    rule.expectCount = true;
+                    break;
+                case "tolerance" when field:
+                    if (TryParseNumber(value, out double tolerance) && tolerance >= 0)
+                    {
+                        rule.tolerance = (float)tolerance;
+                    }
+                    else
+                    {
+                        rule.problem ??= $"tolerance: «{value}» — нужно неотрицательное число";
+                    }
+
+                    break;
+                default:
+                    return false;
             }
 
-            return new CheckRule
+            seen.Add(key);
+            if ((key == "equals" && seen.Contains("count")) || (key == "count" && seen.Contains("equals")))
             {
-                kind = CheckRuleKind.ComponentExists,
-                target = string.IsNullOrEmpty(objectName) ? null : objectName,
-                value = typeName,
-                problem = string.IsNullOrEmpty(typeName) ? "не указан type — какой компонент искать" : null
-            };
+                rule.problem ??= "укажите что-то одно: equals или count";
+            }
+
+            return true;
+        }
+
+        // Без object правило component_exists значит «компонент есть на каком-нибудь объекте сцены».
+        private static void ValidateParameters(CheckRule rule)
+        {
+            if (rule.kind != CheckRuleKind.ComponentExists && rule.kind != CheckRuleKind.Field)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(rule.target) && !string.IsNullOrEmpty(rule.prefab))
+            {
+                rule.problem ??= "укажите что-то одно: object (объект сцены) или prefab";
+            }
+
+            if (string.IsNullOrEmpty(rule.value))
+            {
+                rule.problem ??= "не указан type — какой компонент искать";
+            }
+
+            if (rule.kind != CheckRuleKind.Field)
+            {
+                return;
+            }
+
+            if (string.IsNullOrEmpty(rule.target) && string.IsNullOrEmpty(rule.prefab))
+            {
+                rule.problem ??= "не указано, где смотреть: object (объект сцены) или prefab";
+            }
+
+            if (string.IsNullOrEmpty(rule.member))
+            {
+                rule.problem ??= "не указан name — какое поле сравнивать";
+            }
+
+            if (rule.expected == null)
+            {
+                rule.problem ??= "не указано, с чем сравнивать: equals (значение) или count (длина списка)";
+            }
+            else if (rule.expectCount && !int.TryParse(rule.expected, NumberStyles.Integer,
+                         CultureInfo.InvariantCulture, out _))
+            {
+                rule.problem ??= $"count: «{rule.expected}» — нужно целое число";
+            }
+        }
+
+        internal static bool TryParseBool(string text, out bool value)
+        {
+            switch ((text ?? string.Empty).Trim().ToLowerInvariant())
+            {
+                case "true":
+                case "yes":
+                case "да":
+                    value = true;
+                    return true;
+                case "false":
+                case "no":
+                case "нет":
+                    value = false;
+                    return true;
+                default:
+                    value = false;
+                    return false;
+            }
+        }
+
+        internal static bool TryParseNumber(string text, out double value)
+        {
+            return double.TryParse((text ?? string.Empty).Trim(), NumberStyles.Float, CultureInfo.InvariantCulture,
+                out value) && !double.IsNaN(value) && !double.IsInfinity(value);
         }
 
         public static List<CheckRuleResult> EvaluateRules(string raw)
@@ -322,61 +551,73 @@ namespace NeoCource.Editor
                     continue;
                 }
 
-                switch (rule.kind)
+                try
                 {
-                    case CheckRuleKind.ObjectExists:
-                        result.ok = AlgoNeoEditorUtils.FindSceneObject(rule.target) != null;
-                        result.hint = result.ok ? null : "объекта с таким именем на сцене нет";
-                        break;
+                    switch (rule.kind)
+                    {
+                        case CheckRuleKind.ObjectExists:
+                            result.ok = AlgoNeoEditorUtils.FindSceneObject(rule.target) != null;
+                            result.hint = result.ok ? null : "объекта с таким именем на сцене нет";
+                            break;
 
-                    case CheckRuleKind.ComponentExists:
-                        EvaluateComponentRule(rule, result);
-                        break;
+                        case CheckRuleKind.ComponentExists:
+                            EvaluateComponentRule(rule, result);
+                            break;
 
-                    case CheckRuleKind.SceneName:
-                        EvaluateSceneRule(rule, result);
-                        break;
+                        case CheckRuleKind.Field:
+                            EvaluateFieldRule(rule, result);
+                            break;
 
-                    case CheckRuleKind.FileExists:
-                    case CheckRuleKind.Contains:
-                        if (!files.TryGetValue(rule.target, out (string path, string text, string error) file))
-                        {
-                            file = LoadCheckedFile(rule.target);
-                            files[rule.target] = file;
-                        }
+                        case CheckRuleKind.SceneName:
+                            EvaluateSceneRule(rule, result);
+                            break;
 
-                        if (string.IsNullOrEmpty(file.path))
-                        {
-                            result.hint = "файл не найден в проекте";
-                        }
-                        else if (file.error != null)
-                        {
-                            result.hint = "не удалось прочитать файл: " + file.error;
-                        }
-                        else if (rule.kind == CheckRuleKind.FileExists)
-                        {
-                            result.ok = true;
-                            result.info = file.path;
-                        }
-                        else
-                        {
-                            // Ordinal: C# чувствителен к регистру — "void update()" не равно "void Update()".
-                            result.ok = file.text.IndexOf(rule.value, StringComparison.Ordinal) >= 0;
-                            result.hint = result.ok
-                                ? null
-                                : "такой строки в файле нет — проверьте написание и регистр букв";
-                        }
+                        case CheckRuleKind.FileExists:
+                        case CheckRuleKind.Contains:
+                            if (!files.TryGetValue(rule.target, out (string path, string text, string error) file))
+                            {
+                                file = LoadCheckedFile(rule.target);
+                                files[rule.target] = file;
+                            }
 
-                        break;
+                            if (string.IsNullOrEmpty(file.path))
+                            {
+                                result.hint = "файл не найден в проекте";
+                            }
+                            else if (file.error != null)
+                            {
+                                result.hint = "не удалось прочитать файл: " + file.error;
+                            }
+                            else if (rule.kind == CheckRuleKind.FileExists)
+                            {
+                                result.ok = true;
+                                result.info = file.path;
+                            }
+                            else
+                            {
+                                // Ordinal: C# чувствителен к регистру — "void update()" не равно "void Update()".
+                                result.ok = file.text.IndexOf(rule.value, StringComparison.Ordinal) >= 0;
+                                result.hint = result.ok
+                                    ? null
+                                    : "такой строки в файле нет — проверьте написание и регистр букв";
+                            }
 
-                    case CheckRuleKind.Unknown:
-                        result.hint = "плагин не знает такого правила — проверьте написание. Доступны: " +
-                                      KnownRulesList;
-                        break;
+                            break;
 
-                    default:
-                        result.hint = "проверять нечего — добавьте правила: " + KnownRulesList;
-                        break;
+                        case CheckRuleKind.Unknown:
+                            result.hint = "плагин не знает такого правила — проверьте написание. Доступны: " +
+                                          KnownRulesList;
+                            break;
+
+                        default:
+                            result.hint = "проверять нечего — добавьте правила: " + KnownRulesList;
+                            break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    result.ok = false;
+                    result.hint = "не удалось проверить: " + (ex.InnerException ?? ex).Message;
                 }
             }
 
@@ -386,7 +627,16 @@ namespace NeoCource.Editor
         private static void EvaluateComponentRule(CheckRule rule, CheckRuleResult result)
         {
             GameObject go = null;
-            if (!string.IsNullOrEmpty(rule.target))
+            if (!string.IsNullOrEmpty(rule.prefab))
+            {
+                go = AlgoNeoEditorUtils.FindPrefabObject(rule.prefab, out string prefabProblem);
+                if (go == null)
+                {
+                    result.hint = prefabProblem;
+                    return;
+                }
+            }
+            else if (!string.IsNullOrEmpty(rule.target))
             {
                 go = AlgoNeoEditorUtils.FindSceneObject(rule.target);
                 if (go == null)
@@ -412,7 +662,11 @@ namespace NeoCource.Editor
             if (go != null)
             {
                 result.ok = go.GetComponent(type) != null;
-                result.hint = result.ok ? null : "компонент не добавлен на объект";
+                result.hint = result.ok
+                    ? null
+                    : string.IsNullOrEmpty(rule.prefab)
+                        ? "компонент не добавлен на объект"
+                        : "компонент не добавлен на префаб";
             }
             else
             {

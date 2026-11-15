@@ -19,8 +19,12 @@ namespace NeoCource.Editor.Settings
         public bool ShowFailureDialog = true;
         public bool LogVerbose = true;
 
-        [Header("Debug отображение check-блоков в Markdown")]
-        public bool DebugRenderCheckBlocks = true;
+        // По умолчанию блок check показывается только карточкой задания. В debug над карточкой
+        // остаётся и сам исходник ```check — удобно автору урока сверять правила.
+        // (Прежнее поле DebugRenderCheckBlocks ни на что не влияло и у всех было включено,
+        // поэтому новое поле названо иначе: старые сохранённые настройки его не включат.)
+        [Header("Debug: исходник check-блоков")]
+        public bool DebugShowCheckSource;
 
         [Header("Debug просмотр примеров из Docs/Examples")]
         public bool DebugBrowseDocsExamples = true;
@@ -29,6 +33,9 @@ namespace NeoCource.Editor.Settings
         public List<string> DisabledChecks = new();
 
         public static ValidationSettings Instance => instance;
+
+        // Настройки изменились и сохранены: открытое окно курса перерисовывает текущий слайд.
+        public static event Action Changed;
 
         // Не создаём ассет принудительно во время загрузки редактора, чтобы избежать повторной инициализации синглтона.
         // Он будет создан автоматически Unity при первом доступе к instance и сохранён при изменении.
@@ -94,17 +101,18 @@ namespace NeoCource.Editor.Settings
             ShowSuccessDialog = true;
             ShowFailureDialog = true;
             LogVerbose = true;
-            DebugRenderCheckBlocks = true;
+            DebugShowCheckSource = false;
             DebugBrowseDocsExamples = true;
             // Список мог стать null после ручной правки ассета.
             DisabledChecks ??= new List<string>();
             DisabledChecks.Clear();
-            Save(true);
+            Persist();
         }
 
         public void Persist()
         {
             Save(true);
+            Changed?.Invoke();
         }
 
         [MenuItem("Tools/AlgoNeoCourse/Settings/Reset/Reset Validation Settings", priority = 161)]

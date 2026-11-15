@@ -342,36 +342,50 @@ namespace NeoCource.Editor
                 string current = CourseProgressStore.NormalizeLessonPathKey(currentLessonFilePath);
                 string far = CourseProgressStore.NormalizeLessonPathKey(data.farthestLessonPath);
 
-                bool advance = false;
-                if (string.IsNullOrEmpty(far))
-                {
-                    advance = true;
-                }
-                else
-                {
-                    int curIdx = IndexInAvailableLessons(current);
-                    int farIdx = IndexInAvailableLessons(far);
-                    if (curIdx >= 0 && farIdx >= 0)
-                    {
-                        advance = curIdx > farIdx ||
-                                  (curIdx == farIdx && currentSlideIndex > data.farthestSlideIndex);
-                    }
-                    else if (string.Equals(current, far, StringComparison.OrdinalIgnoreCase))
-                    {
-                        advance = currentSlideIndex > data.farthestSlideIndex;
-                    }
-                    // farthest вне текущего списка — не трогаем.
-                }
+                // Дальняя точка урока — не текущий слайд, а самый дальний, до которого ученик доходил
+                // (он мог вернуться назад перечитать теорию).
+                int reached = Math.Max(currentSlideIndex,
+                    QuizStateStore.GetLessonState(currentLessonFilePath, false)?.maxSlideReached ?? 0);
+                reached = Mathf.Clamp(reached, 0, slides.Count - 1);
 
-                if (advance)
+                bool sameLesson = string.Equals(current, far, StringComparison.OrdinalIgnoreCase);
+                int curIdx = IndexInAvailableLessons(current);
+                int farIdx = string.IsNullOrEmpty(far) ? -1 : IndexInAvailableLessons(far);
+                bool farMissing = string.IsNullOrEmpty(far) || !File.Exists(NormalizeSessionPath(far) ?? far);
+                if (ShouldAdvanceFarthest(curIdx, farIdx, farMissing, sameLesson, reached, data.farthestSlideIndex))
                 {
                     data.farthestLessonPath = current;
-                    data.farthestSlideIndex = currentSlideIndex;
+                    data.farthestSlideIndex = reached;
                 }
             }
             catch
             {
             }
+        }
+
+        // Сдвигать ли дальнюю точку на текущий урок. Вперёд по порядку уроков — да; в том же уроке — если
+        // дошли дальше. Устаревшая точка (файл удалён или урока нет в списке, а текущий в списке есть)
+        // заменяется: иначе «Продолжить» навсегда указывала бы в никуда и оставалась выключенной.
+        internal static bool ShouldAdvanceFarthest(int currentIndex, int farthestIndex, bool farthestMissing,
+            bool sameLesson, int reachedSlide, int farthestSlide)
+        {
+            if (sameLesson)
+            {
+                return reachedSlide > farthestSlide || farthestMissing;
+            }
+
+            if (farthestMissing)
+            {
+                return true;
+            }
+
+            if (currentIndex >= 0 && farthestIndex >= 0)
+            {
+                return currentIndex > farthestIndex;
+            }
+
+            // Дальняя точка есть на диске, но её нет в текущем списке курса, а текущий урок в списке есть.
+            return currentIndex >= 0 && farthestIndex < 0;
         }
 
         private int IndexInAvailableLessons(string normalizedPath)

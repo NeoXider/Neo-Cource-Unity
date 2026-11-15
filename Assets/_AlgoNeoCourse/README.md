@@ -1,6 +1,6 @@
 # AlgoNeo Course
 
-Version: `1.8.0`
+Version: `1.9.0`
 
 Requires Unity `6000.0` or newer.
 
@@ -26,7 +26,8 @@ com.neoxider.algoneocourse
 - embedded Markdown renderer (Neoxider Markdown Renderer `1.3.0`): headings, lists, quotes, links,
   pipe tables, fenced code with C# / Python syntax highlighting
 - quiz system with local JSON persistence
-- validation checks for practical tasks
+- validation checks for practical tasks: optional rules, scene / prefab components, and `field` value comparisons
+- slide progress with a current-position marker and clickable quiz / practice markers
 - editor assemblies via `asmdef`
 - images and `.mp4` video in slides
 

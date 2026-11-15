@@ -220,5 +220,68 @@ namespace NeoCource.Editor.Tests
             Assert.IsFalse(CourseProgressStore.MigrateLessonKeys(noStates, Root));
             Assert.IsNotNull(noStates.lessonStates);
         }
+
+        [Test]
+        public void Merge_Check_Verdicts_Keeps_The_Best_Of_Both_Original_Entries()
+        {
+            // none / failed / remarks / perfect, including both input orders and either primary.
+            for (int left = 0; left < 4; left++)
+            for (int right = 0; right < 4; right++)
+            for (int stronger = 0; stronger < 2; stronger++)
+            {
+                LessonQuizState a = State(stronger == 0 ? 10 : 0);
+                LessonQuizState b = State(stronger == 1 ? 10 : 0);
+                SetCheckVerdict(a, left);
+                SetCheckVerdict(b, right);
+                LessonQuizState merged = CourseProgressStore.MergeLessonStates(a, b);
+                int best = System.Math.Max(left, right);
+                string context = $"left={left}, right={right}, primary={stronger}";
+                if (best == 0)
+                {
+                    Assert.IsFalse(merged.checkIdToPassed.ContainsKey("check:merge"), context);
+                }
+                else
+                {
+                    Assert.AreEqual(best >= 2, merged.checkIdToPassed["check:merge"], context);
+                }
+
+                Assert.AreEqual(best == 2, merged.checkIdToRemarks.ContainsKey("check:merge"), context);
+                if (best == 2)
+                {
+                    Assert.IsTrue(merged.checkIdToRemarks["check:merge"], context);
+                }
+            }
+        }
+
+        private static void SetCheckVerdict(LessonQuizState state, int verdict)
+        {
+            if (verdict > 0)
+            {
+                state.checkIdToPassed["check:merge"] = verdict >= 2;
+            }
+
+            if (verdict == 2)
+            {
+                state.checkIdToRemarks["check:merge"] = true;
+            }
+        }
+
+        [Test]
+        public void Merge_False_Remarks_Flag_Is_Perfect_And_Orphan_Remarks_Are_Removed()
+        {
+            LessonQuizState primary = State(10);
+            primary.checkIdToPassed["check:perfect"] = true;
+            primary.checkIdToRemarks["check:perfect"] = false;
+            primary.checkIdToRemarks["check:orphan"] = true;
+            LessonQuizState secondary = State(0);
+            secondary.checkIdToPassed["check:perfect"] = true;
+            secondary.checkIdToRemarks["check:perfect"] = true;
+
+            LessonQuizState merged = CourseProgressStore.MergeLessonStates(primary, secondary);
+            Assert.IsTrue(merged.checkIdToPassed["check:perfect"]);
+            Assert.IsFalse(merged.checkIdToRemarks.ContainsKey("check:perfect"));
+            Assert.IsFalse(merged.checkIdToPassed["check:orphan"]);
+            Assert.IsFalse(merged.checkIdToRemarks.ContainsKey("check:orphan"));
+        }
     }
 }

@@ -197,6 +197,27 @@
     transition-timing-function: ease-out;
 }
 
+/* «Вы здесь»: тонкая отметка текущего слайда поверх заливки. Заметнее, когда ученик вернулся назад. */
+.algo-course-progress-marker {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    translate: -50% 0;
+    border-radius: 2px;
+    background-color: rgba(255, 255, 255, 0.55);
+    transition-property: left, background-color;
+    transition-duration: 0.25s;
+    transition-timing-function: ease-out;
+}
+
+.algo-course-progress-marker--back {
+    width: 4px;
+    background-color: rgb(255, 255, 255);
+    border-width: 1px;
+    border-color: rgba(20, 24, 30, 0.9);
+}
+
 .algo-course-progress-label {
     font-size: 10px;
     color: #9aa0aa;
@@ -392,4 +413,127 @@
 .algo-course-content .md-table-header Label {
     -unity-font-style: bold;
     color: rgb(214, 222, 233);
+}
+
+/* ---------- Slide-scaled progress: fill, quiz/check checkpoints, current slide ---------- */
+.algo-course-progress-wrap {
+    min-width: 0;
+    flex-shrink: 0;
+}
+
+.algo-course-progress {
+    height: 8px;
+    min-height: 8px;
+    min-width: 0;
+    flex-shrink: 0;
+}
+
+.algo-course-progress-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 8px;
+    max-width: 100%;
+    transition-property: background-color;
+}
+
+.algo-course-progress-fill--medium { background-color: #f2cc4d; }
+.algo-course-progress-fill--high { background-color: #4dbf66; }
+.algo-course-progress-fill--complete { background-color: #408cff; }
+
+.algo-course-progress-checkpoints {
+    position: relative;
+    height: 16px;
+    min-height: 16px;
+    min-width: 0;
+    flex-shrink: 0;
+    margin-top: 3px;
+    overflow: hidden;
+}
+
+.algo-course-progress-checkpoint {
+    position: absolute;
+    top: 1.5px;
+    translate: -50% 0;
+    width: 13px;
+    height: 13px;
+    padding: 0;
+    margin: 0;
+    border-width: 1.5px;
+    cursor: link;
+    transition-property: scale;
+    transition-duration: 0.12s;
+}
+
+.algo-course-progress-checkpoint-glyph {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    padding: 0;
+    margin: 0;
+    font-size: 9px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+.algo-course-progress-checkpoint--quiz {
+    border-radius: 7px;
+    background-color: rgba(179, 157, 255, 0.18);
+    border-color: #B39DFF;
+    color: #B39DFF;
+}
+
+.algo-course-progress-checkpoint--check {
+    border-radius: 3px;
+    background-color: rgba(255, 169, 77, 0.18);
+    border-color: #FFA94D;
+    color: #FFA94D;
+}
+
+.algo-course-progress-checkpoint--done {
+    background-color: #3FBF74;
+    border-color: #8DF0B5;
+    color: #ffffff;
+}
+
+/* Засчитано с замечаниями: зелёный, как выполнено, но с янтарной обводкой и «!». */
+.algo-course-progress-checkpoint--remarks {
+    background-color: #3FBF74;
+    border-color: #FFC94D;
+    color: #FFF3C4;
+}
+
+.algo-course-progress-checkpoint--failed {
+    background-color: #D6454B;
+    border-color: #FF9A9E;
+    color: #ffffff;
+}
+
+.algo-course-progress-checkpoint--current {
+    border-width: 2px;
+    border-color: #ffffff;
+    scale: 1.1 1.1;
+}
+
+.algo-course-progress-checkpoint--locked { opacity: 0.45; }
+.algo-course-progress-checkpoint:hover { scale: 1.25 1.25; }
+
+.algo-course-progress-marker {
+    width: 3px;
+    background-color: #ffffff;
+    border-top-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-color: #14181e;
+    border-radius: 0;
+    transition-property: background-color;
+}
+
+.algo-course-progress-label {
+    min-width: 0;
+    white-space: normal;
+    overflow: hidden;
 }

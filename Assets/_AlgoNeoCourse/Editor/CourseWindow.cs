@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using NeoCource.Editor.Quizzes;
 using NeoCource.Editor.Settings;
+using NeoCource.Editor.Utils;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -34,6 +35,16 @@ namespace NeoCource.Editor
         private UIMarkdownRenderer.UIMarkdownRenderer mdRenderer;
         private ToolbarButton continueBtn;
         private VisualElement courseProgressFill;
+        private VisualElement courseProgressCheckpoints;
+        private string progressMarkersLessonPath;
+        private List<string> progressMarkersSlides;
+        private List<ProgressMarkerDescriptor> progressMarkerDescriptors = new();
+        private readonly List<VisualElement> progressMarkerElements = new();
+        private readonly List<string> progressMarkerQuizIds = new();
+        private readonly HashSet<string> progressMarkerCheckIds = new(StringComparer.Ordinal);
+
+        // Отметка «вы здесь» на полосе прогресса: видна, когда ученик вернулся назад перечитать теорию.
+        private VisualElement courseProgressMarker;
         private Label courseProgressLabel;
         private VisualElement emptyStateBox;
         private ToolbarButton nextBtn;
@@ -79,6 +90,10 @@ namespace NeoCource.Editor
             BuildToolbar();
             BuildContent();
             EnsureHotkeysHook();
+            AlgoNeoEditorUtils.WarmUpTypeIndex();
+
+            ValidationSettings.Changed -= OnValidationSettingsChanged;
+            ValidationSettings.Changed += OnValidationSettingsChanged;
 
             EditorApplication.delayCall += () =>
             {
@@ -100,6 +115,33 @@ namespace NeoCource.Editor
                     Debug.LogError($"CourseWindow: deferred init failed — {ex.Message}");
                 }
             };
+        }
+
+        private void OnDisable()
+        {
+            ValidationSettings.Changed -= OnValidationSettingsChanged;
+        }
+
+        // Галочки debug действуют сразу: меню Docs и текущий слайд перестраиваются без «Обновить».
+        private void OnValidationSettingsChanged()
+        {
+            if (this == null || toolbar == null)
+            {
+                return;
+            }
+
+            try
+            {
+                EnsureDocsMenuFromSettings();
+                if (slides != null && currentSlideIndex >= 0 && currentSlideIndex < slides.Count)
+                {
+                    ShowSlide(currentSlideIndex);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("CourseWindow: настройки применены не полностью — " + ex.Message);
+            }
         }
 
         // Единственный пункт верхнего уровня: Ctrl+Alt+L. Всё остальное живёт в подменю Settings.

@@ -48,6 +48,10 @@ namespace NeoCource.Editor.Quizzes
         // checkId детерминирован содержимым ссылки, переживает перезапуски.
         public Dictionary<string, bool> checkIdToPassed = new();
 
+        // Засчитанная проверка, у которой не выполнены дополнительные (optional) пункты.
+        // Нет записи — «идеально» (или старый сейв до 1.9.0).
+        public Dictionary<string, bool> checkIdToRemarks = new();
+
         // Задел под прогресс/синк (опциональные, старые сейвы читаются без них):
         public string lessonId = string.Empty; // стабильный id из course.json, не путь
         public int lastSlideIndex;

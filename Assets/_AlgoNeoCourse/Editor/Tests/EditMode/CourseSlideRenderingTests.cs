@@ -3,6 +3,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using NeoCource.Editor.Infrastructure;
+using NeoCource.Editor.Settings;
 using NeoCource.Editor.UI;
 using NUnit.Framework;
 using UnityEditor;
@@ -21,10 +22,14 @@ namespace NeoCource.Editor.Tests
         private const string Code = "<color=" + CourseWindow.InlineCodeColorHex + ">";
 
         private CourseWindow window;
+        private bool savedShowCheckSource;
 
         [SetUp]
         public void SetUp()
         {
+            // Настройку меняем только в памяти (без Save) и возвращаем после теста.
+            savedShowCheckSource = ValidationSettings.Instance.DebugShowCheckSource;
+            ValidationSettings.Instance.DebugShowCheckSource = false;
             window = ScriptableObject.CreateInstance<CourseWindow>();
             window.BuildContent();
         }
@@ -32,6 +37,7 @@ namespace NeoCource.Editor.Tests
         [TearDown]
         public void TearDown()
         {
+            ValidationSettings.Instance.DebugShowCheckSource = savedShowCheckSource;
             if (window != null)
             {
                 Object.DestroyImmediate(window);
@@ -205,6 +211,30 @@ namespace NeoCource.Editor.Tests
 
             Assert.IsFalse(LabelTexts().Any(text => text.Contains("unity://check")),
                 "ссылка-транспорт заменена кнопкой");
+        }
+
+        [Test]
+        public void Debug_Shows_Check_Source_Above_The_Card()
+        {
+            ValidationSettings.Instance.DebugShowCheckSource = true;
+            const string raw = "rules:\n  - object_exists: \"Player\"";
+            window.RenderSlideContent("## Практика\n\n```check\n" + raw + "\n```\n");
+
+            List<CheckCard> cards = window.rootVisualElement.Query<CheckCard>().ToList();
+            List<VisualElement> sources = WithClass("language-check");
+            Assert.AreEqual(1, cards.Count, "карточка задания есть и в debug");
+            Assert.AreEqual(1, sources.Count, "в debug исходник ```check остаётся на слайде");
+            Assert.IsTrue(sources[0].ClassListContains("check-source"));
+            StringAssert.Contains("object_exists", Plain(sources[0]));
+
+            VisualElement parent = cards[0].parent;
+            Assert.AreSame(parent, sources[0].parent);
+            Assert.AreEqual(parent.IndexOf(sources[0]) + 1, parent.IndexOf(cards[0]), "исходник стоит прямо над карточкой");
+            Assert.AreEqual(1, WithClass("check-source__caption").Count);
+
+            List<Button> buttons = window.rootVisualElement.Query<Button>(className: "check-button").ToList();
+            Assert.AreEqual(1, buttons.Count, "кнопка «Проверить» одна — в карточке");
+            Assert.IsTrue(cards[0].Contains(buttons[0]));
         }
 
         [Test]

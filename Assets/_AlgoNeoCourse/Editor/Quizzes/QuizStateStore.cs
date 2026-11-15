@@ -29,6 +29,12 @@ namespace NeoCource.Editor.Quizzes
         // Результат практической проверки: last-outcome семантика (как попытки квизов).
         public static void SaveCheckResult(string lessonPath, string checkId, bool passed)
         {
+            SaveCheckResult(lessonPath, checkId, passed, false);
+        }
+
+        // remarks — засчитано, но дополнительные пункты не выполнены.
+        public static void SaveCheckResult(string lessonPath, string checkId, bool passed, bool remarks)
+        {
             if (string.IsNullOrEmpty(checkId))
             {
                 return;
@@ -42,6 +48,16 @@ namespace NeoCource.Editor.Quizzes
 
             state.checkIdToPassed ??= new Dictionary<string, bool>();
             state.checkIdToPassed[checkId] = passed;
+            state.checkIdToRemarks ??= new Dictionary<string, bool>();
+            if (passed && remarks)
+            {
+                state.checkIdToRemarks[checkId] = true;
+            }
+            else
+            {
+                state.checkIdToRemarks.Remove(checkId);
+            }
+
             CourseProgressStore.SaveToDisk();
         }
 

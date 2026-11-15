@@ -257,47 +257,51 @@ namespace NeoCource.Editor.Validation
             }
         }
 
+        // Блок check разбирается тем же движком, что и при проверке (ParseRules): валидатор ругается
+        // ровно на то, что у ученика никогда не пройдёт — неизвестное правило, пустое значение,
+        // field без type/name/equals, непонятный параметр. Дополнительные (optional) правила — тоже.
         private static void ValidateCheckBlocks(string slide, string lessonPath, string lessonTitle,
             int slideIndex, List<ValidationIssue> issues)
         {
             foreach (Match match in CheckBlockRegex.Matches(slide))
             {
-                foreach (string rawLine in match.Groups[1].Value.Split('\n'))
+                foreach (CheckRule rule in AlgoNeoYamlChecker.ParseRules(match.Groups[1].Value))
                 {
-                    // Правила — элементы списка: "- filename: ...".
-                    string line = rawLine.Trim();
-                    if (line.StartsWith("-"))
+                    string where = rule.optional ? " (дополнительное правило)" : string.Empty;
+                    if (rule.kind == CheckRuleKind.Unknown)
                     {
-                        line = line.Substring(1).Trim();
+                        issues.Add(Error(lessonPath, lessonTitle, slideIndex, "check-unknown-rule",
+                            $"check-блок: неизвестное правило «{rule.target}». Доступны: " +
+                            AlgoNeoYamlChecker.KnownRulesList + "."));
                     }
-
-                    if (line.StartsWith("filename:", StringComparison.OrdinalIgnoreCase))
+                    else if (rule.kind == CheckRuleKind.EmptyBlock)
                     {
-                        if (string.IsNullOrWhiteSpace(Unquote(line.Substring(9).Trim())))
-                        {
-                            issues.Add(Error(lessonPath, lessonTitle, slideIndex,
-                                "check-filename-empty", "check-блок: пустой filename."));
-                        }
+                        issues.Add(Error(lessonPath, lessonTitle, slideIndex, "check-empty-block",
+                            "check-блок без правил."));
                     }
-                    else if (line.StartsWith("contains:", StringComparison.OrdinalIgnoreCase))
+                    else if (!string.IsNullOrEmpty(rule.problem))
                     {
-                        if (string.IsNullOrWhiteSpace(Unquote(line.Substring(9).Trim())))
-                        {
-                            issues.Add(Warning(lessonPath, lessonTitle, slideIndex,
-                                "check-contains-empty", "check-блок: пустой contains."));
-                        }
-                    }
-                    else if (line.StartsWith("object_exists:", StringComparison.OrdinalIgnoreCase) ||
-                             line.StartsWith("object-exists:", StringComparison.OrdinalIgnoreCase))
-                    {
-                        int colon = line.IndexOf(':');
-                        if (string.IsNullOrWhiteSpace(Unquote(line.Substring(colon + 1).Trim())))
-                        {
-                            issues.Add(Error(lessonPath, lessonTitle, slideIndex,
-                                "check-object-exists-empty", "check-блок: пустой object_exists."));
-                        }
+                        issues.Add(rule.kind == CheckRuleKind.Contains
+                            ? Warning(lessonPath, lessonTitle, slideIndex, "check-contains-empty",
+                                $"check-блок: {rule.problem}{where}.")
+                            : Error(lessonPath, lessonTitle, slideIndex, RuleCode(rule),
+                                $"check-блок: {rule.ToLogLine()} — {rule.problem}{where}."));
                     }
                 }
+            }
+        }
+
+        // Прежние коды ошибок сохранены: на них могут опираться авторские фильтры.
+        private static string RuleCode(CheckRule rule)
+        {
+            switch (rule.kind)
+            {
+                case CheckRuleKind.FileExists:
+                    return "check-filename-empty";
+                case CheckRuleKind.ObjectExists:
+                    return "check-object-exists-empty";
+                default:
+                    return "check-rule-problem";
             }
         }
 

@@ -225,8 +225,9 @@
     border-color: rgba(255, 170, 60, 0.45);
     border-left-color: rgb(255, 170, 60);
     background-color: rgba(48, 38, 24, 0.55);
-    transition-property: border-color, background-color;
-    transition-duration: 0.3s;
+    transition-property: border-color, background-color, translate;
+    transition-duration: 0.3s, 0.3s, 0.05s;
+    transition-timing-function: ease, ease, ease-in-out;
 }
 
 .check-card--done {
@@ -338,4 +339,119 @@
 .check-card__footer {
     flex-direction: row;
     margin-top: 8px;
+}
+
+/* ---------- Дополнительные пункты (optional: true) и итоги «замечания» / «идеально» ---------- */
+.check-card {
+    overflow: hidden;
+}
+
+.check-rule__tag {
+    flex-shrink: 0;
+    align-self: flex-start;
+    margin-left: 8px;
+    margin-top: 1px;
+    padding: 0 6px;
+    border-radius: 8px;
+    font-size: 10px;
+    color: rgb(200, 190, 255);
+    background-color: rgba(150, 130, 255, 0.16);
+}
+
+.check-rule--remark {
+    background-color: rgba(255, 196, 64, 0.2);
+    border-left-width: 3px;
+    border-left-color: rgb(255, 200, 80);
+}
+
+.check-rule--remark .check-rule__icon {
+    color: rgb(255, 205, 80);
+    scale: 1.15 1.15;
+}
+
+.check-rule--remark .check-rule__hint {
+    color: rgb(255, 214, 120);
+}
+
+/* Засчитано с замечаниями — почти «выполнено»: зелёная карточка, жёлто-зелёная полоска слева и
+   плашка статуса. Сам пункт с замечанием остаётся янтарным (.check-rule--remark), его видно сразу. */
+.check-card--remarks {
+    border-color: rgba(105, 240, 174, 0.45);
+    border-left-color: rgb(196, 232, 96);
+    background-color: rgba(26, 50, 36, 0.6);
+}
+
+.check-card--remarks .check-card__title {
+    color: rgb(170, 242, 200);
+}
+
+.check-card__status--remarks {
+    background-color: rgba(150, 200, 60, 0.3);
+    color: rgb(226, 248, 170);
+}
+
+.check-card--perfect {
+    border-color: rgba(120, 245, 190, 0.75);
+    border-left-color: rgb(255, 214, 90);
+    background-color: rgba(24, 54, 40, 0.65);
+}
+
+.check-card__status--perfect {
+    background-color: rgba(255, 205, 70, 0.32);
+    color: rgb(255, 238, 180);
+    -unity-font-style: bold;
+}
+
+.check-button--remarks {
+    background-color: rgba(46, 125, 50, 0.95);
+    border-color: rgba(214, 240, 120, 1.0);
+    color: rgb(255, 255, 255);
+    transition-property: background-color, border-color;
+    transition-duration: 0.3s;
+}
+
+.check-button--remarks:hover {
+    background-color: rgba(56, 142, 60, 1.0);
+}
+
+/* Блик «идеально»: полоса внутри карточки, карточка её обрезает (overflow: hidden). */
+.check-card__shine {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 15%;
+    opacity: 0;
+    background-color: rgba(255, 246, 200, 0.16);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-color: rgba(255, 246, 200, 0.22);
+    transition-property: left, opacity;
+    transition-duration: 0.7s, 0.25s;
+    transition-timing-function: ease-in-out, ease-out;
+}
+
+.check-card__shine--run {
+    left: 85%;
+    opacity: 1;
+}
+
+.check-card__shine--fade {
+    opacity: 0;
+}
+
+/* ---------- Debug: исходник блока check над карточкой (ValidationSettings → Debug Show Check Source) ---------- */
+.check-source__caption {
+    margin-top: 10px;
+    margin-bottom: 0;
+    padding-left: 2px;
+    font-size: 11px;
+    -unity-font-style: italic;
+    color: rgba(255, 170, 60, 0.75);
+}
+
+.codeblock.check-source {
+    margin-top: 2px;
+    margin-bottom: 0;
+    opacity: 0.85;
 }

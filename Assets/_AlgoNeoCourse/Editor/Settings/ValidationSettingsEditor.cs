@@ -8,7 +8,7 @@ namespace NeoCource.Editor.Settings
     public class ValidationSettingsEditor : UnityEditor.Editor
     {
         private SerializedProperty debugBrowseDocsExamplesProperty;
-        private SerializedProperty debugRenderCheckBlocksProperty;
+        private SerializedProperty debugShowCheckSourceProperty;
         private SerializedProperty disabledChecksProperty;
         private SerializedProperty enableDialogsProperty;
         private SerializedProperty logVerboseProperty;
@@ -21,7 +21,7 @@ namespace NeoCource.Editor.Settings
             showSuccessDialogProperty = serializedObject.FindProperty("ShowSuccessDialog");
             showFailureDialogProperty = serializedObject.FindProperty("ShowFailureDialog");
             logVerboseProperty = serializedObject.FindProperty("LogVerbose");
-            debugRenderCheckBlocksProperty = serializedObject.FindProperty("DebugRenderCheckBlocks");
+            debugShowCheckSourceProperty = serializedObject.FindProperty("DebugShowCheckSource");
             debugBrowseDocsExamplesProperty = serializedObject.FindProperty("DebugBrowseDocsExamples");
             disabledChecksProperty = serializedObject.FindProperty("DisabledChecks");
         }
@@ -44,7 +44,9 @@ namespace NeoCource.Editor.Settings
             AlgoNeoEditorGui.EndSection();
 
             AlgoNeoEditorGui.BeginSection("Отладочное отображение", new Color(0.45f, 0.78f, 1f));
-            EditorGUILayout.PropertyField(debugRenderCheckBlocksProperty);
+            EditorGUILayout.PropertyField(debugShowCheckSourceProperty,
+                new GUIContent("Debug Show Check Source",
+                    "Над карточкой задания показывать и исходный блок ```check. Ученикам не нужно."));
             EditorGUILayout.PropertyField(debugBrowseDocsExamplesProperty);
             AlgoNeoEditorGui.EndSection();
 

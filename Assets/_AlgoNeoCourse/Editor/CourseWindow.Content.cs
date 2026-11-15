@@ -448,6 +448,7 @@ namespace NeoCource.Editor
         }
 
         // Блок check показываем не сырым YAML, а карточкой задания с пунктами и кнопкой.
+        // В debug (ValidationSettings.DebugShowCheckSource) исходник ```check остаётся над карточкой.
         private void DecorateCheckBlocks(string slideMarkdown)
         {
             if (mdRenderer?.RootElement == null || string.IsNullOrEmpty(slideMarkdown))
@@ -470,6 +471,7 @@ namespace NeoCource.Editor
                 LessonQuizState state = string.IsNullOrEmpty(currentLessonFilePath)
                     ? null
                     : QuizStateStore.GetLessonState(currentLessonFilePath, false);
+                bool showSource = ValidationSettings.Instance != null && ValidationSettings.Instance.DebugShowCheckSource;
 
                 for (int i = 0; i < blocks.Count && i < raws.Count; i++)
                 {
@@ -482,17 +484,31 @@ namespace NeoCource.Editor
 
                     Button button = i < buttons.Count ? buttons[i] : null;
                     string link = button?.userData as string;
-                    bool? saved = null;
-                    if (link != null && state?.checkIdToPassed != null &&
-                        state.checkIdToPassed.TryGetValue(QuizStateStore.CheckIdForLink(link), out bool passed))
+                    CheckVerdict? saved = null;
+                    string checkId = link != null ? QuizStateStore.CheckIdForLink(link) : null;
+                    if (checkId != null && state?.checkIdToPassed != null &&
+                        state.checkIdToPassed.TryGetValue(checkId, out bool passed))
                     {
-                        saved = passed;
+                        bool remarks = state.checkIdToRemarks != null && state.checkIdToRemarks.ContainsKey(checkId);
+                        saved = !passed ? CheckVerdict.Failed :
+                            remarks ? CheckVerdict.PassedWithRemarks : CheckVerdict.Perfect;
                     }
 
                     VisualElement buttonHost = button?.parent;
                     CheckCard card = new(raws[i].Groups[1].Value, link, button, saved);
-                    parent.Insert(parent.IndexOf(block), card);
-                    block.RemoveFromHierarchy();
+                    if (showSource)
+                    {
+                        Label caption = new("исходник ```check · debug");
+                        caption.AddToClassList("check-source__caption");
+                        block.AddToClassList("check-source");
+                        parent.Insert(parent.IndexOf(block), caption);
+                        parent.Insert(parent.IndexOf(block) + 1, card);
+                    }
+                    else
+                    {
+                        parent.Insert(parent.IndexOf(block), card);
+                        block.RemoveFromHierarchy();
+                    }
 
                     // Строка, в которой жила кнопка, осталась пустой — убираем лишний отступ.
                     if (buttonHost != null && buttonHost != parent && buttonHost.childCount == 0)

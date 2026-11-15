@@ -17,7 +17,14 @@ namespace NeoCource.Editor
 
         public static string Execute(Dictionary<string, string> args, out bool success)
         {
+            return Execute(args, out success, out _);
+        }
+
+        public static string Execute(Dictionary<string, string> args, out bool success,
+            out List<CheckRuleResult> results)
+        {
             success = false;
+            results = null;
             if (args == null || !args.TryGetValue("type", out string type) || string.IsNullOrEmpty(type))
             {
                 EditorUtility.DisplayDialog("Проверка задания", "Параметры проверки не заданы", "Ок");
@@ -38,7 +45,7 @@ namespace NeoCource.Editor
 
             if (type == "from-block" && args != null && args.TryGetValue("__raw_block__", out string raw))
             {
-                (bool blockOk, string blockMsg) = AlgoNeoYamlChecker.Evaluate(raw);
+                (bool blockOk, string blockMsg) = AlgoNeoYamlChecker.Evaluate(raw, out results);
                 result = (blockOk, blockMsg, "Проверка блока");
             }
             else if (TaskCheckRegistry.TryGet(type, out ITaskCheck checker))
