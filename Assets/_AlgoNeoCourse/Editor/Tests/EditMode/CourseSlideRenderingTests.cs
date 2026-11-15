@@ -344,8 +344,10 @@ namespace NeoCource.Editor.Tests
 
             VisualElement parent = cards[0].parent;
             Assert.AreSame(parent, sources[0].parent);
-            Assert.AreEqual(parent.IndexOf(sources[0]) + 1, parent.IndexOf(cards[0]), "исходник стоит прямо над карточкой");
-            Assert.AreEqual(1, WithClass("check-source__caption").Count);
+            List<VisualElement> captions = WithClass("check-source__caption");
+            Assert.AreEqual(1, captions.Count);
+            Assert.AreEqual(parent.IndexOf(cards[0]) + 1, parent.IndexOf(captions[0]), "подпись идёт сразу под карточкой");
+            Assert.AreEqual(parent.IndexOf(cards[0]) + 2, parent.IndexOf(sources[0]), "исходник стоит под карточкой");
 
             List<Button> buttons = window.rootVisualElement.Query<Button>(className: "check-button").ToList();
             Assert.AreEqual(1, buttons.Count, "кнопка «Проверить» одна — в карточке");

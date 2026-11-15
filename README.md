@@ -139,7 +139,7 @@ com.unity.nuget.newtonsoft-json
 
 Что важно в `Validation Settings`:
 
-- `Debug Show Check Source` — над карточкой задания показывать и исходный блок ```check (для автора урока; по умолчанию выключено, ученик видит только карточку);
+- `Debug Show Check Source` — под карточкой задания показывать и исходный блок ```check (для автора урока; по умолчанию выключено, ученик видит только карточку);
 - `Debug Browse Docs Examples` — меню `Docs` с примерами из `Docs/Examples`;
 - `Disabled Checks` — временно отключённые правила проверок.
 

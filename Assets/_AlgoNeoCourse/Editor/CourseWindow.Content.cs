@@ -448,7 +448,7 @@ namespace NeoCource.Editor
         }
 
         // Блок check показываем не сырым YAML, а карточкой задания с пунктами и кнопкой.
-        // В debug (ValidationSettings.DebugShowCheckSource) исходник ```check остаётся над карточкой.
+        // В debug (ValidationSettings.DebugShowCheckSource) исходник ```check показывается под карточкой.
         private void DecorateCheckBlocks(string slideMarkdown)
         {
             if (mdRenderer?.RootElement == null || string.IsNullOrEmpty(slideMarkdown))
@@ -508,8 +508,9 @@ namespace NeoCource.Editor
                         Label caption = new("исходник ```check · debug");
                         caption.AddToClassList("check-source__caption");
                         block.AddToClassList("check-source");
+                        // Сначала карточка, под ней — подпись и исходный блок.
+                        parent.Insert(parent.IndexOf(block), card);
                         parent.Insert(parent.IndexOf(block), caption);
-                        parent.Insert(parent.IndexOf(block) + 1, card);
                     }
                     else
                     {

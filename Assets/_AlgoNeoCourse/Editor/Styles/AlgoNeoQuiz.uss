@@ -440,7 +440,7 @@
     opacity: 0;
 }
 
-/* ---------- Debug: исходник блока check над карточкой (ValidationSettings → Debug Show Check Source) ---------- */
+/* ---------- Debug: исходник блока check под карточкой (ValidationSettings → Debug Show Check Source) ---------- */
 .check-source__caption {
     margin-top: 10px;
     margin-bottom: 0;

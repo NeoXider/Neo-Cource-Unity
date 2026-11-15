@@ -28,7 +28,7 @@ Entry point for the package documentation inside `Assets/_AlgoNeoCourse/Docs`.
 - pipe tables (a header row plus a separator row) are rendered as a grid since `1.8.0`
 - the package requires Unity `6000.0` or newer since `1.8.0`
 - slides are rendered by the embedded Neoxider Markdown Renderer `1.3.0` (`Plugins/markdownrenderer`)
-- a `check` block is shown as a task card; with `Validation Settings -> Debug Show Check Source` (off by default, since `1.9.0`) the raw ```check block is shown above the card; Validation Settings toggles apply immediately
+- a `check` block is shown as a task card; with `Validation Settings -> Debug Show Check Source` (off by default, since `1.9.0`) the raw ```check block is shown below the card; Validation Settings toggles apply immediately
 - since `1.9.1` the task card remembers each rule's result (✓ / ! / ✕ and the hint) after leaving the slide and after an editor restart; course progress is reset only from `Course Settings` or `Tools -> AlgoNeoCourse -> Settings -> Progress -> Reset Course Progress`
 - `optional: true` on any check rule allows a pass with remarks; malformed rules still fail, and saved check results distinguish remarks from a perfect pass
 - `field` compares component fields / properties on scene objects or prefab assets using `equals` or collection `count`; `component_exists` also accepts `prefab`
